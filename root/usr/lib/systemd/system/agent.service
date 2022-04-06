@@ -1,0 +1,17 @@
+[Unit]
+Description=NS8 agent
+ConditionPathExists=/var/lib/nethserver/agent/agent.env
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/nethserver/agent.env
+EnvironmentFile=/var/lib/nethserver/agent/agent.env
+WorkingDirectory=/var/lib/nethserver/agent
+ExecStart=/usr/bin/agent \
+    --agentid=${AGENT_ID} \
+    --actionsdir=${AGENT_INSTALL_DIR}/actions \
+    --eventsdir=${AGENT_INSTALL_DIR}/events
+Restart=always
+
+[Install]
+WantedBy=default.target

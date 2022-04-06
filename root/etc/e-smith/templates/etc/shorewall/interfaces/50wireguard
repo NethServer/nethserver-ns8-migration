@@ -1,0 +1,4 @@
+#
+# wireguard VPN
+#
+loc    wg+    optional

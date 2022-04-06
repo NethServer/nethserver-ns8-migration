@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+priv=$(/sbin/e-smith/config getprop wg-quick@wg0 SecretKey)
+
+if [ -z "$priv" ]; then
+    priv=$(wg genkey | tee /etc/wireguard/private.key)
+    /sbin/e-smith/config setprop wg-quick@wg0 SecretKey "$priv"
+fi
+echo "$priv" | wg pubkey > /etc/wireguard/public.key
+chmod 0600 /etc/wireguard/private.key /etc/wireguard/public.key

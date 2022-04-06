@@ -1,0 +1,7 @@
+#
+# nsapi_nethserver_ns8_migration
+#
+Cmnd_Alias NSAPI_NETHSERVER_NS8_MIGRATION = \
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/configuration/read
+
+Defaults!NSAPI_NETHSERVER_DEDALO !requiretty

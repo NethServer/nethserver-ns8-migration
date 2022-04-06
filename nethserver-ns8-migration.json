@@ -1,0 +1,23 @@
+{
+    "id": "nethserver-ns8-migration",
+    "name": "Hotspot unit",
+    "description": "Nethserver 7 migration tool to NethServer 8",
+    "summary": "NS7 to NS8 migration",
+    "url": "",
+    "homepage": "https://github.com/NethServer/nethserver-ns8-migration",
+    "provides": ["nethserver-ns8-migration"],
+    "release": {
+        "version": "_RELEASE_"
+    },
+    "tags": ["nethserver"],
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/NethServer/dev/issues"
+    },
+    "author": {
+        "name": "Giacomo Sanchietti",
+        "url": "https://github.com/NethServer/nethserver-ns8-migration",
+        "email": "giacomo.sanchiettii@nethesis.it"
+    },
+    "icon": "logo.png"
+}
