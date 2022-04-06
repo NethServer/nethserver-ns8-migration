@@ -1,6 +1,6 @@
 {
     "id": "nethserver-ns8-migration",
-    "name": "Hotspot unit",
+    "name": "NS8 migration",
     "description": "Nethserver 7 migration tool to NethServer 8",
     "summary": "NS7 to NS8 migration",
     "url": "",

@@ -33,8 +33,8 @@
             v-on:change="handleLogs()"
             :disabled="view.follow"
           >
-            <option selected>dedalo</option>
-            <option>/var/log/squid/dedalo.log</option>
+            <option selected>migration</option>
+            <option>/var/log/messages</option>
           </select>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-8">
@@ -109,7 +109,7 @@ export default {
   data() {
     return {
       view: {
-        path: "dedalo",
+        path: "migration",
         logsLoaded: false,
         logsContent: "",
         follow: false,
@@ -140,10 +140,10 @@ export default {
         {
           action: this.view.follow ? "follow" : "dump",
           lines: this.view.follow ? null : this.view.lines,
-          mode: this.view.path === "dedalo" ? "systemd" : "file",
+          mode: this.view.path === "migration" ? "systemd" : "file",
           filter: this.view.filter,
           paths: [this.view.path],
-          format_time: this.view.path === "/var/log/squid/dedalo.log" ? true : false
+          format_time: this.view.path === "/var/lof/messages" ? true : false
         },
         this.view.follow
           ? function(stream) {
