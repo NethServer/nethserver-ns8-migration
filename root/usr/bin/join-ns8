@@ -121,6 +121,7 @@ if ret['code'] == 200:
 
     # Save config inside config db
     subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@wg0", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
+    subprocess.run(["/sbin/e-smith/config", "setprop", "agent", "status", "enabled"], check=True)
 
     # Save agent environment
     with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
