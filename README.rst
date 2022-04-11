@@ -19,3 +19,11 @@ Example: ::
   ns8-join ns8.nethserver.org admin Nethesis,1234
   signal-event nethserver-ns8-migration-save
 
+
+After the join, it is possible to execute actions: ::
+
+  ns8-join [--no-tlsverify] <ns8_host> <admin_user> <admin_pass> <agent> <action> <json_data>
+
+Example: ::
+
+  ns8-action --no-tlsverify debian.nethesis.loc admin Nethesis,1234 cluster get-cluster-status '{}'

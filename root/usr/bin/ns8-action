@@ -1,0 +1,112 @@
+#!/usr/bin/python3
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+import time
+import ssl
+import sys
+import subprocess
+import argparse
+import json
+import hashlib
+import uuid
+from urllib import request, parse
+
+def call(host, token, tlsverify, agent, action, data):
+    # Prepare SSL context
+    ctx = ssl.create_default_context()
+    if not tlsverify:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    
+    jdata = json.dumps({"action": action, "data": data}).encode('utf8')
+    req = request.Request(f'https://{args.host}/cluster-admin/api/{agent}/tasks', data=jdata)
+    req.add_header('Content-Type', 'application/json')
+    req.add_header('Authorization', f'Bearer {token}')
+    post = request.urlopen(req, context=ctx)
+    post_response = json.loads(post.read())
+
+    # wait for the cluster queue to grab the request
+    time.sleep(0.5)
+    if post_response["code"] == 201:
+        get_response = {"code": 201}
+        task_id = post_response["data"]["id"]
+
+        # wait until the response is ready
+        watchdog = 0
+        while get_response["code"] == 201:
+            if watchdog >= 30:
+                print("No server response", file=sys.stderr)
+                sys.exit(1)
+            try:
+                req = request.Request(f'https://{args.host}/cluster-admin/api/{agent}/task/{task_id}/status')
+                req.add_header('Content-Type', 'application/json')
+                req.add_header('Authorization', f'Bearer {token}')
+                get = request.urlopen(req, context=ctx)
+                get_response = json.loads(get.read())
+            except:
+                time.sleep(1)
+                pass
+            finally:
+                watchdog = watchdog + 1
+
+        return get_response
+
+    return None
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('host')
+parser.add_argument('username', default="admin")
+parser.add_argument('password', default="Nethesis,1234")
+parser.add_argument('agent', default="cluster")
+parser.add_argument('action')
+parser.add_argument('data')
+parser.add_argument('--no-tlsverify', dest='tlsverify', action='store_false', default=True)
+
+args = parser.parse_args()
+
+# Prepare login credentials
+loginobj = {
+    "username": args.username,
+    "password": args.password,
+}
+data=json.dumps(loginobj).encode('utf8')
+
+# Prepare SSL context
+ctx = ssl.create_default_context()
+if not args.tlsverify:
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+# POST login request
+req = request.Request(f'https://{args.host}/cluster-admin/api/login', data=data)
+req.add_header('Content-Type', 'application/json')
+resp = request.urlopen(req, context=ctx)
+
+payload = json.loads(resp.read())
+
+# Prepare arguments for API call
+
+# Execute add-node
+ret = call(args.host, payload['token'], args.tlsverify, args.agent, args.action, args.data)
+
+print(json.dumps(ret))
