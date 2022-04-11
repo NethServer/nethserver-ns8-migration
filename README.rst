@@ -22,8 +22,8 @@ Example: ::
 
 After the join, it is possible to execute actions: ::
 
-  ns8-join [--no-tlsverify] <ns8_host> <admin_user> <admin_pass> <agent> <action> <json_data>
+  ns8-join <agent> <action> <json_data>
 
 Example: ::
 
-  ns8-action --no-tlsverify debian.nethesis.loc admin Nethesis,1234 cluster get-cluster-status '{}'
+  ns8-action cluster get-cluster-status '{}'
