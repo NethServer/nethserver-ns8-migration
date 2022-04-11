@@ -1,0 +1,36 @@
+#!/bin/bash
+
+NC_CONF=/var/lib/nethserver/agent/nextcloud.json
+
+# If nexcloud rsync configuration is not set, install nextcloud inside the NS8 cluster
+if [ ! -s $NC_CONF ]; then
+    response=$(ns8-action cluster import-module '{"image": "ghcr.io/nethserver/nextcloud:migrate", "node": 1, "volumes": ["nextcloud-app-data"]}')
+    echo $response > $NC_CONF
+else
+    response=$(cat $NC_CONF)
+fi
+
+
+# Read rsync configuration
+user=$(echo $response | jq -r .data.output.credentials[0])
+password=$(echo $response | jq -r .data.output.credentials[1])
+address=$(echo $response | jq -r .data.output.address)
+port=$(echo $response | jq -r .data.output.port)
+
+# White for rsync server
+while ! nc -z $address $port
+do
+    sleep 1
+done
+
+# Sync files: --owner --group --chown=82:82 are needed to map data for the www-data user
+RSYNC_PASSWORD=$password rsync -vtr --owner --group --chown=82:82 --delete --progress --exclude=appdata\* --exclude=nextcloud.log /var/lib/nethserver/nextcloud/ rsync://$user@$address:$port/data/volumes/nextcloud-app-data/data/
+
+# Create database dump
+mysqldump -S /run/rh-mariadb105-mariadb/nextcloud-mysql.sock nextcloud > /var/lib/nethserver/nextcloud/dump.sql
+RSYNC_PASSWORD=$password rsync -vtr /var/lib/nethserver/nextcloud/dump.sql rsync://$user@$address:$port/data/state/restore/
+
+# Copy original config
+RSYNC_PASSWORD=$password rsync -vtr /usr/share/nextcloud/config/config.php rsync://$user@$address:$port/data/state/
+
+rm -f /var/lib/nethserver/nextcloud/dump.sql
