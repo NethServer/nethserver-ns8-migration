@@ -13,6 +13,7 @@ Source2: agent
 
 BuildRequires: nethserver-devtools
 Requires: wireguard-tools, kmod-wireguard
+Requires: mariadb
 
 %description
 NS7 to NS8 migration
