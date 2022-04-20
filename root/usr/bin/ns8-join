@@ -111,7 +111,7 @@ data = {
     "public_key": pub_key,
     "endpoint": "",
     "listen_port": 55820,
-    "flag": "norun"
+    "flags": ["nomodules"]
 }
 # Execute add-node
 ret = call(args.host, "add-node", payload['token'], data, args.tlsverify)
