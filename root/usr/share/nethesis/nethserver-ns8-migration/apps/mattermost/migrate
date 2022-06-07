@@ -1,0 +1,30 @@
+#!/bin/bash
+
+host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
+
+if [ -z "$host" ]; then
+    echo "mattermost: no VirtualHost defined."
+    exit 1
+fi
+
+NC_CONF=/var/lib/nethserver/agent/mattermost.json
+
+if [ ! -f $NC_CONF ]; then
+    echo "$NC_CONF not found. Run mattermost-export first."
+    exit 1
+else
+    response=$(cat $NC_CONF)
+fi
+
+# Read rsync configuration
+user=$(echo $response | jq -r .data.output.credentials[0])
+password=$(echo $response | jq -r .data.output.credentials[1])
+address=$(echo $response | jq -r .data.output.address)
+port=$(echo $response | jq -r .data.output.port)
+
+# Terminate the rsync server
+RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
+
+rm -f $NC_CONF
+
+ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'
