@@ -23,7 +23,7 @@ do
     sleep 1
 done
 
-# Sync files: --owner --group --chown=82:82 are needed to map data for the mattermost user
+# Sync files: --owner --group --chown=2000:2000 are needed to map data for the mattermost user
 RSYNC_PASSWORD=$password rsync -vtr --owner --group --chown=2000:2000 --delete --progress /var/lib/nethserver/mattermost/data/ rsync://$user@$address:$port/data/volumes/mattermost-data/
 
 # Create database dump
