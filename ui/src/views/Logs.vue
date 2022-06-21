@@ -78,6 +78,8 @@
 </template>
 
 <script>
+//// delete file?
+
 export default {
   name: "Logs",
   mounted() {

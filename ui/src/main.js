@@ -51,8 +51,7 @@ const router = new Router({
     routes: [
       { path: '/', redirect: '/dashboard'},
       { path: '/dashboard', component: Dashboard },
-      { path: '/settings', component: Settings },
-      { path: '/logs', component: Logs },
+      { path: '/logs', component: Logs }, //// remove?
       { path: '/about', name: 'about', component: About },
       { path: "*", redirect: "/" }
     ]

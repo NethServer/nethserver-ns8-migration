@@ -31,13 +31,6 @@
                 </a>
             </router-link>
             <li class="li-empty"></li>
-            <router-link tag="li" to="/settings" active-class="active" class="list-group-item">
-                <a>
-                    <span class="fa fa-gear"></span>
-                    <span class="list-group-item-value">{{$t('settings.title')}}</span>
-                </a>
-            </router-link>
-            <li class="li-empty"></li>
             <router-link tag="li" to="/logs" active-class="active" class="list-group-item">
                 <a>
                     <span class="fa fa-list"></span>
