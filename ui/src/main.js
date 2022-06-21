@@ -18,56 +18,55 @@
  * along with NethServer.  If not, see COPYING.
  */
 
-import Vue from 'vue'
-import VueI18n from "vue-i18n"
-import Router from 'vue-router'
-import VueToggleButton from 'vue-js-toggle-button';
+import Vue from "vue";
+import VueI18n from "vue-i18n";
+import Router from "vue-router";
+import VueToggleButton from "vue-js-toggle-button";
 import DocInfo from "./directives/DocInfo.vue";
 import VueGoodTable from "vue-good-table";
 
-import App from './App.vue'
-import Dashboard from './views/Dashboard.vue'
-import Settings from './views/Settings.vue'
-import Logs from './views/Logs.vue'
-import About from './views/About.vue'
-import UtilService from "./services/util"
-import "./filters/filters"
+import App from "./App.vue";
+import Dashboard from "./views/Dashboard.vue";
+import Logs from "./views/Logs.vue";
+import About from "./views/About.vue";
+import UtilService from "./services/util";
+import "./filters/filters";
 
-window.c3 = require('c3');
+window.c3 = require("c3");
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 Vue.use(VueToggleButton);
-Vue.component('doc-info', DocInfo);
+Vue.component("doc-info", DocInfo);
 Vue.use(VueGoodTable);
-Vue.mixin(UtilService)
+Vue.mixin(UtilService);
 
-Vue.use(VueI18n)
+Vue.use(VueI18n);
 const i18n = new VueI18n();
 
-Vue.use(Router)
+Vue.use(Router);
 const router = new Router({
-    mode: 'hash',
-    base: process.env.BASE_URL,
-    routes: [
-      { path: '/', redirect: '/dashboard'},
-      { path: '/dashboard', component: Dashboard },
-      { path: '/logs', component: Logs }, //// remove?
-      { path: '/about', name: 'about', component: About },
-      { path: "*", redirect: "/" }
-    ]
-})
-router.replace("/dashboard")
+  mode: "hash",
+  base: process.env.BASE_URL,
+  routes: [
+    { path: "/", redirect: "/dashboard" },
+    { path: "/dashboard", component: Dashboard },
+    { path: "/logs", component: Logs }, //// remove?
+    { path: "/about", name: "about", component: About },
+    { path: "*", redirect: "/" },
+  ],
+});
+router.replace("/dashboard");
 
 var app = new Vue({
-    i18n,
-    router,
-    render: h => h(App)
-})
+  i18n,
+  router,
+  render: (h) => h(App),
+});
 
 var nethserver = window.nethserver;
 
-nethserver.fetchTranslatedStrings(function (data) {
-    i18n.setLocaleMessage('cockpit', data)
-    i18n.locale = 'cockpit'
-    app.$mount('#app') // Start VueJS application
-})
+nethserver.fetchTranslatedStrings(function(data) {
+  i18n.setLocaleMessage("cockpit", data);
+  i18n.locale = "cockpit";
+  app.$mount("#app"); // Start VueJS application
+});
