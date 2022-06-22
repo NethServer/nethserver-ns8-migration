@@ -1,0 +1,94 @@
+#!/usr/bin/python
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+import sys
+import fileinput
+import simplejson
+# import re ////
+# from urlparse import urlparse ////
+
+
+def invalid_attribute(parameter, error):
+    return {"parameter": parameter, "error": error, "value": ""}
+
+
+line = fileinput.input()[0].rstrip()
+input_json = simplejson.loads(line)
+invalid_attributes = []
+
+host_p = 'Host'
+user_p = 'User'
+password_p = 'Password'
+tls_verify_p = 'TLSVerify'
+
+host = ''
+user = ''
+password = ''
+tls_verify = ''
+
+# host
+
+if (host_p not in input_json) or (not input_json[host_p]):
+    invalid_attributes.append(invalid_attribute(host_p, "empty"))
+# else: ////
+#     host = input_json[host_p]
+
+# //// need to try ping?
+
+# user
+
+if (user_p not in input_json) or (not input_json[user_p]):
+    invalid_attributes.append(invalid_attribute(user_p, "empty"))
+
+    # check syntax
+    # if not re.match(r"(?:http\:|https\:)?\/\/.+\..+", url): ////
+    #     invalid_attributes.append(invalid_attribute(url_p, "invalid"))
+
+# password
+
+if (password_p not in input_json) or (not input_json[password_p]):
+    invalid_attributes.append(invalid_attribute(password_p, "empty"))
+
+# tls verify
+
+if (tls_verify_p not in input_json) or (not input_json[tls_verify_p]):
+    invalid_attributes.append(invalid_attribute(tls_verify_p, "empty"))
+else:
+    tls_verify = input_json[tls_verify_p]
+
+    if tls_verify not in ['true', 'false']:
+        invalid_attributes.append(invalid_attribute(tls_verify_p, "invalid"))
+
+# output
+success = len(invalid_attributes) == 0
+
+if success:
+    output = {"state": "success"}
+else:
+    output = {"type": "NotValid", "message": "validation_failed",
+              "attributes": invalid_attributes}
+
+output_json = simplejson.dumps(output)
+print(output_json)
+
+if not success:
+    sys.exit(1)

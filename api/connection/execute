@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 #
 # Copyright (C) 2022 Nethesis S.r.l.
@@ -20,4 +20,22 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-echo '{}'
+#  //// delete file
+
+# . /usr/libexec/nethserver/api/lib/helper_functions
+
+# host=$(/sbin/e-smith/config getprop ns8 Host)
+# user=$(/sbin/e-smith/config getprop ns8 User)
+# password=$(/sbin/e-smith/config getprop ns8 Password)
+# tls_verify=$(/sbin/e-smith/config getprop ns8 TLSVerify)
+# tls_verify_arg=""
+
+# if [ "$tls_verify" = "false" ]; then
+#     tls_verify_arg="--no-tlsverify"
+# fi
+
+# /usr/bin/ns8-join "$tls_verify_arg" "$host" "$user" "$password"
+
+# if [ $? -gt 0 ]; then
+#     error "ConnectionExecuteFailed" "See /var/log/messages"
+# fi

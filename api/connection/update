@@ -1,0 +1,58 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+. /usr/libexec/nethserver/api/lib/helper_functions
+
+# read json from stdin
+data=$(cat /dev/stdin)
+
+host=$(echo $data | jq -r '.Host')
+user=$(echo $data | jq -r '.User')
+password=$(echo $data | jq -r '.Password')
+tls_verify=$(echo $data | jq -r '.TLSVerify')
+
+/sbin/e-smith/config setprop ns8 Host "$host" User "$user" Password "$password" TLSVerify "$tls_verify"
+
+if [ $? -gt 0 ]; then
+    invalid_error
+fi
+
+# execute ns8-join
+
+if [ "$tls_verify" = "false" ]; then
+    /usr/bin/ns8-join --no-tlsverify "$host" "$user" "$password"
+else
+    /usr/bin/ns8-join "$host" "$user" "$password"
+fi
+
+if [ $? -gt 0 ]; then
+    error "EventFailed" "See /var/log/messages"
+fi
+
+# signal event
+
+/sbin/e-smith/signal-event -j nethserver-ns8-migration-save
+if [ $? -gt 0 ]; then
+    error "EventFailed" "See /var/log/messages"
+fi
+
+success
