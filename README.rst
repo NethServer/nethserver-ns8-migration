@@ -66,3 +66,23 @@ Steps:
 3. When ready for the final migration, execute: ::
 
      /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/migrate
+
+Mattermost migration
+====================
+
+At the end, the migrated Mattermost installation will be accessible at the same virtual host on the remote NS8 cluster.
+
+Assumptions:
+- Mattermost community edition
+
+Steps:
+
+1. The first time, install a Mattermost instance to NS8. Then synchronize data, configuration and database: ::
+
+     /usr/share/nethesis/nethserver-ns8-migration/apps/mattermost/export
+
+   This command can be executed multiple times to sync the data until Mattermost is ready to be totally migrated.
+
+3. When ready for the final migration, execute: ::
+
+     /usr/share/nethesis/nethserver-ns8-migration/apps/mattermost/migrate
