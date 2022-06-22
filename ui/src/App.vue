@@ -112,4 +112,13 @@ export default {
   font-size: 12px;
   text-align: left;
 }
+
+.adjust-top-loader {
+  top: 0;
+}
+
+.apps-icon {
+  height: 30px;
+  width: 30px;
+}
 </style>
