@@ -75,7 +75,7 @@ if (tls_verify_p not in input_json) or (not input_json[tls_verify_p]):
 else:
     tls_verify = input_json[tls_verify_p]
 
-    if tls_verify not in ['true', 'false']:
+    if tls_verify not in ['enabled', 'disabled']:
         invalid_attributes.append(invalid_attribute(tls_verify_p, "invalid"))
 
 # output

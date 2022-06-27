@@ -21,29 +21,29 @@
 #
 
 import sys
-import subprocess
+# import subprocess ////
 import simplejson
 
-
-def get_config():
-    # ns8 config
-    bash_command = "/sbin/e-smith/config getjson ns8"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    ns8_config = simplejson.loads(output)
-
-    # agent config
-    bash_command = "/sbin/e-smith/config getjson agent"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    agent_config = simplejson.loads(output)
-
-    return {"ns8": ns8_config, "agent": agent_config}
-
+# //// TODO: read db or status file
 
 try:
-    config = get_config()
-    output = simplejson.dumps({'configuration': config})
+    apps = []
+    apps.append({
+        "id": "nethserver-nextcloud",
+        "name": "Nextcloud",
+        "status": "not_migrated",
+    })
+    apps.append({
+        "id": "nethserver-mattermost",
+        "name": "Mattermost",
+        "status": "not_migrated",
+    })
+    apps.append({
+        "id": "nethserver-roundcubemail",
+        "name": "Webmail",
+        "status": "not_migrated",
+    })
+    output = simplejson.dumps({'migration': apps})
     print(output)
 except Exception as e:
     print simplejson.dumps({'error': "%s" % e})

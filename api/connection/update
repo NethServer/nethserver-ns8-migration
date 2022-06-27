@@ -38,7 +38,7 @@ fi
 
 # execute ns8-join
 
-if [ "$tls_verify" = "false" ]; then
+if [ "$tls_verify" = "disabled" ]; then
     /usr/bin/ns8-join --no-tlsverify "$host" "$user" "$password"
 else
     /usr/bin/ns8-join "$host" "$user" "$password"
