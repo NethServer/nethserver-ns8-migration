@@ -1,0 +1,50 @@
+#!/usr/bin/python
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+import sys
+# import subprocess ////
+import simplejson
+
+# //// TODO: read db or status file
+
+try:
+    apps = []
+    apps.append({
+        "id": "nethserver-nextcloud",
+        "name": "Nextcloud",
+        "status": "not_migrated",
+    })
+    apps.append({
+        "id": "nethserver-mattermost",
+        "name": "Mattermost",
+        "status": "not_migrated",
+    })
+    apps.append({
+        "id": "nethserver-roundcubemail",
+        "name": "Webmail",
+        "status": "not_migrated",
+    })
+    output = simplejson.dumps({'migration': apps})
+    print(output)
+except Exception as e:
+    print simplejson.dumps({'error': "%s" % e})
+    sys.exit(1)

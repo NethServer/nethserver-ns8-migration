@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+. /usr/libexec/nethserver/api/lib/helper_functions
+
+# read json from stdin
+data=$(cat /dev/stdin)
+
+app_id=$(echo $data | jq -r '.app')
+action=$(echo $data | jq -r '.action')
+
+# update db ////
+
+# //// a new db key for every app to migrate?
+
+# //// how many action values are needed? "start", "sync", "finish"? Need to have both "start" and "sync"?
+
+# execute data sync
+
+if [[ "$app_id" == "nethserver-nextcloud" ]]; then
+    if [[ "$action" == "start" || "$action" == "sync" ]]; then
+        /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/export
+
+        if [ $? -gt 0 ]; then
+            error "EventFailed" "See /var/log/messages"
+        fi
+    elif [[ "$action" == "finish" ]]; then
+        /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/migrate
+
+        if [ $? -gt 0 ]; then
+            error "EventFailed" "See /var/log/messages"
+        fi
+    fi
+fi
+
+# update db ////
+
+# ////
+# /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
+# if [ $? -gt 0 ]; then
+#     error "EventFailed" "See /var/log/messages"
+# fi
+
+success

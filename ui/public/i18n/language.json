@@ -1,33 +1,57 @@
 {
-    "settings": {
-        "title": "Settings"
-    },
-    "about": {
-        "title": "About",
-        "website": "Web site",
-        "bug_tracker": "Bug tracker"
-    },
-    "logs": {
-        "title": "Logs",
-        "follow": "Follow",
-        "stop_follow": "Stop",
-        "start_follow_button": "Follow",
-        "stop_follow_button": "Stop following",
-        "filter_label": "Regexp filter"
-    },
-    "dashboard":{
-        "title": "NS8 migration",
-        "app": "NS8 migration"
-    },
-    "docs": {
-    },
-    "are_you_sure": "Are you sure",
-    "save": "Save",
-    "cancel": "Cancel",
-    "next": "Next",
-    "prev": "Previous",
-    "of": "of",
-    "rows_per_page": "Row per page",
-    "search": "Search",
-    "all": "All"
+  "settings": {
+    "title": "Settings"
+  },
+  "about": {
+    "title": "About",
+    "website": "Web site",
+    "bug_tracker": "Bug tracker"
+  },
+  "logs": {
+    "title": "Logs",
+    "follow": "Follow",
+    "stop_follow": "Stop",
+    "start_follow_button": "Follow",
+    "stop_follow_button": "Stop following",
+    "filter_label": "Regexp filter"
+  },
+  "dashboard": {
+    "title": "NS8 migration",
+    "app": "NS8 migration",
+    "connect_to_ns8_cluster": "Connect to NethServer 8 cluster",
+    "connect_description": "Enter the following information to start migrating applications to an existing NethServer 8 cluster",
+    "leader_node": "NS8 leader node",
+    "admin_username": "NS8 admin username",
+    "admin_password": "NS8 admin password",
+    "tls_verify": "TLS validation",
+    "connect": "Connect",
+    "start_migration": "Start migration",
+    "finish_migration": "Finish migration",
+    "sync_data": "Sync data",
+    "status_not_migrated": "Not migrated",
+    "status_migrating": "Migration started",
+    "status_syncing": "Syncing data",
+    "status_migrated": "Migration completed",
+    "connected_description": "Migrate NethServer 7 applications to <strong>{leaderNode}</strong>.",
+    "connect_to_different_cluster": "Connect to a different cluster",
+    "error_retrieving_connection_data": "Error retrieving connection data",
+    "error_retrieving_migration_data": "Error retrieving connection data",
+    "connection_successful": "Connected to NS8 cluster",
+    "connection_failed": "Connection failed"
+  },
+  "validation": {
+    "leader_node_empty": "Leader node is mandatory",
+    "admin_username_empty": "Admin username is mandatory",
+    "admin_password_empty": "Admin password is mandatory"
+  },
+  "docs": {},
+  "are_you_sure": "Are you sure",
+  "save": "Save",
+  "cancel": "Cancel",
+  "next": "Next",
+  "prev": "Previous",
+  "of": "of",
+  "rows_per_page": "Row per page",
+  "search": "Search",
+  "all": "All"
 }
