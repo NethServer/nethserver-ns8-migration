@@ -37,7 +37,8 @@ def call(host, token, tlsverify, agent, action, data):
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
     
-    jdata = json.dumps({"action": action, "data": data}).encode('utf8')
+    jdata = json.dumps({"action": action, "data": data, "extra": {
+                       "title": action}}).encode('utf8')
     req = request.Request(f'https://{host}/cluster-admin/api/{agent}/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')

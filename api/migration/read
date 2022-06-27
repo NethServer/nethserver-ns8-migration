@@ -21,29 +21,45 @@
 #
 
 import sys
-import subprocess
+# import subprocess ////
 import simplejson
 
+# //// TODO: show only installed apps that can be migrated
 
-def get_config():
-    # ns8 config
-    bash_command = "/sbin/e-smith/config getjson ns8"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    ns8_config = simplejson.loads(output)
 
-    # agent config
-    bash_command = "/sbin/e-smith/config getjson agent"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    agent_config = simplejson.loads(output)
+def getMigrationStatus(app_name):
+    file_name = "/tmp/{}_ns8_migration".format(app_name)
 
-    return {"ns8": ns8_config, "agent": agent_config}
+    try:
+        with open(file_name, 'r') as file:
+            status = file.read().replace('\n', '')
+            return status
+
+    except IOError as e:
+        return "not_migrated"
 
 
 try:
-    config = get_config()
-    output = simplejson.dumps({'configuration': config})
+    apps = [
+        {
+            "id": "nethserver-nextcloud",
+            "name": "Nextcloud"
+        },
+        {
+            "id": "nethserver-mattermost",
+            "name": "Mattermost"
+        },
+        {
+            "id": "nethserver-roundcubemail",
+            "name": "Webmail"
+        }
+    ]
+
+    for app in apps:
+        status = getMigrationStatus(app["id"])
+        app["status"] = status
+
+    output = simplejson.dumps({'migration': apps})
     print(output)
 except Exception as e:
     print simplejson.dumps({'error': "%s" % e})

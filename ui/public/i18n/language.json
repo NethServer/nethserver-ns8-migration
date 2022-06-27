@@ -33,7 +33,18 @@
     "status_syncing": "Syncing data",
     "status_migrated": "Migration completed",
     "connected_description": "Migrate NethServer 7 applications to <strong>{leaderNode}</strong>.",
-    "connect_to_different_cluster": "Connect to a different cluster"
+    "connect_to_different_cluster": "Connect to a different cluster",
+    "error_retrieving_connection_data": "Error retrieving connection data",
+    "error_retrieving_migration_data": "Error retrieving migration data",
+    "connection_successful": "Connected to NS8 cluster",
+    "connection_failed": "Connection failed",
+    "synchronization_successful": "Synchronization successful",
+    "synchronization_failed": "Synchronization failed"
+  },
+  "validation": {
+    "leader_node_empty": "Leader node is mandatory",
+    "admin_username_empty": "Admin username is mandatory",
+    "admin_password_empty": "Admin password is mandatory"
   },
   "docs": {},
   "are_you_sure": "Are you sure",

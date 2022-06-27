@@ -1,24 +1,11 @@
 <template>
   <div>
     <h2>{{ $t("dashboard.title") }}</h2>
-    <!-- error message //// -->
-    <!-- <div v-if="errorMessage" class="alert alert-danger alert-dismissable">
-      <button
-        type="button"
-        class="close"
-        @click="closeErrorMessage()"
-        aria-label="Close"
-      >
-        <span class="pficon pficon-close"></span>
-      </button>
+    <div v-if="error.connectionRead" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
-      {{ errorMessage }}.
-    </div> -->
-    <div v-if="error.read" class="alert alert-danger">
-      <span class="pficon pficon-error-circle-o"></span>
-      {{ error.read }}.
+      {{ error.connectionRead }}
     </div>
-    <div v-if="loading.read" class="spinner spinner-lg"></div>
+    <div v-if="loading.connectionRead" class="spinner spinner-lg"></div>
     <div v-else>
       <template v-if="!config.isConnected">
         <!-- connect form -->
@@ -28,9 +15,9 @@
         <div class="page-description">
           {{ $t("dashboard.connect_description") }}
         </div>
-        <form class="form-horizontal" v-on:submit.prevent="connectToCluster">
+        <form class="form-horizontal" v-on:submit.prevent="connectionValidate">
           <!-- leader node -->
-          <div class="form-group">
+          <div :class="['form-group', { 'has-error': error.leaderNode }]">
             <label class="col-sm-2 control-label" for="leader-node">{{
               $t("dashboard.leader_node")
             }}</label>
@@ -48,7 +35,7 @@
             </div>
           </div>
           <!-- admin username -->
-          <div class="form-group">
+          <div :class="['form-group', { 'has-error': error.adminUsername }]">
             <label class="col-sm-2 control-label" for="admin-username">{{
               $t("dashboard.admin_username")
             }}</label>
@@ -66,7 +53,7 @@
             </div>
           </div>
           <!-- admin password -->
-          <div class="form-group">
+          <div :class="['form-group', { 'has-error': error.adminPassword }]">
             <label class="col-sm-2 control-label" for="admin-password">{{
               $t("dashboard.admin_password")
             }}</label>
@@ -78,6 +65,9 @@
                 ref="adminPassword"
                 class="form-control"
               />
+              <span v-if="error.adminPassword" class="help-block">{{
+                $t("validation.admin_password_" + error.adminPassword)
+              }}</span>
             </div>
             <div class="col-sm-1">
               <button
@@ -112,7 +102,7 @@
           <div class="form-group">
             <label class="col-sm-2 control-label">
               <div
-                v-if="loading.update"
+                v-if="loading.connectionUpdate"
                 class="spinner spinner-sm form-spinner-loader adjust-top-loader"
               ></div>
             </label>
@@ -120,8 +110,8 @@
               <button
                 class="btn btn-primary"
                 type="button"
-                :disabled="loading.update"
-                @click="connectToCluster"
+                :disabled="loading.connectionUpdate"
+                @click="connectionValidate"
               >
                 {{ $t("dashboard.connect") }}
               </button>
@@ -140,21 +130,18 @@
             "
           ></span>
           <span>
-            <a class="disconnect-link" @click="disconnectFromCluster">
-              {{ $t("dashboard.connect_to_different_cluster") }}
+            <a class="disconnect-link" @click="disconnectFromCluster"
+              >{{ $t("dashboard.connect_to_different_cluster") }}
             </a>
           </span>
         </div>
         <div id="pf-list-default" class="list-group list-view-pf app-list">
-          <div
-            v-for="app in config.apps"
-            :key="app.name"
-            class="list-group-item"
-          >
+          <div v-for="app in apps" :key="app.name" class="list-group-item">
             <div class="list-view-pf-actions">
               <button
                 v-if="app.status == 'not_migrated'"
                 @click="startMigration(app)"
+                :disabled="loading.migrationUpdate"
                 class="btn btn-default"
               >
                 {{ $t("dashboard.start_migration") }}
@@ -162,6 +149,7 @@
               <button
                 v-else-if="app.status == 'migrating'"
                 @click="finishMigration(app)"
+                :disabled="loading.migrationUpdate"
                 class="btn btn-default"
               >
                 {{ $t("dashboard.finish_migration") }}
@@ -200,9 +188,11 @@
                   aria-labelledby="dropdownKebabRight"
                 >
                   <li>
-                    <a @click="syncData(app)">{{
-                      $t("dashboard.sync_data")
-                    }}</a>
+                    <a
+                      @click="syncData(app)"
+                      :disabled="loading.migrationUpdate"
+                      >{{ $t("dashboard.sync_data") }}</a
+                    >
                   </li>
                 </ul>
               </div>
@@ -230,7 +220,7 @@
                     ></span>
                     <span
                       v-else-if="app.status == 'migrating'"
-                      class="pficon pficon-info status-icon"
+                      class="pficon pficon-maintenance status-icon"
                     ></span>
                     <span>{{ $t("dashboard.status_" + app.status) }}</span>
                   </div>
@@ -254,34 +244,38 @@ export default {
       config: {
         isConnected: false,
         tlsVerify: false,
-        leaderNode: "leader.ns8.example.org", //// ""
-        adminUsername: "admin", //// ""
-        adminPassword: "Nethesis,1234", //// ""
-        apps: [
-          {
-            id: "nethserver-nextcloud",
-            name: "Nextcloud",
-            status: "not_migrated",
-          },
-          {
-            id: "nethserver-mattermost",
-            name: "Mattermost",
-            status: "not_migrated",
-          },
-          {
-            id: "nethserver-roundcubemail",
-            name: "Webmail",
-            status: "not_migrated",
-          },
-        ],
+        leaderNode: "",
+        adminUsername: "",
+        adminPassword: "",
       },
+      apps: [
+        // { ////
+        //   id: "nethserver-nextcloud",
+        //   name: "Nextcloud",
+        //   status: "not_migrated",
+        // },
+        // {
+        //   id: "nethserver-mattermost",
+        //   name: "Mattermost",
+        //   status: "not_migrated",
+        // },
+        // {
+        //   id: "nethserver-roundcubemail",
+        //   name: "Webmail",
+        //   status: "not_migrated",
+        // },
+      ],
       loading: {
-        read: false,
-        update: false,
+        connectionRead: false,
+        connectionUpdate: false,
+        migrationRead: false,
+        migrationUpdate: false,
       },
       error: {
-        read: "",
-        update: "",
+        connectionRead: "",
+        connectionUpdate: "",
+        migrationRead: "",
+        migrationUpdate: "",
         leaderNode: "",
         adminUsername: "",
         adminPassword: "",
@@ -289,86 +283,259 @@ export default {
     };
   },
   mounted() {
-    //// call api
+    this.connectionRead();
+
     //// remove mock
-    this.config.isConnected = false;
+    // this.config.isConnected = false;
   },
   methods: {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
-    connectToCluster() {
-      console.log("connectToCluster"); ////
+    // connectToCluster() { ////
+    //   console.log("connectToCluster"); ////
 
-      this.loading.update = true;
+    //   this.loading.connectionUpdate = true;
 
-      setTimeout(() => {
-        ////
-        this.loading.update = false;
-        this.config.isConnected = true;
-      }, 1000);
-    },
+    //   setTimeout(() => {
+    //     ////
+    //     this.loading.connectionUpdate = false;
+    //     this.config.isConnected = true;
+    //   }, 1000);
+    // },
     startMigration(app) {
       console.log("startMigration", app); ////
 
-      app.status = "syncing";
+      this.migrationUpdate(app, "start");
 
-      setTimeout(() => {
-        ////
-        app.status = "migrating";
-      }, 2000);
+      // app.status = "syncing";
+
+      // setTimeout(() => {
+      //   ////
+      //   app.status = "migrating";
+      // }, 2000);
     },
     finishMigration(app) {
       console.log("finishMigration", app); ////
 
-      app.status = "syncing";
+      this.migrationUpdate(app, "finish");
 
-      setTimeout(() => {
-        ////
-        app.status = "migrated";
-      }, 2000);
+      // app.status = "syncing"; ////
+
+      // setTimeout(() => {
+      //   ////
+      //   app.status = "migrated";
+      // }, 2000);
     },
     syncData(app) {
       console.log("syncData", app); ////
 
-      app.status = "syncing";
+      this.migrationUpdate(app, "sync");
 
-      setTimeout(() => {
-        ////
-        app.status = "migrating";
-      }, 2000);
+      // app.status = "syncing"; ////
+
+      // setTimeout(() => {
+      //   ////
+      //   app.status = "migrating";
+      // }, 2000);
     },
     disconnectFromCluster() {
-      this.config.isConnected = false;
+      this.config.isConnected = false; ////
     },
-    // readDashboardData() { ////
-    //   var ctx = this;
-    //   nethserver.exec(
-    //     ["nethserver-ns8-migration/dashboard/read"],
-    //     { appInfo: "dashboardData" },
-    //     null,
-    //     function(success) {
-    //       var dashboardOutput = JSON.parse(success);
-    //       ctx.readDashboardDataSuccess(dashboardOutput);
-    //     },
-    //     function(error) {
-    //       ctx.showErrorMessage(
-    //         ctx.$i18n.t("dashboard.error_retrieving_dashboard_data"),
-    //         error
-    //       );
-    //     }
-    //   );
-    // },
-    // readDashboardDataSuccess(dashboardOutput) {
-    //   this.dashboardData = dashboardOutput.dashboardData;
-    //   this.uiLoaded = true;
-    // },
-    // showErrorMessage(errorMessage, error) {
+    connectionRead() {
+      const context = this;
+      context.loading.connectionRead = true;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/read"],
+        {},
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.connectionReadSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_connection_data"
+          );
+          console.error(
+            errorMessage,
+            error
+          ); /* eslint-disable-line no-console */
+          context.error.connectionRead = errorMessage;
+        }
+      );
+    },
+    connectionReadSuccess(output) {
+      console.log("connectionReadSuccess", output); ////
+
+      const agentStatus = output.configuration.agent.props.status; ////
+      this.config.isConnected = agentStatus == "enabled";
+      const ns8Config = output.configuration.ns8.props;
+      this.config.leaderNode = ns8Config.Host;
+      this.config.adminUsername = ns8Config.User;
+      this.config.adminPassword = ns8Config.Password;
+      this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
+      this.loading.connectionRead = false;
+
+      if (this.config.isConnected) {
+        this.migrationRead();
+      } else {
+        this.$nextTick(() => {
+          this.$refs.leaderNode.focus();
+        });
+      }
+
+      //// remove mock
+      // this.config.leaderNode = "192.168.122.183";
+      // this.config.adminUsername = "admin";
+      // this.config.adminPassword = "Nethesis,12345";
+    },
+    connectionValidate() {
+      this.error.leaderNode = "";
+      this.error.adminUsername = "";
+      this.error.adminPassword = "";
+      this.error.leaderNode = "";
+      this.loading.connectionUpdate = true;
+
+      var validateObj = {
+        Host: this.config.leaderNode,
+        User: this.config.adminUsername,
+        Password: this.config.adminPassword,
+        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled",
+      };
+
+      const context = this;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/validate"],
+        validateObj,
+        null,
+        function(success) {
+          try {
+            success = JSON.parse(success);
+          } catch (e) {
+            console.error(e);
+          }
+          context.connectionValidateSuccess(validateObj);
+        },
+        function(error, data) {
+          context.connectionValidateError(error, data);
+        }
+      );
+    },
+    connectionValidateError(error, data) {
+      console.log("connectionValidateError", error, data); ////
+
+      this.loading.connectionUpdate = false;
+      const errorData = JSON.parse(data);
+
+      for (const e in errorData.attributes) {
+        const attr = errorData.attributes[e];
+        const param = attr.parameter;
+
+        if (param === "Host") {
+          this.error.leaderNode = attr.error;
+          this.$refs.leaderNode.focus();
+        } else if (param === "User") {
+          this.error.adminUsername = attr.error;
+          this.$refs.adminUsername.focus();
+        } else if (param === "Password") {
+          this.error.adminPassword = attr.error;
+          this.$refs.adminPassword.focus();
+        }
+      }
+    },
+    connectionValidateSuccess(validateObj) {
+      console.log("connectionValidateSuccess"); ////
+
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.connection_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t(
+        "dashboard.connection_failed"
+      );
+      const context = this;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/update"],
+        validateObj,
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
+        function(success) {
+          context.loading.connectionUpdate = false;
+          context.connectionRead();
+        },
+        function(error) {
+          console.error(error);
+          context.loading.connectionUpdate = false;
+        }
+      );
+    },
+    migrationRead() {
+      const context = this;
+      context.loading.migrationRead = true;
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/read"],
+        {},
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.migrationReadSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_migration_data"
+          );
+          console.error(
+            errorMessage,
+            error
+          ); /* eslint-disable-line no-console */
+          context.error.migrationRead = errorMessage;
+        }
+      );
+    },
+    migrationReadSuccess(output) {
+      this.apps = output.migration;
+    },
+    migrationUpdate(app, action) {
+      const context = this;
+      context.loading.migrationUpdate = true;
+
+      app.status = "syncing";
+
+      const migrationObj = {
+        app: app.id,
+        action: action,
+      };
+
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.synchronization_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t(
+        "dashboard.synchronization_failed"
+      );
+
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/update"],
+        migrationObj,
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
+        function(success) {
+          context.loading.migrationUpdate = false;
+          context.migrationRead();
+        },
+        function(error) {
+          console.error(error);
+          context.loading.migrationUpdate = false;
+        }
+      );
+    },
+    // showErrorMessage(errorMessage, error) { ////
     //   console.error(errorMessage, error); /* eslint-disable-line no-console */
-    //   this.errorMessage = errorMessage;
+    //   this.error.read = errorMessage;
     // },
     // closeErrorMessage() {
-    //   this.errorMessage = null;
+    //   this.error.read = null;
     // },
   },
 };
@@ -393,7 +560,7 @@ export default {
 }
 
 .disconnect-link {
-  margin-left: 5px;
+  margin-left: 8px;
 }
 
 .status-icon {

@@ -25,8 +25,18 @@ port=$(echo $response | jq -r .data.output.port)
 # Terminate the rsync server
 RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
 
+# //// remove config file after configure-module completion?
 rm -f $NC_CONF
 
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
 
+echo Launch configure-module... # ////
+
 ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
+
+if [ $? -gt 0 ]; then
+    echo "ns8-action configure-module failed"
+    exit 1
+fi
+
+echo Configure-module completed # ////
