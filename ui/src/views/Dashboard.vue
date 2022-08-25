@@ -1,11 +1,18 @@
 <template>
   <div>
     <h2>{{ $t("dashboard.title") }}</h2>
+    <div v-if="error.listApplications" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.listApplications }}
+    </div>
     <div v-if="error.connectionRead" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.connectionRead }}
     </div>
-    <div v-if="loading.connectionRead" class="spinner spinner-lg"></div>
+    <div
+      v-if="loading.listApplications || loading.connectionRead"
+      class="spinner spinner-lg"
+    ></div>
     <div v-else>
       <template v-if="!config.isConnected">
         <!-- connect form -->
@@ -248,28 +255,14 @@ export default {
         adminUsername: "",
         adminPassword: "",
       },
-      apps: [
-        // { ////
-        //   id: "nethserver-nextcloud",
-        //   name: "Nextcloud",
-        //   status: "not_migrated",
-        // },
-        // {
-        //   id: "nethserver-mattermost",
-        //   name: "Mattermost",
-        //   status: "not_migrated",
-        // },
-        // {
-        //   id: "nethserver-roundcubemail",
-        //   name: "Webmail",
-        //   status: "not_migrated",
-        // },
-      ],
+      installedApps: [],
+      apps: [],
       loading: {
         connectionRead: false,
         connectionUpdate: false,
         migrationRead: false,
         migrationUpdate: false,
+        listApplications: false,
       },
       error: {
         connectionRead: "",
@@ -279,68 +272,28 @@ export default {
         leaderNode: "",
         adminUsername: "",
         adminPassword: "",
+        listApplications: "",
       },
     };
   },
   mounted() {
-    this.connectionRead();
-
-    //// remove mock
-    // this.config.isConnected = false;
+    this.listApplications();
   },
   methods: {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
-    // connectToCluster() { ////
-    //   console.log("connectToCluster"); ////
-
-    //   this.loading.connectionUpdate = true;
-
-    //   setTimeout(() => {
-    //     ////
-    //     this.loading.connectionUpdate = false;
-    //     this.config.isConnected = true;
-    //   }, 1000);
-    // },
     startMigration(app) {
-      console.log("startMigration", app); ////
-
       this.migrationUpdate(app, "start");
-
-      // app.status = "syncing";
-
-      // setTimeout(() => {
-      //   ////
-      //   app.status = "migrating";
-      // }, 2000);
     },
     finishMigration(app) {
-      console.log("finishMigration", app); ////
-
       this.migrationUpdate(app, "finish");
-
-      // app.status = "syncing"; ////
-
-      // setTimeout(() => {
-      //   ////
-      //   app.status = "migrated";
-      // }, 2000);
     },
     syncData(app) {
-      console.log("syncData", app); ////
-
       this.migrationUpdate(app, "sync");
-
-      // app.status = "syncing"; ////
-
-      // setTimeout(() => {
-      //   ////
-      //   app.status = "migrating";
-      // }, 2000);
     },
     disconnectFromCluster() {
-      this.config.isConnected = false; ////
+      this.config.isConnected = false; //// TODO
     },
     connectionRead() {
       const context = this;
@@ -366,9 +319,7 @@ export default {
       );
     },
     connectionReadSuccess(output) {
-      console.log("connectionReadSuccess", output); ////
-
-      const agentStatus = output.configuration.agent.props.status; ////
+      const agentStatus = output.configuration.agent.props.status;
       this.config.isConnected = agentStatus == "enabled";
       const ns8Config = output.configuration.ns8.props;
       this.config.leaderNode = ns8Config.Host;
@@ -384,11 +335,6 @@ export default {
           this.$refs.leaderNode.focus();
         });
       }
-
-      //// remove mock
-      // this.config.leaderNode = "192.168.122.183";
-      // this.config.adminUsername = "admin";
-      // this.config.adminPassword = "Nethesis,12345";
     },
     connectionValidate() {
       this.error.leaderNode = "";
@@ -423,8 +369,6 @@ export default {
       );
     },
     connectionValidateError(error, data) {
-      console.log("connectionValidateError", error, data); ////
-
       this.loading.connectionUpdate = false;
       const errorData = JSON.parse(data);
 
@@ -445,8 +389,6 @@ export default {
       }
     },
     connectionValidateSuccess(validateObj) {
-      console.log("connectionValidateSuccess"); ////
-
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.connection_successful"
       );
@@ -494,7 +436,9 @@ export default {
       );
     },
     migrationReadSuccess(output) {
-      this.apps = output.migration;
+      this.apps = output.migration.filter((app) =>
+        this.installedApps.includes(app.id)
+      );
     },
     migrationUpdate(app, action) {
       const context = this;
@@ -530,13 +474,34 @@ export default {
         }
       );
     },
-    // showErrorMessage(errorMessage, error) { ////
-    //   console.error(errorMessage, error); /* eslint-disable-line no-console */
-    //   this.error.read = errorMessage;
-    // },
-    // closeErrorMessage() {
-    //   this.error.read = null;
-    // },
+    listApplications() {
+      const context = this;
+      context.loading.listApplications = true;
+      nethserver.exec(
+        ["system-apps/read"],
+        {
+          action: "list",
+        },
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.listApplicationsSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_apps"
+          );
+          console.error(errorMessage, error);
+          context.error.listApplications = errorMessage;
+        },
+        false
+      );
+    },
+    listApplicationsSuccess(output) {
+      this.installedApps = output.map((app) => app.id);
+      this.loading.listApplications = false;
+      this.connectionRead();
+    },
   },
 };
 </script>

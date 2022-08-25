@@ -35,7 +35,7 @@ echo Launch configure-module... # ////
 ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
 
 if [ $? -gt 0 ]; then
-    echo "ns8-action configure-module failed"
+    echo "ns8-action configure-module has timed out"
     exit 1
 fi
 

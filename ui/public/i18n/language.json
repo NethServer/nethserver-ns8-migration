@@ -39,7 +39,8 @@
     "connection_successful": "Connected to NS8 cluster",
     "connection_failed": "Connection failed",
     "synchronization_successful": "Synchronization successful",
-    "synchronization_failed": "Synchronization failed"
+    "synchronization_failed": "Synchronization failed",
+    "error_retrieving_apps": "Error retrieving applications"
   },
   "validation": {
     "leader_node_empty": "Leader node is mandatory",
