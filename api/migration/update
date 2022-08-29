@@ -53,7 +53,7 @@ if [[ "$app_id" == "nethserver-nextcloud" ]]; then
             error "EventFailed" "See /var/log/messages"
         fi
 
-        /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/export
+        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app nextcloud
 
         if [ $? -gt 0 ]; then
             set_migration_status $app_id "migrating"
@@ -64,7 +64,7 @@ if [[ "$app_id" == "nethserver-nextcloud" ]]; then
     elif [[ "$action" == "sync" ]]; then
         set_migration_status $app_id "syncing"
 
-        /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/export
+        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app nextcloud
 
         if [ $? -gt 0 ]; then
             set_migration_status $app_id "migrating"
@@ -74,7 +74,7 @@ if [[ "$app_id" == "nethserver-nextcloud" ]]; then
         set_migration_status $app_id "migrating"
     elif [[ "$action" == "finish" ]]; then
         set_migration_status $app_id "syncing"
-        /usr/share/nethesis/nethserver-ns8-migration/apps/nextcloud/migrate
+        /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app nextcloud
 
         if [ $? -gt 0 ]; then
             set_migration_status $app_id "migrating"
