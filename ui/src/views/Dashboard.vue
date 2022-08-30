@@ -142,9 +142,24 @@
             </a>
           </span>
         </div>
+
+        <div
+          v-if="accountProviderMigrationStarted"
+          class="alert alert-info alert-dismissable"
+        >
+          <span class="pficon pficon-info"></span>
+          <strong
+            >{{
+              $t("dashboard.account_provider_migration_in_progress")
+            }}:</strong
+          >
+          {{
+            $t("dashboard.account_provider_migration_in_progress_description")
+          }}
+        </div>
         <div id="pf-list-default" class="list-group list-view-pf app-list">
           <div v-for="app in apps" :key="app.name" class="list-group-item">
-            <div class="list-view-pf-actions">
+            <div class="list-view-pf-actions migration-buttons">
               <button
                 v-if="app.status == 'not_migrated'"
                 @click="startMigration(app)"
@@ -153,22 +168,25 @@
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
-              <button
-                v-else-if="app.status == 'migrating'"
-                @click="finishMigration(app)"
-                :disabled="loading.migrationUpdate"
-                class="btn btn-default"
+              <template
+                v-else-if="app.status == 'migrating' || app.status == 'syncing'"
               >
-                {{ $t("dashboard.finish_migration") }}
-              </button>
-              <button
-                v-else-if="app.status == 'syncing'"
-                disabled
-                class="btn btn-default"
-              >
-                {{ $t("dashboard.start_migration") }}
-              </button>
-
+                <button
+                  v-if="app.id != 'account-provider'"
+                  @click="syncData(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  class="btn btn-primary"
+                >
+                  {{ $t("dashboard.sync_data") }}
+                </button>
+                <button
+                  @click="finishMigration(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  class="btn btn-default"
+                >
+                  {{ $t("dashboard.finish_migration") }}
+                </button>
+              </template>
               <button
                 v-else-if="app.status == 'migrated'"
                 disabled
@@ -176,67 +194,191 @@
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
-              <div
-                v-if="app.status == 'migrating'"
-                class="dropdown pull-right dropdown-kebab-pf"
-              >
-                <button
-                  class="btn btn-link dropdown-toggle"
-                  type="button"
-                  id="dropdownKebabRight"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="true"
-                >
-                  <span class="fa fa-ellipsis-v"></span>
-                </button>
-                <ul
-                  class="dropdown-menu dropdown-menu-right"
-                  aria-labelledby="dropdownKebabRight"
-                >
-                  <li>
-                    <a
-                      @click="syncData(app)"
-                      :disabled="loading.migrationUpdate"
-                      >{{ $t("dashboard.sync_data") }}</a
-                    >
-                  </li>
-                </ul>
-              </div>
             </div>
             <div class="list-view-pf-main-info">
               <div class="list-view-pf-left">
+                <!-- //// remove -->
                 <img
+                  v-if="app.id === 'account-provider'"
+                  class="apps-icon"
+                  src="logo.png"
+                />
+                <!--  //// remove v-else -->
+                <img
+                  v-else
                   class="apps-icon"
                   :src="'../' + app.id + '/' + (app.icon || 'logo.png')"
                 />
               </div>
               <div class="list-view-pf-body">
-                <div class="list-view-pf-description">
-                  <div class="list-group-item-heading">
-                    {{ app.name }}
-                  </div>
-                  <div class="list-group-item-text">
-                    <div
-                      v-if="app.status == 'syncing'"
-                      class="spinner spinner-sm form-spinner-loader"
-                    ></div>
-                    <span
-                      v-else-if="app.status == 'migrated'"
-                      class="pficon pficon-ok status-icon"
-                    ></span>
-                    <span
-                      v-else-if="app.status == 'migrating'"
-                      class="pficon pficon-maintenance status-icon"
-                    ></span>
-                    <span>{{ $t("dashboard.status_" + app.status) }}</span>
-                  </div>
+                <div class="list-group-item-heading">
+                  {{ app.name }}
+                </div>
+                <div class="list-group-item-text">
+                  <div
+                    v-if="app.status == 'syncing'"
+                    class="spinner spinner-sm form-spinner-loader"
+                  ></div>
+                  <span
+                    v-else-if="app.status == 'migrated'"
+                    class="pficon pficon-ok status-icon"
+                  ></span>
+                  <span
+                    v-else-if="app.status == 'migrating'"
+                    class="pficon pficon-maintenance status-icon"
+                  ></span>
+                  <span>{{ $t("dashboard.status_" + app.status) }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </template>
+    </div>
+    <!-- start migration modal -->
+    <div
+      class="modal"
+      id="start-migration-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.start_migration") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <template v-if="currentApp">
+                <template v-if="currentApp.id === 'nethserver-nextcloud'">
+                  <!-- choose a virtual host -->
+                  <div class="mg-bottom-20">
+                    {{ $t("dashboard.virtual_host_explanation") }}
+                  </div>
+                  <div
+                    :class="['form-group', { 'has-error': error.virtualHost }]"
+                  >
+                    <label class="col-sm-3 control-label" for="virtual-host">
+                      {{ $t("dashboard.virtual_host") }}
+                    </label>
+                    <div class="col-sm-7">
+                      <input
+                        v-model.trim="virtualHost"
+                        id="virtual-host"
+                        ref="virtualHost"
+                        class="form-control"
+                      />
+                      <!--  //// validate virtual host -->
+                      <span v-if="error.virtualHost" class="help-block">{{
+                        error.virtualHost
+                      }}</span>
+                    </div>
+                  </div>
+                </template>
+                <template v-if="currentApp.id === 'account-provider'">
+                  <div class="mg-bottom-20">
+                    {{
+                      $t(
+                        "dashboard.start_account_provider_migration_explanation"
+                      )
+                    }}
+                  </div>
+                </template>
+              </template>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideStartMigrationModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                @click="startMigrationFromModal"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- finish migration modal -->
+    <div
+      class="modal"
+      id="finish-migration-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.finish_migration") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <template v-if="currentApp">
+                <template v-if="currentApp.id === 'account-provider'">
+                  <!-- choose an IP address for AD -->
+                  <div class="mg-bottom-20">
+                    {{ $t("dashboard.ad_ip_address_explanation") }}
+                  </div>
+                  <div
+                    :class="['form-group', { 'has-error': error.adIpAddress }]"
+                  >
+                    <label class="col-sm-4 control-label" for="ad-ip-address">
+                      {{ $t("dashboard.ad_ip_address") }}
+                    </label>
+                    <div class="col-sm-6">
+                      <select
+                        v-model="adIpAddress"
+                        class="combobox form-control"
+                        id="ad-ip-address"
+                      >
+                        <option
+                          v-for="(ip, i) in adIpAddresses"
+                          v-bind:key="i"
+                          :value="ip"
+                        >
+                          {{ ip }}
+                        </option>
+                      </select>
+                      <span v-if="error.adIpAddress" class="help-block">{{
+                        error.adIpAddress
+                      }}</span>
+                    </div>
+                  </div>
+                </template>
+              </template>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideFinishMigrationModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                @click="finishMigrationFromModal"
+              >
+                {{ $t("dashboard.finish_migration") }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -257,6 +399,12 @@ export default {
       },
       installedApps: [],
       apps: [],
+      currentApp: null,
+      virtualHost: "",
+      isShownStartMigrationModal: false,
+      isShownFinishMigrationModal: false,
+      adIpAddress: "",
+      adIpAddresses: ["1.1.1.1", "2.2.2.2"], //// get from api
       loading: {
         connectionRead: false,
         connectionUpdate: false,
@@ -273,8 +421,47 @@ export default {
         adminUsername: "",
         adminPassword: "",
         listApplications: "",
+        virtualHost: "",
+        adIpAddress: "",
       },
     };
+  },
+  computed: {
+    accountProviderApp() {
+      return this.apps.find((app) => app.id === "account-provider");
+    },
+    accountProviderMigrationStarted() {
+      if (this.accountProviderApp) {
+        return this.accountProviderApp.status === "migrating";
+      }
+      return false;
+    },
+  },
+  watch: {
+    isShownStartMigrationModal: function() {
+      if (this.isShownStartMigrationModal) {
+        this.error.virtualHost = "";
+        this.virtualHost = "";
+        $("#start-migration-modal").modal("show");
+
+        this.$nextTick(() => {
+          if (this.$refs.virtualHost) {
+            this.$refs.virtualHost.focus();
+          }
+        });
+      } else {
+        $("#start-migration-modal").modal("hide");
+      }
+    },
+    isShownFinishMigrationModal: function() {
+      if (this.isShownFinishMigrationModal) {
+        this.error.adIpAddress = "";
+        this.adIpAddress = "";
+        $("#finish-migration-modal").modal("show");
+      } else {
+        $("#finish-migration-modal").modal("hide");
+      }
+    },
   },
   mounted() {
     this.listApplications();
@@ -283,11 +470,73 @@ export default {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
+    isStartMigrationModalNeeded(app) {
+      return (
+        (app.id === "nethserver-nextcloud" && !app.config.props.VirtualHost) ||
+        app.id === "account-provider"
+      );
+    },
+    isFinishMigrationModalNeeded(app) {
+      return app.id === "account-provider" && app.provider === "ad";
+    },
     startMigration(app) {
-      this.migrationUpdate(app, "start");
+      if (this.isStartMigrationModalNeeded(app)) {
+        this.currentApp = app;
+        this.isShownStartMigrationModal = true;
+      } else {
+        this.migrationUpdate(app, "start");
+      }
+    },
+    validateStartMigrationFromModal() {
+      let isValidationOk = true;
+
+      if (this.currentApp.id === "nethserver-nextcloud") {
+        this.error.virtualHost = "";
+
+        if (!this.virtualHost) {
+          this.error.virtualHost = this.$t("validation.virtual_host_empty");
+          this.$refs.virtualHost.focus();
+          isValidationOk = false;
+        }
+      }
+      return isValidationOk;
+    },
+    startMigrationFromModal() {
+      const isValidationOk = this.validateStartMigrationFromModal();
+      if (!isValidationOk) {
+        return;
+      }
+      this.migrationUpdate(this.currentApp, "start");
+      this.hideStartMigrationModal();
+    },
+    validateFinishMigrationFromModal() {
+      let isValidationOk = true;
+
+      if (this.currentApp.id === "account-provider") {
+        this.error.adIpAddress = "";
+
+        if (!this.adIpAddress) {
+          this.error.adIpAddress = this.$t("validation.ad_ip_address_empty");
+          isValidationOk = false;
+        }
+      }
+      return isValidationOk;
+    },
+    finishMigrationFromModal() {
+      const isValidationOk = this.validateFinishMigrationFromModal();
+      if (!isValidationOk) {
+        return;
+      }
+      this.migrationUpdate(this.currentApp, "finish");
+      this.hideFinishMigrationModal();
     },
     finishMigration(app) {
-      this.migrationUpdate(app, "finish");
+      if (this.isFinishMigrationModalNeeded(app)) {
+        this.currentApp = app;
+        this.isShownFinishMigrationModal = true;
+      } else {
+        this.migrationUpdate(app, "finish");
+      }
     },
     syncData(app) {
       this.migrationUpdate(app, "sync");
@@ -322,9 +571,10 @@ export default {
       const agentStatus = output.configuration.agent.props.status;
       this.config.isConnected = agentStatus == "enabled";
       const ns8Config = output.configuration.ns8.props;
-      this.config.leaderNode = ns8Config.Host;
-      this.config.adminUsername = ns8Config.User;
-      this.config.adminPassword = ns8Config.Password;
+      this.config.leaderNode =
+        ns8Config.Host || "dn1.leader.cluster0.al.nethserver.net"; //// remove || ...
+      this.config.adminUsername = ns8Config.User || "admin"; //// remove || ...
+      this.config.adminPassword = ns8Config.Password || "Nethesis,1234"; //// remove || ...
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
 
@@ -436,8 +686,10 @@ export default {
       );
     },
     migrationReadSuccess(output) {
-      this.apps = output.migration.filter((app) =>
-        this.installedApps.includes(app.id)
+      this.apps = output.migration.filter(
+        (app) =>
+          this.installedApps.includes(app.id) ||
+          (app.id === "account-provider" && app.provider != "none")
       );
     },
     migrationUpdate(app, action) {
@@ -446,6 +698,18 @@ export default {
 
       app.status = "syncing";
 
+      //// remove mock
+      // if (app.id === "account-provider") {
+      //   setTimeout(() => {
+      //     app.status = "migrating";
+      //     context.accountProviderMigrationStarted = true;
+      //     context.loading.migrationUpdate = false;
+      //   }, 2000);
+      //   return;
+      // }
+      //// end mock
+
+      //// pass extra parameters if needed (virtualhost, ip address...)
       const migrationObj = {
         app: app.id,
         action: action,
@@ -502,6 +766,12 @@ export default {
       this.loading.listApplications = false;
       this.connectionRead();
     },
+    hideStartMigrationModal() {
+      this.isShownStartMigrationModal = false;
+    },
+    hideFinishMigrationModal() {
+      this.isShownFinishMigrationModal = false;
+    },
   },
 };
 </script>
@@ -533,5 +803,15 @@ export default {
   font-size: 16px;
   position: relative;
   top: 2px;
+}
+
+.mg-bottom-20 {
+  margin-bottom: 20px;
+}
+
+.migration-buttons {
+  width: 33%;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

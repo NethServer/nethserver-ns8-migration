@@ -37,21 +37,21 @@ action=$(echo $data | jq -r '.action')
 set_migration_status() {
     app_id=$1
     status=$2
-    echo $status >/tmp/${app_id}_ns8_migration
+    echo $status >/var/lib/nethserver/agent/${app_id}_ns8_migration
 }
 
-# execute data sync
+# //// simplify code? (merge ifs)
 
 if [[ "$app_id" == "nethserver-nextcloud" ]]; then
     if [[ "$action" == "start" ]]; then
         set_migration_status $app_id "syncing"
 
-        # connect to NS7 DC
-        /usr/share/nethesis/nethserver-ns8-migration/apps/ldapproxy/export
+        # connect to NS7 DC //// remove
+        # /usr/share/nethesis/nethserver-ns8-migration/apps/ldapproxy/export
 
-        if [ $? -gt 0 ]; then
-            error "EventFailed" "See /var/log/messages"
-        fi
+        # if [ $? -gt 0 ]; then
+        #     error "EventFailed" "See /var/log/messages"
+        # fi
 
         /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app nextcloud
 
@@ -82,6 +82,28 @@ if [[ "$app_id" == "nethserver-nextcloud" ]]; then
         fi
 
         set_migration_status $app_id "migrated"
+    fi
+elif [[ "$app_id" == "account-provider" ]]; then
+    if [[ "$action" == "start" ]]; then
+        set_migration_status $app_id "syncing"
+
+        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app ldapproxy
+
+        if [ $? -gt 0 ]; then
+            error "EventFailed" "See /var/log/messages"
+        fi
+
+        set_migration_status $app_id "migrating"
+
+        # //// implement migrate script and uncomment
+        # elif [[ "$action" == "finish" ]]; then
+        # set_migration_status $app_id "syncing"
+        # /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app ldapproxy
+        #
+        # if [ $? -gt 0 ]; then
+        #     error "EventFailed" "See /var/log/messages"
+        # fi
+        # fi
     fi
 fi
 

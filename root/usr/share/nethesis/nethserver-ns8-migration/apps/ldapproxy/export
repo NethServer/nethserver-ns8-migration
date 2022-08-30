@@ -35,4 +35,10 @@ ns8-action cluster update-routes '{"add": [{"network": "'$green_net'", "node_id"
 
 data='{"domain": "'$domain'", "protocol": "ldap", "host": "'$host'", "port": '$port', "schema": "'$schema'", "bind_dn": "'$binddn'", "base_dn": "'$basedn'", "bind_password": "'$bindpass'", "tls": true, "tls_verify": false}'
 
-ns8-action cluster add-external-domain "$data"
+# //// uncomment
+# ns8-action cluster add-external-domain "$data"
+
+# //// delete
+response=$(ns8-action cluster add-external-domain "$data")
+echo ADD-EXTERNAL-DOMAIN RESPONSE # //// delete
+echo $response                    # //// delete

@@ -23,6 +23,4 @@
 EVENT=$1
 APP=$2
 
-echo heyyy $EVENT $APP # ////
-
 /usr/share/nethesis/nethserver-ns8-migration/apps/$APP/export

@@ -40,12 +40,21 @@
     "connection_failed": "Connection failed",
     "synchronization_successful": "Synchronization successful",
     "synchronization_failed": "Synchronization failed",
-    "error_retrieving_apps": "Error retrieving applications"
+    "error_retrieving_apps": "Error retrieving applications",
+    "virtual_host": "Virtual host",
+    "virtual_host_explanation": "Nextcloud needs to be configured on a virtual host to work properly on NethServer 8",
+    "account_provider_migration_in_progress": "Account provider migration in progress",
+    "account_provider_migration_in_progress_description": "NS8 apps are currently using NS7 account provider",
+    "start_account_provider_migration_explanation": "NethServer 8 is going to be connected to NethServer 7 account provider. NS8 apps will start using NS7 account provider",
+    "ad_ip_address_explanation": "Select an IP address to configure Active Directory and finish migration",
+    "ad_ip_address": "Active Directory IP address"
   },
   "validation": {
-    "leader_node_empty": "Leader node is mandatory",
-    "admin_username_empty": "Admin username is mandatory",
-    "admin_password_empty": "Admin password is mandatory"
+    "leader_node_empty": "Leader node is required",
+    "admin_username_empty": "Admin username is required",
+    "admin_password_empty": "Admin password is required",
+    "virtual_host_empty": "Virtual host is required",
+    "ad_ip_address_empty": "Active Directory IP address is required"
   },
   "docs": {},
   "are_you_sure": "Are you sure",

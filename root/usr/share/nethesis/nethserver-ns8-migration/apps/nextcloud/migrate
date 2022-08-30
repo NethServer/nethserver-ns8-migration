@@ -25,7 +25,6 @@ port=$(echo $response | jq -r .data.output.port)
 # Terminate the rsync server
 RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
 
-# //// remove config file after configure-module completion?
 rm -f $NC_CONF
 
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
