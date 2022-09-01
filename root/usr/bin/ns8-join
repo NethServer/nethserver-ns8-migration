@@ -117,20 +117,27 @@ data = {
 # Execute add-node
 ret = call(args.host, "add-node", payload['token'], data, args.tlsverify)
 
-if ret['code'] == 200:
-    ret = ret['data']['output']
+if not ret['code'] == 200:
+    print("Request has failed: {}".format(ret), file=sys.stderr)
+    sys.exit(1)
 
-    # Save config inside config db
-    subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@wg0", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
-    subprocess.run(["/sbin/e-smith/config", "setprop", "agent", "status", "enabled"], check=True)
-    subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", args.host, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled"], check=True)
+if not ret['data']['exit_code'] == 0:
+    print("Task has failed: {}".format(ret['data']), file=sys.stderr)
+    sys.exit(1)
 
-    # Save agent environment
-    with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
-        fp.write(f"REDIS_ADDRESS={ret['leader_ip_address']}:6379\n")
-        fp.write(f"AGENT_ID=node/{ret['node_id']}\n")
-        fp.write(f"REDIS_USER=node/{ret['node_id']}\n")
-        fp.write(f"REDIS_PASSWORD={node_pw}\n")
+ret = ret['data']['output']
 
-    with open('/var/lib/nethserver/agent/environment', 'w') as fp:
-        fp.write(f"NODE_ID={ret['node_id']}\n")
+# Save config inside config db
+subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@wg0", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "agent", "status", "enabled"], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", args.host, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled"], check=True)
+
+# Save agent environment
+with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
+    fp.write(f"REDIS_ADDRESS={ret['leader_ip_address']}:6379\n")
+    fp.write(f"AGENT_ID=node/{ret['node_id']}\n")
+    fp.write(f"REDIS_USER=node/{ret['node_id']}\n")
+    fp.write(f"REDIS_PASSWORD={node_pw}\n")
+
+with open('/var/lib/nethserver/agent/environment', 'w') as fp:
+    fp.write(f"NODE_ID={ret['node_id']}\n")
