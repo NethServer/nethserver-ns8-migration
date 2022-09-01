@@ -137,7 +137,7 @@
             "
           ></span>
           <span>
-            <a class="disconnect-link" @click="disconnectFromCluster"
+            <a class="disconnect-link" @click="connectionLogout"
               >{{ $t("dashboard.connect_to_different_cluster") }}
             </a>
           </span>
@@ -541,8 +541,29 @@ export default {
     syncData(app) {
       this.migrationUpdate(app, "sync");
     },
-    disconnectFromCluster() {
-      this.config.isConnected = false; //// TODO
+    connectionLogout() {
+      this.loading.connectionUpdate = true;
+
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.logout_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t("dashboard.logout_failed");
+      const context = this;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/update"],
+        { action: "logout" },
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
+        function(success) {
+          context.loading.connectionUpdate = false;
+          context.connectionRead();
+        },
+        function(error) {
+          console.error(error);
+          context.loading.connectionUpdate = false;
+        }
+      );
     },
     connectionRead() {
       const context = this;
@@ -594,6 +615,7 @@ export default {
       this.loading.connectionUpdate = true;
 
       var validateObj = {
+        action: "login",
         Host: this.config.leaderNode,
         User: this.config.adminUsername,
         Password: this.config.adminPassword,

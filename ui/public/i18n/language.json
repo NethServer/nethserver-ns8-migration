@@ -47,7 +47,9 @@
     "account_provider_migration_in_progress_description": "NS8 apps are currently using NS7 account provider",
     "start_account_provider_migration_explanation": "NethServer 8 is going to be connected to NethServer 7 account provider. NS8 apps will start using NS7 account provider",
     "ad_ip_address_explanation": "Select an IP address to configure Active Directory and finish migration",
-    "ad_ip_address": "Active Directory IP address"
+    "ad_ip_address": "Active Directory IP address",
+    "logout_successful": "Disconnected from NS8 cluster",
+    "logout_failed": "Logout failed"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",

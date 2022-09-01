@@ -35,6 +35,7 @@ line = fileinput.input()[0].rstrip()
 input_json = simplejson.loads(line)
 invalid_attributes = []
 
+action_p = 'action'
 host_p = 'Host'
 user_p = 'User'
 password_p = 'Password'
@@ -45,14 +46,15 @@ user = ''
 password = ''
 tls_verify = ''
 
+# action
+
+if (action_p not in input_json) or (not input_json[action_p]):
+    invalid_attributes.append(invalid_attribute(action_p, "empty"))
+
 # host
 
 if (host_p not in input_json) or (not input_json[host_p]):
     invalid_attributes.append(invalid_attribute(host_p, "empty"))
-# else: ////
-#     host = input_json[host_p]
-
-# //// need to try ping?
 
 # user
 
