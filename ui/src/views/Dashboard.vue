@@ -197,17 +197,16 @@
             </div>
             <div class="list-view-pf-main-info">
               <div class="list-view-pf-left">
-                <!-- //// remove -->
                 <img
                   v-if="app.id === 'account-provider'"
                   class="apps-icon"
                   src="logo.png"
                 />
-                <!--  //// remove v-else -->
                 <img
                   v-else
                   class="apps-icon"
                   :src="'../' + app.id + '/' + (app.icon || 'logo.png')"
+                  @error="$event.target.src = 'logo.png'"
                 />
               </div>
               <div class="list-view-pf-body">
@@ -271,7 +270,6 @@
                         ref="virtualHost"
                         class="form-control"
                       />
-                      <!--  //// validate virtual host -->
                       <span v-if="error.virtualHost" class="help-block">{{
                         error.virtualHost
                       }}</span>
@@ -330,35 +328,62 @@
             <div class="modal-body">
               <template v-if="currentApp">
                 <template v-if="currentApp.id === 'account-provider'">
-                  <!-- choose an IP address for AD -->
-                  <div class="mg-bottom-20">
-                    {{ $t("dashboard.ad_ip_address_explanation") }}
-                  </div>
-                  <div
-                    :class="['form-group', { 'has-error': error.adIpAddress }]"
-                  >
-                    <label class="col-sm-4 control-label" for="ad-ip-address">
-                      {{ $t("dashboard.ad_ip_address") }}
-                    </label>
-                    <div class="col-sm-6">
-                      <select
-                        v-model="adIpAddress"
-                        class="combobox form-control"
-                        id="ad-ip-address"
-                      >
-                        <option
-                          v-for="(ip, i) in adIpAddresses"
-                          v-bind:key="i"
-                          :value="ip"
-                        >
-                          {{ ip }}
-                        </option>
-                      </select>
-                      <span v-if="error.adIpAddress" class="help-block">{{
-                        error.adIpAddress
-                      }}</span>
+                  <template v-if="currentApp.provider === 'ad'">
+                    <!-- choose an IP address for AD -->
+                    <div class="mg-bottom-20">
+                      {{ $t("dashboard.ad_ip_address_explanation") }}
                     </div>
-                  </div>
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.adIpAddress },
+                      ]"
+                    >
+                      <label class="col-sm-4 control-label" for="ad-ip-address">
+                        {{ $t("dashboard.ad_ip_address") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="adIpAddress"
+                          class="combobox form-control"
+                          id="ad-ip-address"
+                        >
+                          <option
+                            v-for="(ip, i) in adIpAddresses"
+                            v-bind:key="i"
+                            :value="ip"
+                          >
+                            {{ ip }}
+                          </option>
+                        </select>
+                        <span v-if="error.adIpAddress" class="help-block">{{
+                          error.adIpAddress
+                        }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <!-- LDAP -->
+                    <div
+                      class="mg-bottom-20"
+                      v-html="
+                        $t(
+                          'dashboard.finish_account_provider_migration_explanation'
+                        )
+                      "
+                    ></div>
+                  </template>
+                </template>
+                <template v-else>
+                  <!-- app will be uninstalled -->
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
+                      $t('dashboard.finish_app_migration_explanation', {
+                        appName: currentApp.name,
+                      })
+                    "
+                  ></div>
                 </template>
               </template>
             </div>
@@ -531,12 +556,10 @@ export default {
         app.id === "account-provider"
       );
     },
-    isFinishMigrationModalNeeded(app) {
-      return app.id === "account-provider" && app.provider === "ad";
-    },
     startMigration(app) {
+      this.currentApp = app;
+
       if (this.isStartMigrationModalNeeded(app)) {
-        this.currentApp = app;
         this.isShownStartMigrationModal = true;
       } else {
         this.migrationUpdate(app, "start");
@@ -567,7 +590,10 @@ export default {
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
 
-      if (this.currentApp.id === "account-provider") {
+      if (
+        this.currentApp.id === "account-provider" &&
+        this.currentApp.provider === "ad"
+      ) {
         this.error.adIpAddress = "";
 
         if (!this.adIpAddress) {
@@ -586,12 +612,8 @@ export default {
       this.hideFinishMigrationModal();
     },
     finishMigration(app) {
-      if (this.isFinishMigrationModalNeeded(app)) {
-        this.currentApp = app;
-        this.isShownFinishMigrationModal = true;
-      } else {
-        this.migrationUpdate(app, "finish");
-      }
+      this.currentApp = app;
+      this.isShownFinishMigrationModal = true;
     },
     syncData(app) {
       this.migrationUpdate(app, "sync");
@@ -766,25 +788,14 @@ export default {
       this.apps = output.migration.filter(
         (app) =>
           this.installedApps.includes(app.id) ||
-          (app.id === "account-provider" && app.provider != "none")
+          (app.id === "account-provider" && app.provider != "none") ||
+          app.status !== "not_migrated"
       );
     },
     migrationUpdate(app, action) {
       const context = this;
       context.loading.migrationUpdate = true;
-
       app.status = "syncing";
-
-      //// remove mock
-      // if (app.id === "account-provider") {
-      //   setTimeout(() => {
-      //     app.status = "migrating";
-      //     context.accountProviderMigrationStarted = true;
-      //     context.loading.migrationUpdate = false;
-      //   }, 2000);
-      //   return;
-      // }
-      //// end mock
 
       //// pass extra parameters if needed (virtualhost, ip address...)
       const migrationObj = {
@@ -808,6 +819,11 @@ export default {
         function(success) {
           context.loading.migrationUpdate = false;
           context.migrationRead();
+
+          if (action === "finish" && app.id !== "account-provider") {
+            // uninstall app
+            context.getPackagesToRemove(app);
+          }
         },
         function(error) {
           console.error(error);
@@ -854,6 +870,92 @@ export default {
     },
     hideLogoutModal() {
       this.isShownLogoutModal = false;
+    },
+    getPackagesToRemove(app) {
+      var context = this;
+      nethserver.exec(
+        ["system-packages/read"],
+        {
+          action: "list-removed",
+          packages: [app.id],
+        },
+        null,
+        function(success) {
+          try {
+            success = JSON.parse(success);
+          } catch (e) {
+            console.error(e);
+          }
+          app.listRemove = success.packages;
+          context.removeApp(app);
+        },
+        function(error) {
+          console.error(error);
+        }
+      );
+    },
+    removeApp(app) {
+      var context = this;
+
+      // notification
+      nethserver.notifications.success = this.$i18n.t("applications.remove_ok");
+      nethserver.notifications.error = this.$i18n.t(
+        "applications.remove_error"
+      );
+
+      nethserver.exec(
+        ["system-packages/update"],
+        {
+          action: "remove",
+          packages: app.listRemove,
+        },
+        function(stream) {
+          console.info("packages-remove", stream);
+        },
+        function(success) {
+          app.listRemove.forEach((Pin) => {
+            context.removePin(Pin);
+          });
+          app.listRemove.forEach((Shortcut) => {
+            context.removeShortcut(Shortcut);
+          });
+        },
+        function(error) {
+          console.error(error);
+        }
+      );
+    },
+    removeShortcut(application) {
+      var context = this;
+
+      nethserver.exec(
+        ["system-apps/update"],
+        {
+          action: "remove-shortcut",
+          name: application,
+        },
+        null,
+        function(success) {},
+        function(error) {
+          console.error(error);
+        }
+      );
+    },
+    removePin(application) {
+      var context = this;
+
+      nethserver.exec(
+        ["system-apps/update"],
+        {
+          action: "remove-pin",
+          name: application,
+        },
+        null,
+        function(success) {},
+        function(error) {
+          console.error(error);
+        }
+      );
     },
   },
 };
