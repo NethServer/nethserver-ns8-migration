@@ -32,8 +32,8 @@ def get_config(appId):
     return simplejson.loads(output)
 
 
-def getMigrationStatus(app_name):
-    file_name = "/var/lib/nethserver/agent/{}_ns8_migration".format(app_name)
+def getMigrationStatus(app_name, ns8_leader):
+    file_name = "/var/lib/nethserver/agent/{}/{}_ns8_migration".format(ns8_leader, app_name)
 
     try:
         with open(file_name, 'r') as file:
@@ -93,8 +93,11 @@ try:
     apps.append(get_mattermost_info())
     apps.append(get_webmail_info())
 
+    ns8_config = get_config("ns8")
+    ns8_leader = ns8_config['props']['Host']
+
     for app in apps:
-        status = getMigrationStatus(app["id"])
+        status = getMigrationStatus(app["id"], ns8_leader)
         app["status"] = status
 
     output = simplejson.dumps({'migration': apps})

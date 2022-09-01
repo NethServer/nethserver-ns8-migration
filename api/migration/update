@@ -37,7 +37,9 @@ action=$(echo $data | jq -r '.action')
 set_migration_status() {
     app_id=$1
     status=$2
-    echo $status >/var/lib/nethserver/agent/${app_id}_ns8_migration
+    ns8_leader=$(/sbin/e-smith/config getprop ns8 Host)
+    /usr/bin/mkdir -p /var/lib/nethserver/agent/${ns8_leader}
+    echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
 }
 
 # //// simplify code? (merge ifs)
