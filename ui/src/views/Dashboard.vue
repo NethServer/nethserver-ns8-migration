@@ -137,7 +137,7 @@
             "
           ></span>
           <span>
-            <a class="disconnect-link" @click="connectionLogout"
+            <a class="disconnect-link" @click="showLogoutModal"
               >{{ $t("dashboard.connect_to_different_cluster") }}
             </a>
           </span>
@@ -279,13 +279,15 @@
                   </div>
                 </template>
                 <template v-if="currentApp.id === 'account-provider'">
-                  <div class="mg-bottom-20">
-                    {{
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
                       $t(
-                        "dashboard.start_account_provider_migration_explanation"
+                        'dashboard.start_account_provider_migration_explanation',
+                        { leaderNode: config.leaderNode }
                       )
-                    }}
-                  </div>
+                    "
+                  ></div>
                 </template>
               </template>
             </div>
@@ -380,6 +382,51 @@
         </div>
       </div>
     </div>
+    <!-- logout modal -->
+    <div
+      class="modal"
+      id="logout-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.logout_from_ns8_cluster") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <div
+                v-html="
+                  $t('dashboard.logout_explanation', {
+                    leaderNode: config.leaderNode,
+                  })
+                "
+              ></div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideLogoutModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                @click="connectionLogout"
+              >
+                {{ $t("dashboard.logout") }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -403,6 +450,7 @@ export default {
       virtualHost: "",
       isShownStartMigrationModal: false,
       isShownFinishMigrationModal: false,
+      isShownLogoutModal: false,
       adIpAddress: "",
       adIpAddresses: ["1.1.1.1", "2.2.2.2"], //// get from api
       loading: {
@@ -460,6 +508,13 @@ export default {
         $("#finish-migration-modal").modal("show");
       } else {
         $("#finish-migration-modal").modal("hide");
+      }
+    },
+    isShownLogoutModal: function() {
+      if (this.isShownLogoutModal) {
+        $("#logout-modal").modal("show");
+      } else {
+        $("#logout-modal").modal("hide");
       }
     },
   },
@@ -793,6 +848,12 @@ export default {
     },
     hideFinishMigrationModal() {
       this.isShownFinishMigrationModal = false;
+    },
+    showLogoutModal() {
+      this.isShownLogoutModal = true;
+    },
+    hideLogoutModal() {
+      this.isShownLogoutModal = false;
     },
   },
 };
