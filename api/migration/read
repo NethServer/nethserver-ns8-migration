@@ -33,7 +33,8 @@ def get_config(appId):
 
 
 def getMigrationStatus(app_name, ns8_leader):
-    file_name = "/var/lib/nethserver/agent/{}/{}_ns8_migration".format(ns8_leader, app_name)
+    file_name = "/var/lib/nethserver/agent/{}/{}_ns8_migration".format(
+        ns8_leader, app_name)
 
     try:
         with open(file_name, 'r') as file:
@@ -45,20 +46,8 @@ def getMigrationStatus(app_name, ns8_leader):
 
 
 def get_account_provider_info():
-    config = get_config("sssd")
-    name = ""
-    provider = config['props']['Provider']
-
-    if provider == "ldap":
-        name = "LDAP"
-    elif provider == "ad":
-        name = "Active Directory"
-
     return {
-        "id": "account-provider",
-        "config": config,
-        "name": name,
-        "provider": provider
+        "id": "account-provider"
     }
 
 
