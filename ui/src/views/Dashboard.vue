@@ -9,6 +9,30 @@
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.connectionRead }}
     </div>
+    <div v-if="error.connectionUpdate" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.connectionUpdate }}
+    </div>
+    <div v-if="error.migrationRead" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.migrationRead }}
+    </div>
+    <div v-if="error.migrationUpdate" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.migrationUpdate }}
+    </div>
+    <div v-if="error.listPackagesToRemove" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.listPackagesToRemove }}
+    </div>
+    <div v-if="error.removePackages" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.removePackages }}
+    </div>
+    <div v-if="error.getAccountProviderInfo" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.getAccountProviderInfo }}
+    </div>
     <div
       v-if="loading.listApplications || loading.connectionRead"
       class="spinner spinner-lg"
@@ -158,7 +182,7 @@
           }}
         </div>
         <div id="pf-list-default" class="list-group list-view-pf app-list">
-          <div v-for="app in apps" :key="app.name" class="list-group-item">
+          <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
               <button
                 v-if="app.status == 'not_migrated'"
@@ -181,7 +205,11 @@
                 </button>
                 <button
                   @click="finishMigration(app)"
-                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  :disabled="
+                    loading.migrationUpdate ||
+                      app.status == 'syncing' ||
+                      app.id === 'account-provider'
+                  "
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.finish_migration") }}
@@ -211,7 +239,7 @@
               </div>
               <div class="list-view-pf-body">
                 <div class="list-group-item-heading">
-                  {{ app.name }}
+                  <span>{{ app.name }}</span>
                 </div>
                 <div class="list-group-item-text">
                   <div
@@ -477,13 +505,15 @@ export default {
       isShownFinishMigrationModal: false,
       isShownLogoutModal: false,
       adIpAddress: "",
-      adIpAddresses: ["1.1.1.1", "2.2.2.2"], //// get from api
+      adIpAddresses: [],
+      accountProviderConfig: null,
       loading: {
         connectionRead: false,
         connectionUpdate: false,
         migrationRead: false,
         migrationUpdate: false,
         listApplications: false,
+        accountProviderInfo: false,
       },
       error: {
         connectionRead: "",
@@ -494,8 +524,11 @@ export default {
         adminUsername: "",
         adminPassword: "",
         listApplications: "",
+        accountProviderInfo: "",
         virtualHost: "",
         adIpAddress: "",
+        listPackagesToRemove: "",
+        removePackages: "",
       },
     };
   },
@@ -544,7 +577,7 @@ export default {
     },
   },
   mounted() {
-    this.listApplications();
+    this.connectionRead();
   },
   methods: {
     togglePassword() {
@@ -637,10 +670,13 @@ export default {
           context.connectionRead();
         },
         function(error) {
-          console.error(error);
+          const errorMessage = context.$i18n.t("dashboard.error_logging_out");
+          console.error(errorMessage, error);
+          context.error.connectionUpdate = errorMessage;
           context.loading.connectionUpdate = false;
         }
       );
+      this.hideLogoutModal();
     },
     connectionRead() {
       const context = this;
@@ -657,11 +693,9 @@ export default {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_connection_data"
           );
-          console.error(
-            errorMessage,
-            error
-          ); /* eslint-disable-line no-console */
+          console.error(errorMessage, error);
           context.error.connectionRead = errorMessage;
+          context.loading.connectionRead = false;
         }
       );
     },
@@ -669,15 +703,14 @@ export default {
       const agentStatus = output.configuration.agent.props.status;
       this.config.isConnected = agentStatus == "enabled";
       const ns8Config = output.configuration.ns8.props;
-      this.config.leaderNode =
-        ns8Config.Host || "dn1.leader.cluster0.al.nethserver.net"; //// remove || ...
-      this.config.adminUsername = ns8Config.User || "admin"; //// remove || ...
-      this.config.adminPassword = ns8Config.Password || "Nethesis,1234"; //// remove || ...
+      this.config.leaderNode = ns8Config.Host;
+      this.config.adminUsername = ns8Config.User;
+      this.config.adminPassword = ns8Config.Password;
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
 
       if (this.config.isConnected) {
-        this.migrationRead();
+        this.getAccountProviderInfo();
       } else {
         this.$nextTick(() => {
           this.$refs.leaderNode.focus();
@@ -756,7 +789,11 @@ export default {
           context.connectionRead();
         },
         function(error) {
-          console.error(error);
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_connecting_to_ns8"
+          );
+          console.error(errorMessage, error);
+          context.error.connectionUpdate = errorMessage;
           context.loading.connectionUpdate = false;
         }
       );
@@ -776,28 +813,43 @@ export default {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_migration_data"
           );
-          console.error(
-            errorMessage,
-            error
-          ); /* eslint-disable-line no-console */
+          console.error(errorMessage, error);
           context.error.migrationRead = errorMessage;
+          context.loading.migrationRead = false;
         }
       );
     },
     migrationReadSuccess(output) {
-      this.apps = output.migration.filter(
+      const apps = output.migration.filter(
         (app) =>
           this.installedApps.includes(app.id) ||
-          (app.id === "account-provider" && app.provider != "none") ||
+          (app.id === "account-provider" &&
+            this.accountProviderConfig.type !== "none") ||
           app.status !== "not_migrated"
       );
+
+      console.log("this.accountProviderConfig", this.accountProviderConfig); ////
+
+      const accountProviderApp = apps.find(
+        (app) => app.id === "account-provider"
+      );
+
+      if (accountProviderApp) {
+        const type = this.accountProviderConfig.type;
+        const location = this.accountProviderConfig.location;
+        accountProviderApp.name = this.$t(`dashboard.${location}_${type}`);
+
+        console.log("accountProviderApp", accountProviderApp); ////
+      }
+      this.apps = apps;
+      context.loading.migrationRead = false;
     },
     migrationUpdate(app, action) {
       const context = this;
       context.loading.migrationUpdate = true;
       app.status = "syncing";
 
-      //// pass extra parameters if needed (virtualhost, ip address...)
+      //// pass extra parameters if needed (virtual host, ip address...)
       const migrationObj = {
         app: app.id,
         action: action,
@@ -826,7 +878,11 @@ export default {
           }
         },
         function(error) {
-          console.error(error);
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_migrating_data"
+          );
+          console.error(errorMessage, error);
+          context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
         }
       );
@@ -850,6 +906,7 @@ export default {
           );
           console.error(errorMessage, error);
           context.error.listApplications = errorMessage;
+          context.loading.listApplications = false;
         },
         false
       );
@@ -857,7 +914,7 @@ export default {
     listApplicationsSuccess(output) {
       this.installedApps = output.map((app) => app.id);
       this.loading.listApplications = false;
-      this.connectionRead();
+      this.migrationRead();
     },
     hideStartMigrationModal() {
       this.isShownStartMigrationModal = false;
@@ -890,7 +947,11 @@ export default {
           context.removeApp(app);
         },
         function(error) {
-          console.error(error);
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_listing_packages_to_remove"
+          );
+          console.error(errorMessage, error);
+          context.error.listPackagesToRemove = errorMessage;
         }
       );
     },
@@ -921,7 +982,11 @@ export default {
           });
         },
         function(error) {
-          console.error(error);
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_removing_app"
+          );
+          console.error(errorMessage, error);
+          context.error.removePackages = errorMessage;
         }
       );
     },
@@ -954,6 +1019,47 @@ export default {
         function(success) {},
         function(error) {
           console.error(error);
+        }
+      );
+    },
+    getAccountProviderInfo() {
+      this.loading.accountProviderInfo = true;
+      let context = this;
+      nethserver.exec(
+        ["system-accounts-provider/read"],
+        {
+          action: "dump",
+        },
+        null,
+        function(success) {
+          success = JSON.parse(success);
+          const accountProviderConfig = success;
+
+          // provider type
+
+          if (accountProviderConfig.isLdap) {
+            accountProviderConfig.type = "ldap";
+          } else if (accountProviderConfig.isAD) {
+            accountProviderConfig.type = "ad";
+          } else {
+            accountProviderConfig.type = "none";
+          }
+
+          // provider location
+
+          const location = accountProviderConfig.IsLocal ? "local" : "remote";
+          accountProviderConfig.location = location;
+          context.accountProviderConfig = accountProviderConfig;
+          this.loading.accountProviderInfo = false;
+          context.listApplications();
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_account_provider_info"
+          );
+          console.error(errorMessage, error);
+          context.error.getAccountProviderInfo = errorMessage;
+          context.loading.getAccountProviderInfo = false;
         }
       );
     },
