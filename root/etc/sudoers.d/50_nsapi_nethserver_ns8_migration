@@ -2,6 +2,10 @@
 # nsapi_nethserver_ns8_migration
 #
 Cmnd_Alias NSAPI_NETHSERVER_NS8_MIGRATION = \
-    /usr/libexec/nethserver/api/nethserver-ns8-migration/connection/read
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/connection/read, \
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/connection/update, \
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/connection/validate, \
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/migration/read, \
+    /usr/libexec/nethserver/api/nethserver-ns8-migration/migration/update
 
-Defaults!NSAPI_NETHSERVER_DEDALO !requiretty
+Defaults!NSAPI_NETHSERVER_NS8_MIGRATION !requiretty
