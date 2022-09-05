@@ -27,7 +27,11 @@ data=$(cat /dev/stdin)
 
 app_id=$(echo $data | jq -r '.app')
 action=$(echo $data | jq -r '.action')
+
 virtual_host=$(echo $data | jq -r '.virtualHost')
+if [[ "$virtual_host" == "null" ]]; then
+    virtual_host=""
+fi
 
 set_migration_status() {
     app_id=$1

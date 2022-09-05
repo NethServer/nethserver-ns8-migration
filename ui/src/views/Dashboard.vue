@@ -394,35 +394,6 @@
                     ></div>
                   </template>
                 </template>
-                <template
-                  v-else-if="
-                    currentApp.id === 'nethserver-nextcloud' &&
-                      !nextcloudApp.config.props.VirtualHost
-                  "
-                >
-                  <!-- choose a virtual host for Nextcloud -->
-                  <div class="mg-bottom-20">
-                    {{ $t("dashboard.virtual_host_explanation") }}
-                  </div>
-                  <div
-                    :class="['form-group', { 'has-error': error.virtualHost }]"
-                  >
-                    <label class="col-sm-3 control-label" for="virtual-host">
-                      {{ $t("dashboard.virtual_host") }}
-                    </label>
-                    <div class="col-sm-7">
-                      <input
-                        v-model.trim="virtualHost"
-                        id="virtual-host"
-                        ref="virtualHost"
-                        class="form-control"
-                      />
-                      <span v-if="error.virtualHost" class="help-block">{{
-                        error.virtualHost
-                      }}</span>
-                    </div>
-                  </div>
-                </template>
                 <template v-else>
                   <!-- app will be uninstalled -->
                   <div
@@ -433,6 +404,40 @@
                       })
                     "
                   ></div>
+                  <template
+                    v-if="
+                      currentApp.id === 'nethserver-nextcloud' &&
+                        !nextcloudApp.config.props.VirtualHost
+                    "
+                  >
+                    <!-- choose a virtual host for Nextcloud -->
+                    <div class="mg-bottom-20">
+                      <span
+                        >{{ $t("dashboard.virtual_host_explanation") }}
+                      </span>
+                    </div>
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.virtualHost },
+                      ]"
+                    >
+                      <label class="col-sm-4 control-label" for="virtual-host">
+                        {{ $t("dashboard.nextcloud_virtual_host") }}
+                      </label>
+                      <div class="col-sm-7">
+                        <input
+                          v-model.trim="virtualHost"
+                          id="virtual-host"
+                          ref="virtualHost"
+                          class="form-control"
+                        />
+                        <span v-if="error.virtualHost" class="help-block">{{
+                          error.virtualHost
+                        }}</span>
+                      </div>
+                    </div>
+                  </template>
                 </template>
               </template>
             </div>
@@ -570,8 +575,6 @@ export default {
   watch: {
     isShownStartMigrationModal: function() {
       if (this.isShownStartMigrationModal) {
-        this.error.virtualHost = "";
-        this.virtualHost = "";
         $("#start-migration-modal").modal("show");
 
         this.$nextTick(() => {
@@ -585,7 +588,9 @@ export default {
     },
     isShownFinishMigrationModal: function() {
       if (this.isShownFinishMigrationModal) {
+        this.error.virtualHost = "";
         this.error.adIpAddress = "";
+        this.virtualHost = "";
         this.adIpAddress = "";
         $("#finish-migration-modal").modal("show");
       } else {
