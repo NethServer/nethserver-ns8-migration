@@ -78,7 +78,7 @@
 </template>
 
 <script>
-//// delete file?
+//// TODO delete file?
 
 export default {
   name: "Logs",

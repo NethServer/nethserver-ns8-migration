@@ -34,7 +34,12 @@
       {{ error.getAccountProviderInfo }}
     </div>
     <div
-      v-if="loading.listApplications || loading.connectionRead || loading.migrationRead || loading.accountProviderInfo"
+      v-if="
+        loading.listApplications ||
+          loading.connectionRead ||
+          loading.migrationRead ||
+          loading.accountProviderInfo
+      "
       class="spinner spinner-lg"
     ></div>
     <div v-else>
@@ -280,30 +285,6 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <template v-if="currentApp">
-                <template v-if="currentApp.id === 'nethserver-nextcloud'">
-                  <!-- choose a virtual host -->
-                  <div class="mg-bottom-20">
-                    {{ $t("dashboard.virtual_host_explanation") }}
-                  </div>
-                  <div
-                    :class="['form-group', { 'has-error': error.virtualHost }]"
-                  >
-                    <label class="col-sm-3 control-label" for="virtual-host">
-                      {{ $t("dashboard.virtual_host") }}
-                    </label>
-                    <div class="col-sm-7">
-                      <input
-                        v-model.trim="virtualHost"
-                        id="virtual-host"
-                        ref="virtualHost"
-                        class="form-control"
-                      />
-                      <span v-if="error.virtualHost" class="help-block">{{
-                        error.virtualHost
-                      }}</span>
-                    </div>
-                  </div>
-                </template>
                 <template v-if="currentApp.id === 'account-provider'">
                   <div
                     class="mg-bottom-20"
@@ -312,6 +293,17 @@
                         'dashboard.start_account_provider_migration_explanation',
                         { leaderNode: config.leaderNode }
                       )
+                    "
+                  ></div>
+                </template>
+                <template v-else>
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
+                      $t('dashboard.app_will_be_migrated', {
+                        appName: currentApp.name,
+                        leaderNode: config.leaderNode,
+                      })
                     "
                   ></div>
                 </template>
@@ -401,6 +393,35 @@
                       "
                     ></div>
                   </template>
+                </template>
+                <template
+                  v-else-if="
+                    currentApp.id === 'nethserver-nextcloud' &&
+                      !nextcloudApp.config.props.VirtualHost
+                  "
+                >
+                  <!-- choose a virtual host for Nextcloud -->
+                  <div class="mg-bottom-20">
+                    {{ $t("dashboard.virtual_host_explanation") }}
+                  </div>
+                  <div
+                    :class="['form-group', { 'has-error': error.virtualHost }]"
+                  >
+                    <label class="col-sm-3 control-label" for="virtual-host">
+                      {{ $t("dashboard.virtual_host") }}
+                    </label>
+                    <div class="col-sm-7">
+                      <input
+                        v-model.trim="virtualHost"
+                        id="virtual-host"
+                        ref="virtualHost"
+                        class="form-control"
+                      />
+                      <span v-if="error.virtualHost" class="help-block">{{
+                        error.virtualHost
+                      }}</span>
+                    </div>
+                  </div>
                 </template>
                 <template v-else>
                   <!-- app will be uninstalled -->
@@ -536,6 +557,9 @@ export default {
     accountProviderApp() {
       return this.apps.find((app) => app.id === "account-provider");
     },
+    nextcloudApp() {
+      return this.apps.find((app) => app.id === "nethserver-nextcloud");
+    },
     accountProviderMigrationStarted() {
       if (this.accountProviderApp) {
         return this.accountProviderApp.status === "migrating";
@@ -584,10 +608,8 @@ export default {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
     isStartMigrationModalNeeded(app) {
-      return (
-        (app.id === "nethserver-nextcloud" && !app.config.props.VirtualHost) ||
-        app.id === "account-provider"
-      );
+      return true;
+      // return app.id === "account-provider"; ////
     },
     startMigration(app) {
       this.currentApp = app;
@@ -600,16 +622,6 @@ export default {
     },
     validateStartMigrationFromModal() {
       let isValidationOk = true;
-
-      if (this.currentApp.id === "nethserver-nextcloud") {
-        this.error.virtualHost = "";
-
-        if (!this.virtualHost) {
-          this.error.virtualHost = this.$t("validation.virtual_host_empty");
-          this.$refs.virtualHost.focus();
-          isValidationOk = false;
-        }
-      }
       return isValidationOk;
     },
     startMigrationFromModal() {
@@ -622,6 +634,19 @@ export default {
     },
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
+
+      if (
+        this.currentApp.id === "nethserver-nextcloud" &&
+        !this.nextcloudApp.config.props.VirtualHost
+      ) {
+        this.error.virtualHost = "";
+
+        if (!this.virtualHost) {
+          this.error.virtualHost = this.$t("validation.virtual_host_empty");
+          this.$refs.virtualHost.focus();
+          isValidationOk = false;
+        }
+      }
 
       if (
         this.currentApp.id === "account-provider" &&
@@ -845,11 +870,15 @@ export default {
       context.loading.migrationUpdate = true;
       app.status = "syncing";
 
-      //// pass extra parameters if needed (virtual host, ip address...)
+      //// TODO pass extra parameters if needed (virtual host, ip address...)
       const migrationObj = {
         app: app.id,
         action: action,
       };
+
+      if (this.virtualHost) {
+        migrationObj.virtualHost = this.virtualHost;
+      }
 
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.synchronization_successful"
@@ -978,9 +1007,7 @@ export default {
           });
         },
         function(error) {
-          const errorMessage = context.$i18n.t(
-            "dashboard.error_removing_app"
-          );
+          const errorMessage = context.$i18n.t("dashboard.error_removing_app");
           console.error(errorMessage, error);
           context.error.removePackages = errorMessage;
         }

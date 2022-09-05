@@ -1,13 +1,13 @@
 #!/bin/bash
 
-NC_CONF=/var/lib/nethserver/agent/mattermost.json
+MM_CONF=/var/lib/nethserver/agent/mattermost.json
 
 # If mattermost rsync configuration is not set, install mattermost inside the NS8 cluster
-if [ ! -s $NC_CONF ]; then
+if [ ! -s $MM_CONF ]; then
     response=$(ns8-action cluster import-module '{"image": "ghcr.io/nethserver/mattermost:latest", "node": 1, "volumes": ["mattermost-data"]}')
-    echo $response > $NC_CONF
+    echo $response > $MM_CONF
 else
-    response=$(cat $NC_CONF)
+    response=$(cat $MM_CONF)
 fi
 
 

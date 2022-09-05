@@ -27,12 +27,7 @@ data=$(cat /dev/stdin)
 
 app_id=$(echo $data | jq -r '.app')
 action=$(echo $data | jq -r '.action')
-
-# update db ////
-
-# //// a new db key for every app to migrate?
-
-# //// how many action values are needed? "start", "sync", "finish"? Need to have both "start" and "sync"?
+virtual_host=$(echo $data | jq -r '.virtualHost')
 
 set_migration_status() {
     app_id=$1
@@ -41,8 +36,6 @@ set_migration_status() {
     /usr/bin/mkdir -p /var/lib/nethserver/agent/${ns8_leader}
     echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
 }
-
-# //// simplify code? (merge ifs)
 
 if [[ "$app_id" == "nethserver-nextcloud" ]]; then
     if [[ "$action" == "start" ]]; then
@@ -67,6 +60,11 @@ if [[ "$app_id" == "nethserver-nextcloud" ]]; then
         set_migration_status $app_id "migrating"
     elif [[ "$action" == "finish" ]]; then
         set_migration_status $app_id "syncing"
+
+        if [[ ! -z "$virtual_host" ]]; then
+            /sbin/e-smith/config setprop nextcloud VirtualHost $virtual_host
+        fi
+
         /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app nextcloud
 
         if [ $? -gt 0 ]; then
@@ -87,7 +85,7 @@ elif [[ "$app_id" == "account-provider" ]]; then
 
         set_migration_status $app_id "migrating"
 
-        # //// implement migrate script and uncomment
+        # //// TODO implement migrate script and uncomment:
         # elif [[ "$action" == "finish" ]]; then
         # set_migration_status $app_id "syncing"
         # /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app ldapproxy

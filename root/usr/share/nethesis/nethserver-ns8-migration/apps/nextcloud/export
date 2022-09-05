@@ -4,8 +4,7 @@ NC_CONF=/var/lib/nethserver/agent/nextcloud.json
 
 # If nexcloud rsync configuration is not set, install nextcloud inside the NS8 cluster
 if [ ! -s $NC_CONF ]; then
-    # //// FIX use ghcr.io/nethserver/nextcloud:latest
-    response=$(ns8-action cluster import-module '{"image": "ghcr.io/nethserver/nextcloud:disable-nc-updates", "node": 1, "volumes": ["nextcloud-app-data"]}')
+    response=$(ns8-action cluster import-module '{"image": "ghcr.io/nethserver/nextcloud:latest", "node": 1, "volumes": ["nextcloud-app-data"]}')
     echo $response >$NC_CONF
 else
     response=$(cat $NC_CONF)

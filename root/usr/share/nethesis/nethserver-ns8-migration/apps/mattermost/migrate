@@ -7,13 +7,13 @@ if [ -z "$host" ]; then
     exit 1
 fi
 
-NC_CONF=/var/lib/nethserver/agent/mattermost.json
+MM_CONF=/var/lib/nethserver/agent/mattermost.json
 
-if [ ! -f $NC_CONF ]; then
-    echo "$NC_CONF not found. Run mattermost-export first."
+if [ ! -f $MM_CONF ]; then
+    echo "$MM_CONF not found. Run mattermost-export first."
     exit 1
 else
-    response=$(cat $NC_CONF)
+    response=$(cat $MM_CONF)
 fi
 
 # Read rsync configuration
@@ -25,6 +25,6 @@ port=$(echo $response | jq -r .data.output.port)
 # Terminate the rsync server
 RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
 
-rm -f $NC_CONF
+rm -f $MM_CONF
 
 ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'

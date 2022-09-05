@@ -23,8 +23,6 @@
 import sys
 import fileinput
 import simplejson
-# import re ////
-# from urlparse import urlparse ////
 
 
 def invalid_attribute(parameter, error):
@@ -60,10 +58,6 @@ if (host_p not in input_json) or (not input_json[host_p]):
 
 if (user_p not in input_json) or (not input_json[user_p]):
     invalid_attributes.append(invalid_attribute(user_p, "empty"))
-
-    # check syntax
-    # if not re.match(r"(?:http\:|https\:)?\/\/.+\..+", url): ////
-    #     invalid_attributes.append(invalid_attribute(url_p, "invalid"))
 
 # password
 
