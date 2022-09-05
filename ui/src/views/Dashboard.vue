@@ -34,7 +34,7 @@
       {{ error.getAccountProviderInfo }}
     </div>
     <div
-      v-if="loading.listApplications || loading.connectionRead"
+      v-if="loading.listApplications || loading.connectionRead || loading.migrationRead || loading.accountProviderInfo"
       class="spinner spinner-lg"
     ></div>
     <div v-else>
@@ -828,8 +828,6 @@ export default {
           app.status !== "not_migrated"
       );
 
-      console.log("this.accountProviderConfig", this.accountProviderConfig); ////
-
       const accountProviderApp = apps.find(
         (app) => app.id === "account-provider"
       );
@@ -838,11 +836,9 @@ export default {
         const type = this.accountProviderConfig.type;
         const location = this.accountProviderConfig.location;
         accountProviderApp.name = this.$t(`dashboard.${location}_${type}`);
-
-        console.log("accountProviderApp", accountProviderApp); ////
       }
       this.apps = apps;
-      context.loading.migrationRead = false;
+      this.loading.migrationRead = false;
     },
     migrationUpdate(app, action) {
       const context = this;
@@ -1050,7 +1046,7 @@ export default {
           const location = accountProviderConfig.IsLocal ? "local" : "remote";
           accountProviderConfig.location = location;
           context.accountProviderConfig = accountProviderConfig;
-          this.loading.accountProviderInfo = false;
+          context.loading.accountProviderInfo = false;
           context.listApplications();
         },
         function(error) {
