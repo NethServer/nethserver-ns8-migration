@@ -29,7 +29,7 @@
     "finish_migration": "Finish migration",
     "sync_data": "Sync data",
     "status_not_migrated": "Not migrated",
-    "status_migrating": "Migration started",
+    "status_migrating": "Migration initialized. Click <strong>Sync data</strong> and then <strong>Finish migration</strong> when you are ready",
     "status_syncing": "Syncing data",
     "status_migrated": "Migration completed",
     "connected_description": "Migrate NethServer 7 applications to <strong>{leaderNode}</strong>.",

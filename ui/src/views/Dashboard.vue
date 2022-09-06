@@ -259,7 +259,7 @@
                     v-else-if="app.status == 'migrating'"
                     class="pficon pficon-maintenance status-icon"
                   ></span>
-                  <span>{{ $t("dashboard.status_" + app.status) }}</span>
+                  <span v-html="$t('dashboard.status_' + app.status)"></span>
                 </div>
               </div>
             </div>
@@ -1028,7 +1028,13 @@ export default {
           name: application,
         },
         null,
-        function(success) {},
+        function(success) {
+          cockpit
+            .dbus(null, {
+              bus: "internal",
+            })
+            .call("/packages", "cockpit.Packages", "Reload", []);
+        },
         function(error) {
           console.error(error);
         }
