@@ -22,6 +22,14 @@
 
 . /usr/libexec/nethserver/api/lib/helper_functions
 
+set_migration_status() {
+    app_id=$1
+    status=$2
+    ns8_leader=$(/sbin/e-smith/config getprop ns8 Host)
+    /usr/bin/mkdir -p /var/lib/nethserver/agent/${ns8_leader}
+    echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
+}
+
 # read json from stdin
 data=$(cat /dev/stdin)
 
@@ -33,103 +41,41 @@ if [[ "$virtual_host" == "null" ]]; then
     virtual_host=""
 fi
 
-set_migration_status() {
-    app_id=$1
-    status=$2
-    ns8_leader=$(/sbin/e-smith/config getprop ns8 Host)
-    /usr/bin/mkdir -p /var/lib/nethserver/agent/${ns8_leader}
-    echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
-}
-
-if [[ "$app_id" == "nethserver-nextcloud" ]]; then
-    if [[ "$action" == "start" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app nextcloud
-
-        if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrating"
-    elif [[ "$action" == "sync" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app nextcloud
-
-        if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrating"
-    elif [[ "$action" == "finish" ]]; then
-        set_migration_status $app_id "syncing"
-
-        if [[ ! -z "$virtual_host" ]]; then
-            /sbin/e-smith/config setprop nextcloud VirtualHost $virtual_host
-        fi
-
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app nextcloud
-
-        if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrated"
-    fi
-elif [[ "$app_id" == "account-provider" ]]; then
-    if [[ "$action" == "start" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app ldapproxy
-
-        if [ $? -gt 0 ]; then
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrating"
-
-        # //// TODO implement migrate script and uncomment:
-        # elif [[ "$action" == "finish" ]]; then
-        # set_migration_status $app_id "syncing"
-        # /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app ldapproxy
-        #
-        # if [ $? -gt 0 ]; then
-        #     error "EventFailed" "See /var/log/messages"
-        # fi
-        # fi
-    fi
+app=""
+if [[ "$app_id" == "account-provider" ]]; then
+    app="ldapproxy"
+elif [[ "$app_id" == "nethserver-nextcloud" ]]; then
+    app="nextcloud"
 elif [[ "$app_id" == "nethserver-mattermost" ]]; then
-    if [[ "$action" == "start" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app mattermost
+    app="mattermost"
+fi
 
-        if [ $? -gt 0 ]; then
-            error "EventFailed" "See /var/log/messages"
-        fi
 
+if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
+    set_migration_status $app_id "syncing"
+    /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app "$app"
+
+    if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
-    elif [[ "$action" == "sync" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app mattermost
-
-        if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrating"
-    elif [[ "$action" == "finish" ]]; then
-        set_migration_status $app_id "syncing"
-        /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app mattermost
-
-        if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
-            error "EventFailed" "See /var/log/messages"
-        fi
-
-        set_migration_status $app_id "migrated"
+        error "EventFailed" "See /var/log/messages"
     fi
+
+    set_migration_status $app_id "migrating"
+elif [[ "$action" == "finish" ]]; then
+    set_migration_status $app_id "syncing"
+
+    if [[ "$app_id" == "nethserver-nextcloud" && ! -z "$virtual_host" ]]; then
+        /sbin/e-smith/config setprop nextcloud VirtualHost $virtual_host
+    fi
+
+    /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app "$app"
+
+    if [ $? -gt 0 ]; then
+        set_migration_status $app_id "migrating"
+        error "EventFailed" "See /var/log/messages"
+    fi
+
+    set_migration_status $app_id "migrated"
 fi
 
 success
