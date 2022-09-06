@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exec &>> /var/log/ns8-migration.log
+
 host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
 
 if [ -z "$host" ]; then

@@ -30,16 +30,14 @@ set_migration_status() {
     echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
 }
 
+echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migrate-data","state":"running","step":0,"pid":0,"action":""}'
+
 # read json from stdin
 data=$(cat /dev/stdin)
 
 app_id=$(echo $data | jq -r '.app')
 action=$(echo $data | jq -r '.action')
-
-virtual_host=$(echo $data | jq -r '.virtualHost')
-if [[ "$virtual_host" == "null" ]]; then
-    virtual_host=""
-fi
+migration_config=$(echo $data | jq -r '.migrationConfig')
 
 app=""
 if [[ "$app_id" == "account-provider" ]]; then
@@ -48,34 +46,33 @@ elif [[ "$app_id" == "nethserver-nextcloud" ]]; then
     app="nextcloud"
 elif [[ "$app_id" == "nethserver-mattermost" ]]; then
     app="mattermost"
+else
+    error "ApiFailed" "Unknown app ID $app_id"
 fi
-
 
 if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     set_migration_status $app_id "syncing"
-    /sbin/e-smith/signal-event -j nethserver-ns8-migration-export-app "$app"
 
+    /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
-        error "EventFailed" "See /var/log/messages"
+        error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/export failed"
     fi
 
     set_migration_status $app_id "migrating"
 elif [[ "$action" == "finish" ]]; then
     set_migration_status $app_id "syncing"
 
-    if [[ "$app_id" == "nethserver-nextcloud" && ! -z "$virtual_host" ]]; then
-        /sbin/e-smith/config setprop nextcloud VirtualHost $virtual_host
-    fi
-
-    /sbin/e-smith/signal-event -j nethserver-ns8-migration-migrate-app "$app"
-
+    # if needed, pass additional migration configurations to migrate script (e.g. virtual host for webapps, IP address for AD)
+    echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
-        error "EventFailed" "See /var/log/messages"
+        error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate failed"
     fi
 
     set_migration_status $app_id "migrated"
 fi
 
+echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migrate-data","state":"done","step":0,"pid":0,"action":""}'
+echo '{"pid":0,"status":"success","event":"migrate-data"}'
 success

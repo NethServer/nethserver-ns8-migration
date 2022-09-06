@@ -1,5 +1,7 @@
 #!/bin/bash
 
+exec &>> /var/log/ns8-migration.log
+
 MM_CONF=/var/lib/nethserver/agent/mattermost.json
 
 # If mattermost rsync configuration is not set, install mattermost inside the NS8 cluster

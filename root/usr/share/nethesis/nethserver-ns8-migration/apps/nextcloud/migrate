@@ -1,10 +1,22 @@
 #!/bin/bash
 
-host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+exec &>> /var/log/ns8-migration.log
+
+# read json from stdin
+migration_config=$(cat /dev/stdin)
+if [[ "$migration_config" != "null" ]]; then
+    # read virtual host from migration configuration
+    host=$(echo $migration_config | jq -r '.virtualHost')
+fi
 
 if [ -z "$host" ]; then
-    echo "nextcloud: no VirtualHost defined."
-    exit 1
+    # read virtual host from nextcloud configuration
+    host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+
+    if [ -z "$host" ]; then
+        echo "nextcloud: no VirtualHost defined."
+        exit 1
+    fi
 fi
 
 NC_CONF=/var/lib/nethserver/agent/nextcloud.json

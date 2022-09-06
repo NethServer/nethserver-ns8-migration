@@ -45,23 +45,3 @@ event_services($event, qw(
     wg-quick@wg0 restart
     agent restart
 ));
-
-#
-# nethserver-ns8-migration-export-app event
-#
-
-my $event = 'nethserver-ns8-migration-export-app';
-
-event_actions($event, qw(
-   nethserver-ns8-migration-export-app-action 20
-));
-
-#
-# nethserver-ns8-migration-migrate-app event
-#
-
-my $event = 'nethserver-ns8-migration-migrate-app';
-
-event_actions($event, qw(
-   nethserver-ns8-migration-migrate-app-action 20
-));

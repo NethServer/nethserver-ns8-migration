@@ -614,7 +614,6 @@ export default {
     },
     isStartMigrationModalNeeded(app) {
       return true;
-      // return app.id === "account-provider"; ////
     },
     startMigration(app) {
       this.currentApp = app;
@@ -875,14 +874,19 @@ export default {
       context.loading.migrationUpdate = true;
       app.status = "syncing";
 
-      //// TODO pass extra parameters if needed (virtual host, ip address...)
       const migrationObj = {
         app: app.id,
         action: action,
       };
 
-      if (this.virtualHost) {
-        migrationObj.virtualHost = this.virtualHost;
+      if (action === "finish") {
+        // set migration configurations if needed
+
+        if (app.id === "nethserver-nextcloud" && this.virtualHost) {
+          migrationObj.migrationConfig = {
+            virtualHost: this.virtualHost,
+          };
+        }
       }
 
       nethserver.notifications.success = this.$i18n.t(
