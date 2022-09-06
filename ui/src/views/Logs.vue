@@ -33,7 +33,7 @@
             v-on:change="handleLogs()"
             :disabled="view.follow"
           >
-            <option selected>migration</option>
+            <option selected>/var/log/ns8-migration.log</option>
             <option>/var/log/messages</option>
           </select>
         </div>
@@ -111,7 +111,7 @@ export default {
   data() {
     return {
       view: {
-        path: "migration",
+        path: "/var/log/ns8-migration.log",
         logsLoaded: false,
         logsContent: "",
         follow: false,
@@ -142,10 +142,10 @@ export default {
         {
           action: this.view.follow ? "follow" : "dump",
           lines: this.view.follow ? null : this.view.lines,
-          mode: this.view.path === "migration" ? "systemd" : "file",
+          mode: "file",
           filter: this.view.filter,
           paths: [this.view.path],
-          format_time: this.view.path === "/var/lof/messages" ? true : false
+          format_time: this.view.path === "/var/log/messages" ? true : false
         },
         this.view.follow
           ? function(stream) {
