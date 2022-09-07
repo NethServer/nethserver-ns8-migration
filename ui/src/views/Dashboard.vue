@@ -478,7 +478,14 @@
           </div>
           <form class="form-horizontal">
             <div class="modal-body">
+              <!-- logout not allowed -->
               <div
+                v-if="someAppsHaveFinishedMigration"
+                v-html="$t('dashboard.logout_not_allowed_explanation')"
+              ></div>
+              <!-- logout allowed -->
+              <div
+                v-else
                 v-html="
                   $t('dashboard.logout_explanation', {
                     leaderNode: config.leaderNode,
@@ -487,20 +494,31 @@
               ></div>
             </div>
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-default"
-                @click="hideLogoutModal"
-              >
-                {{ $t("cancel") }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="connectionLogout"
-              >
-                {{ $t("dashboard.logout") }}
-              </button>
+              <template v-if="someAppsHaveFinishedMigration">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="connectionLogout"
+                >
+                  {{ $t("dashboard.logout") }}
+                </button>
+              </template>
             </div>
           </form>
         </div>
@@ -570,6 +588,9 @@ export default {
         return this.accountProviderApp.status === "migrating";
       }
       return false;
+    },
+    someAppsHaveFinishedMigration() {
+      return this.apps.some((app) => app.status === "migrated");
     },
   },
   watch: {

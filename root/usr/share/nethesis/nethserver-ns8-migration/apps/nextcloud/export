@@ -1,7 +1,5 @@
 #!/bin/bash
 
-exec &>> /var/log/ns8-migration.log
-
 NC_CONF=/var/lib/nethserver/agent/nextcloud.json
 
 # If nexcloud rsync configuration is not set, install nextcloud inside the NS8 cluster

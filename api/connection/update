@@ -59,9 +59,7 @@ elif [[ "$action" == "logout" ]]; then
     /sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled
     /sbin/e-smith/config setprop agent status disabled
     /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey ""
-
-    rm -f /var/lib/nethserver/agent/agent.env
-    rm -f /var/lib/nethserver/agent/environment
+    rm -rf /var/lib/nethserver/agent/*
 
     # signal event
 

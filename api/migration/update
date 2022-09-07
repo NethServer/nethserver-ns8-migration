@@ -25,9 +25,7 @@
 set_migration_status() {
     app_id=$1
     status=$2
-    ns8_leader=$(/sbin/e-smith/config getprop ns8 Host)
-    /usr/bin/mkdir -p /var/lib/nethserver/agent/${ns8_leader}
-    echo $status >/var/lib/nethserver/agent/${ns8_leader}/${app_id}_ns8_migration
+    echo "{ \"status\": \"$status\" }" >/var/lib/nethserver/agent/${app_id}_ns8_migration
 }
 
 echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migrate-data","state":"running","step":0,"pid":0,"action":""}'
@@ -53,7 +51,7 @@ fi
 if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     set_migration_status $app_id "syncing"
 
-    /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export
+    /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export >> /var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/export failed"
@@ -64,7 +62,7 @@ elif [[ "$action" == "finish" ]]; then
     set_migration_status $app_id "syncing"
 
     # if needed, pass additional migration configurations to migrate script (e.g. virtual host for webapps, IP address for AD)
-    echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate
+    echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate >> /var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate failed"

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-exec &>> /var/log/ns8-migration.log
-
 # read json from stdin
 migration_config=$(cat /dev/stdin)
 if [[ "$migration_config" != "null" ]]; then

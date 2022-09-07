@@ -1,7 +1,5 @@
 #!/bin/bash
 
-exec &>> /var/log/ns8-migration.log
-
 # Translate host name to IP address: it's more likely NS8 cluster will be able to connect to it
 host=$(dig +short $(perl -MNethServer::SSSD -e 'print NethServer::SSSD->new()->host;'))
 port=$(perl -MNethServer::SSSD -e 'print NethServer::SSSD->new()->port;')
