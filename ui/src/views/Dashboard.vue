@@ -928,8 +928,12 @@ export default {
           context.migrationRead();
 
           if (action === "finish" && app.id !== "account-provider") {
-            // uninstall app
-            context.getPackagesToRemove(app);
+            // refresh Cockpit shortcuts after app uninstallation
+            cockpit
+              .dbus(null, {
+                bus: "internal",
+              })
+              .call("/packages", "cockpit.Packages", "Reload", []);
           }
         },
         function(error) {
@@ -982,104 +986,6 @@ export default {
     },
     hideLogoutModal() {
       this.isShownLogoutModal = false;
-    },
-    getPackagesToRemove(app) {
-      var context = this;
-      nethserver.exec(
-        ["system-packages/read"],
-        {
-          action: "list-removed",
-          packages: [app.id],
-        },
-        null,
-        function(success) {
-          try {
-            success = JSON.parse(success);
-          } catch (e) {
-            console.error(e);
-          }
-          app.listRemove = success.packages;
-          context.removeApp(app);
-        },
-        function(error) {
-          const errorMessage = context.$i18n.t(
-            "dashboard.error_listing_packages_to_remove"
-          );
-          console.error(errorMessage, error);
-          context.error.listPackagesToRemove = errorMessage;
-        }
-      );
-    },
-    removeApp(app) {
-      var context = this;
-
-      // notification
-      nethserver.notifications.success = this.$i18n.t("applications.remove_ok");
-      nethserver.notifications.error = this.$i18n.t(
-        "applications.remove_error"
-      );
-
-      nethserver.exec(
-        ["system-packages/update"],
-        {
-          action: "remove",
-          packages: app.listRemove,
-        },
-        function(stream) {
-          console.info("packages-remove", stream);
-        },
-        function(success) {
-          app.listRemove.forEach((Pin) => {
-            context.removePin(Pin);
-          });
-          app.listRemove.forEach((Shortcut) => {
-            context.removeShortcut(Shortcut);
-          });
-        },
-        function(error) {
-          const errorMessage = context.$i18n.t("dashboard.error_removing_app");
-          console.error(errorMessage, error);
-          context.error.removePackages = errorMessage;
-        }
-      );
-    },
-    removeShortcut(application) {
-      var context = this;
-
-      nethserver.exec(
-        ["system-apps/update"],
-        {
-          action: "remove-shortcut",
-          name: application,
-        },
-        null,
-        function(success) {
-          cockpit
-            .dbus(null, {
-              bus: "internal",
-            })
-            .call("/packages", "cockpit.Packages", "Reload", []);
-        },
-        function(error) {
-          console.error(error);
-        }
-      );
-    },
-    removePin(application) {
-      var context = this;
-
-      nethserver.exec(
-        ["system-apps/update"],
-        {
-          action: "remove-pin",
-          name: application,
-        },
-        null,
-        function(success) {},
-        function(error) {
-          console.error(error);
-        }
-      );
     },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;

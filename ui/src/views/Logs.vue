@@ -78,8 +78,6 @@
 </template>
 
 <script>
-//// TODO delete file?
-
 export default {
   name: "Logs",
   mounted() {

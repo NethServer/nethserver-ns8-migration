@@ -50,7 +50,7 @@ const router = new Router({
   routes: [
     { path: "/", redirect: "/dashboard" },
     { path: "/dashboard", component: Dashboard },
-    { path: "/logs", component: Logs }, //// TODO remove?
+    { path: "/logs", component: Logs },
     { path: "/about", name: "about", component: About },
     { path: "*", redirect: "/" },
   ],
