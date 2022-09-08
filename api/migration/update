@@ -50,23 +50,23 @@ else
 fi
 
 if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
-    set_migration_status $app_id "syncing"
+    set_migration_status "$app_id" "syncing"
 
     /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
-        set_migration_status $app_id "migrating"
+        set_migration_status "$app_id" "migrating"
         echo '{"pid":0,"status":"failed","event":"migrate-data"}'
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/export failed"
     fi
 
-    set_migration_status $app_id "migrating"
+    set_migration_status "$app_id" "migrating"
 elif [[ "$action" == "finish" ]]; then
-    set_migration_status $app_id "syncing"
+    set_migration_status "$app_id" "syncing"
 
     # if needed, pass additional migration configurations to migrate script (e.g. virtual host for webapps, IP address for AD)
     echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
-        set_migration_status $app_id "migrating"
+        set_migration_status "$app_id" "migrating"
         echo '{"pid":0,"status":"failed","event":"migrate-data"}'
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate failed"
     fi
@@ -78,7 +78,7 @@ elif [[ "$action" == "finish" ]]; then
 
         echo "{\"action\": \"remove\", \"packages\": $packages}" | /usr/libexec/nethserver/api/system-packages/update
         if [ $? -gt 0 ]; then
-            set_migration_status $app_id "migrating"
+            set_migration_status "$app_id" "migrating"
             echo '{"pid":0,"status":"failed","event":"migrate-data"}'
             error "ApiFailed" "/usr/libexec/nethserver/api/system-packages/update failed"
         fi
@@ -95,7 +95,7 @@ elif [[ "$action" == "finish" ]]; then
 
     fi
 
-    set_migration_status $app_id "migrated"
+    set_migration_status "$app_id" "migrated"
 fi
 
 echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migrate-data","state":"done","step":0,"pid":0,"action":""}'

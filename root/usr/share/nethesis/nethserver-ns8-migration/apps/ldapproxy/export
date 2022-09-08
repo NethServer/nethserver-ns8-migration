@@ -15,8 +15,6 @@ if [ "$provider" == "ad" ]; then
 else
     schema="rfc2307"
 fi
-tls="true"
-tls_verify="false"
 
 # Add route to nsdc
 if [[ "$schema" == "ad" && "$islocal" == "1" ]]; then
