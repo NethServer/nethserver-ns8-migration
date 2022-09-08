@@ -45,6 +45,7 @@ elif [[ "$app_id" == "nethserver-nextcloud" ]]; then
 elif [[ "$app_id" == "nethserver-mattermost" ]]; then
     app="mattermost"
 else
+    echo '{"pid":0,"status":"failed","event":"migrate-data"}'
     error "ApiFailed" "Unknown app ID $app_id"
 fi
 
@@ -54,6 +55,7 @@ if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
+        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/export failed"
     fi
 
@@ -65,6 +67,7 @@ elif [[ "$action" == "finish" ]]; then
     echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status $app_id "migrating"
+        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
         error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate failed"
     fi
 
@@ -76,6 +79,7 @@ elif [[ "$action" == "finish" ]]; then
         echo "{\"action\": \"remove\", \"packages\": $packages}" | /usr/libexec/nethserver/api/system-packages/update
         if [ $? -gt 0 ]; then
             set_migration_status $app_id "migrating"
+            echo '{"pid":0,"status":"failed","event":"migrate-data"}'
             error "ApiFailed" "/usr/libexec/nethserver/api/system-packages/update failed"
         fi
 
