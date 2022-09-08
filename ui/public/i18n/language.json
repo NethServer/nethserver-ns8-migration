@@ -1,33 +1,88 @@
 {
-    "settings": {
-        "title": "Settings"
-    },
-    "about": {
-        "title": "About",
-        "website": "Web site",
-        "bug_tracker": "Bug tracker"
-    },
-    "logs": {
-        "title": "Logs",
-        "follow": "Follow",
-        "stop_follow": "Stop",
-        "start_follow_button": "Follow",
-        "stop_follow_button": "Stop following",
-        "filter_label": "Regexp filter"
-    },
-    "dashboard":{
-        "title": "NS8 migration",
-        "app": "NS8 migration"
-    },
-    "docs": {
-    },
-    "are_you_sure": "Are you sure",
-    "save": "Save",
-    "cancel": "Cancel",
-    "next": "Next",
-    "prev": "Previous",
-    "of": "of",
-    "rows_per_page": "Row per page",
-    "search": "Search",
-    "all": "All"
+  "settings": {
+    "title": "Settings"
+  },
+  "about": {
+    "title": "About",
+    "website": "Web site",
+    "bug_tracker": "Bug tracker"
+  },
+  "logs": {
+    "title": "Logs",
+    "follow": "Follow",
+    "stop_follow": "Stop",
+    "start_follow_button": "Follow",
+    "stop_follow_button": "Stop following",
+    "filter_label": "Regexp filter"
+  },
+  "dashboard": {
+    "title": "NS8 migration",
+    "app": "NS8 migration",
+    "connect_to_ns8_cluster": "Connect to NethServer 8 cluster",
+    "connect_description": "Enter the following information to start migrating applications to an existing NethServer 8 cluster",
+    "leader_node": "NS8 leader node",
+    "admin_username": "NS8 admin username",
+    "admin_password": "NS8 admin password",
+    "tls_verify": "TLS validation",
+    "connect": "Connect",
+    "start_migration": "Start migration",
+    "finish_migration": "Finish migration",
+    "sync_data": "Sync data",
+    "status_not_migrated": "Not migrated",
+    "status_migrating": "Migration initialized. Click <strong>Sync data</strong> and then <strong>Finish migration</strong> when you are ready",
+    "status_syncing": "Syncing data",
+    "status_migrated": "Migration completed",
+    "connected_description": "Migrate NethServer 7 applications to <strong>{leaderNode}</strong>.",
+    "connect_to_different_cluster": "Connect to a different cluster",
+    "error_retrieving_connection_data": "Error retrieving connection data",
+    "error_retrieving_migration_data": "Error retrieving migration data",
+    "connection_successful": "Connected to NS8 cluster",
+    "connection_failed": "Connection failed",
+    "synchronization_successful": "Synchronization successful",
+    "synchronization_failed": "Synchronization failed",
+    "error_retrieving_apps": "Error retrieving applications",
+    "nextcloud_virtual_host": "Nextcloud virtual host",
+    "virtual_host_explanation": "Nextcloud needs to be configured on a virtual host to work properly on NethServer 8",
+    "account_provider_migration_in_progress": "Account provider migration in progress",
+    "account_provider_migration_in_progress_description": "NS8 apps are currently using NS7 account provider",
+    "start_account_provider_migration_explanation": "<strong>{leaderNode}</strong> is going to be connected to NethServer 7 account provider. NS8 apps will start using NS7 account provider",
+    "ad_ip_address_explanation": "Select an IP address to configure Active Directory",
+    "ad_ip_address": "Active Directory IP address",
+    "logout_successful": "Disconnected from NS8 cluster",
+    "logout_failed": "Logout failed",
+    "logout": "Logout",
+    "logout_from_ns8_cluster": "Logout from NS8 cluster",
+    "logout_explanation": "Do you really want to logout from <strong>{leaderNode}</strong>? You'll have to start over migration process",
+    "finish_account_provider_migration_explanation": "Migration will be finalized and NethServer 7 account provider will be connected to NethServer 8. You won't be able to logout and change NS8 cluster",
+    "finish_app_migration_explanation": "Migration will be finalized and <strong>{appName} will be uninstalled</strong> from NethServer 7. From now on, you won't be able to logout and change NS8 cluster",
+    "local_ldap": "Local LDAP",
+    "remote_ldap": "Remote LDAP",
+    "local_ad": "Local Active Directory",
+    "remote_ad": "Remote Active Directory",
+    "error_logging_out": "Error logging out",
+    "error_connecting_to_ns8": "Error connecting to NS8",
+    "error_migrating_data": "Error migrating data",
+    "error_listing_packages_to_remove": "Error listing packages to remove",
+    "error_removing_app": "Error removing app",
+    "error_retrieving_account_provider_info": "Error retrieving account provider info",
+    "app_will_be_migrated": "<strong>{appName}</strong> will be migrated to NethServer 8 cluster <strong>{leaderNode}</strong>",
+    "logout_not_allowed_explanation": "Cannot logout and connect to a different NS8 cluster: some apps have already been migrated"
+  },
+  "validation": {
+    "leader_node_empty": "Leader node is required",
+    "admin_username_empty": "Admin username is required",
+    "admin_password_empty": "Admin password is required",
+    "virtual_host_empty": "Virtual host is required",
+    "ad_ip_address_empty": "Active Directory IP address is required"
+  },
+  "docs": {},
+  "are_you_sure": "Are you sure",
+  "save": "Save",
+  "cancel": "Cancel",
+  "next": "Next",
+  "prev": "Previous",
+  "of": "of",
+  "rows_per_page": "Row per page",
+  "search": "Search",
+  "all": "All"
 }

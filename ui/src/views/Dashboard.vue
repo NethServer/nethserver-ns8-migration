@@ -1,64 +1,1073 @@
 <template>
   <div>
-    <h2>{{$t('dashboard.title')}}</h2>
-      <!-- error message -->
-      <div v-if="errorMessage" class="alert alert-danger alert-dismissable">
-        <button type="button" class="close" @click="closeErrorMessage()" aria-label="Close">
-          <span class="pficon pficon-close"></span>
-        </button>
-        <span class="pficon pficon-error-circle-o"></span>
-        {{ errorMessage }}.
-      </div>
+    <h2>{{ $t("dashboard.title") }}</h2>
+    <div v-if="error.listApplications" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.listApplications }}
+    </div>
+    <div v-if="error.connectionRead" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.connectionRead }}
+    </div>
+    <div v-if="error.connectionUpdate" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.connectionUpdate }}
+    </div>
+    <div v-if="error.migrationRead" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.migrationRead }}
+    </div>
+    <div v-if="error.migrationUpdate" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.migrationUpdate }}
+    </div>
+    <div v-if="error.listPackagesToRemove" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.listPackagesToRemove }}
+    </div>
+    <div v-if="error.removePackages" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.removePackages }}
+    </div>
+    <div v-if="error.getAccountProviderInfo" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.getAccountProviderInfo }}
+    </div>
+    <div
+      v-if="
+        loading.listApplications ||
+          loading.connectionRead ||
+          loading.migrationRead ||
+          loading.accountProviderInfo
+      "
+      class="spinner spinner-lg"
+    ></div>
+    <div v-else>
+      <template v-if="!config.isConnected">
+        <!-- connect form -->
+        <h3 class="connect-title">
+          {{ $t("dashboard.connect_to_ns8_cluster") }}
+        </h3>
+        <div class="page-description">
+          {{ $t("dashboard.connect_description") }}
+        </div>
+        <form class="form-horizontal" v-on:submit.prevent="connectionValidate">
+          <!-- leader node -->
+          <div :class="['form-group', { 'has-error': error.leaderNode }]">
+            <label class="col-sm-2 control-label" for="leader-node">{{
+              $t("dashboard.leader_node")
+            }}</label>
+            <div class="col-sm-5">
+              <input
+                type="text"
+                v-model="config.leaderNode"
+                id="leader-node"
+                ref="leaderNode"
+                class="form-control"
+              />
+              <span v-if="error.leaderNode" class="help-block">{{
+                $t("validation.leader_node_" + error.leaderNode)
+              }}</span>
+            </div>
+          </div>
+          <!-- admin username -->
+          <div :class="['form-group', { 'has-error': error.adminUsername }]">
+            <label class="col-sm-2 control-label" for="admin-username">{{
+              $t("dashboard.admin_username")
+            }}</label>
+            <div class="col-sm-5">
+              <input
+                type="text"
+                v-model="config.adminUsername"
+                id="admin-username"
+                ref="adminUsername"
+                class="form-control"
+              />
+              <span v-if="error.adminUsername" class="help-block">{{
+                $t("validation.admin_username_" + error.adminUsername)
+              }}</span>
+            </div>
+          </div>
+          <!-- admin password -->
+          <div :class="['form-group', { 'has-error': error.adminPassword }]">
+            <label class="col-sm-2 control-label" for="admin-password">{{
+              $t("dashboard.admin_password")
+            }}</label>
+            <div class="col-sm-5">
+              <input
+                :type="isPasswordVisible ? 'text' : 'password'"
+                v-model="config.adminPassword"
+                id="admin-password"
+                ref="adminPassword"
+                class="form-control"
+              />
+              <span v-if="error.adminPassword" class="help-block">{{
+                $t("validation.admin_password_" + error.adminPassword)
+              }}</span>
+            </div>
+            <div class="col-sm-1">
+              <button
+                tabindex="-1"
+                @click="togglePassword"
+                type="button"
+                class="btn btn-primary adjust-top-min"
+              >
+                <span
+                  :class="[
+                    !isPasswordVisible ? 'fa fa-eye' : 'fa fa-eye-slash',
+                  ]"
+                ></span>
+              </button>
+            </div>
+          </div>
+          <!-- tls verify -->
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="tls-verify">{{
+              $t("dashboard.tls_verify")
+            }}</label>
+            <div class="col-sm-2">
+              <input
+                type="checkbox"
+                v-model="config.tlsVerify"
+                id="tls-verify"
+                class="form-control"
+              />
+            </div>
+          </div>
+          <!-- connect button -->
+          <div class="form-group">
+            <label class="col-sm-2 control-label">
+              <div
+                v-if="loading.connectionUpdate"
+                class="spinner spinner-sm form-spinner-loader adjust-top-loader"
+              ></div>
+            </label>
+            <div class="col-sm-5">
+              <button
+                class="btn btn-primary"
+                type="button"
+                :disabled="loading.connectionUpdate"
+                @click="connectionValidate"
+              >
+                {{ $t("dashboard.connect") }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </template>
+      <template v-else>
+        <!-- connected to ns8 cluster -->
+        <div class="page-description">
+          <span
+            v-html="
+              $t('dashboard.connected_description', {
+                leaderNode: config.leaderNode,
+              })
+            "
+          ></span>
+          <span>
+            <a class="disconnect-link" @click="showLogoutModal"
+              >{{ $t("dashboard.connect_to_different_cluster") }}
+            </a>
+          </span>
+        </div>
 
-      <div v-show="!uiLoaded" class="spinner spinner-lg"></div>
-      <div v-show="uiLoaded">
-      NS7 2 NS8
+        <div
+          v-if="accountProviderMigrationStarted"
+          class="alert alert-info alert-dismissable"
+        >
+          <span class="pficon pficon-info"></span>
+          <strong
+            >{{
+              $t("dashboard.account_provider_migration_in_progress")
+            }}:</strong
+          >
+          {{
+            $t("dashboard.account_provider_migration_in_progress_description")
+          }}
+        </div>
+        <div id="pf-list-default" class="list-group list-view-pf app-list">
+          <div v-for="app in apps" :key="app.id" class="list-group-item">
+            <div class="list-view-pf-actions migration-buttons">
+              <button
+                v-if="app.status == 'not_migrated'"
+                @click="startMigration(app)"
+                :disabled="loading.migrationUpdate"
+                class="btn btn-default"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+              <template
+                v-else-if="app.status == 'migrating' || app.status == 'syncing'"
+              >
+                <button
+                  v-if="app.id != 'account-provider'"
+                  @click="syncData(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  class="btn btn-primary"
+                >
+                  {{ $t("dashboard.sync_data") }}
+                </button>
+                <button
+                  @click="finishMigration(app)"
+                  :disabled="
+                    loading.migrationUpdate ||
+                      app.status == 'syncing' ||
+                      app.id === 'account-provider'
+                  "
+                  class="btn btn-default"
+                >
+                  {{ $t("dashboard.finish_migration") }}
+                </button>
+              </template>
+              <button
+                v-else-if="app.status == 'migrated'"
+                disabled
+                class="btn btn-default"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+            </div>
+            <div class="list-view-pf-main-info">
+              <div class="list-view-pf-left">
+                <img
+                  v-if="app.id === 'account-provider'"
+                  class="apps-icon"
+                  src="logo.png"
+                />
+                <img
+                  v-else
+                  class="apps-icon"
+                  :src="'../' + app.id + '/' + (app.icon || 'logo.png')"
+                  @error="$event.target.src = 'logo.png'"
+                />
+              </div>
+              <div class="list-view-pf-body">
+                <div class="list-group-item-heading">
+                  <span>{{ app.name }}</span>
+                </div>
+                <div class="list-group-item-text">
+                  <div
+                    v-if="app.status == 'syncing'"
+                    class="spinner spinner-sm form-spinner-loader"
+                  ></div>
+                  <span
+                    v-else-if="app.status == 'migrated'"
+                    class="pficon pficon-ok status-icon"
+                  ></span>
+                  <span
+                    v-else-if="app.status == 'migrating'"
+                    class="pficon pficon-maintenance status-icon"
+                  ></span>
+                  <span v-html="$t('dashboard.status_' + app.status)"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+    <!-- start migration modal -->
+    <div
+      class="modal"
+      id="start-migration-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.start_migration") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <template v-if="currentApp">
+                <template v-if="currentApp.id === 'account-provider'">
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
+                      $t(
+                        'dashboard.start_account_provider_migration_explanation',
+                        { leaderNode: config.leaderNode }
+                      )
+                    "
+                  ></div>
+                </template>
+                <template v-else>
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
+                      $t('dashboard.app_will_be_migrated', {
+                        appName: currentApp.name,
+                        leaderNode: config.leaderNode,
+                      })
+                    "
+                  ></div>
+                </template>
+              </template>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideStartMigrationModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                @click="startMigrationFromModal"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
+    </div>
+    <!-- finish migration modal -->
+    <div
+      class="modal"
+      id="finish-migration-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.finish_migration") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <template v-if="currentApp">
+                <template v-if="currentApp.id === 'account-provider'">
+                  <template v-if="currentApp.provider === 'ad'">
+                    <!-- choose an IP address for AD -->
+                    <div class="mg-bottom-20">
+                      {{ $t("dashboard.ad_ip_address_explanation") }}
+                    </div>
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.adIpAddress },
+                      ]"
+                    >
+                      <label class="col-sm-4 control-label" for="ad-ip-address">
+                        {{ $t("dashboard.ad_ip_address") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="adIpAddress"
+                          class="combobox form-control"
+                          id="ad-ip-address"
+                        >
+                          <option
+                            v-for="(ip, i) in adIpAddresses"
+                            v-bind:key="i"
+                            :value="ip"
+                          >
+                            {{ ip }}
+                          </option>
+                        </select>
+                        <span v-if="error.adIpAddress" class="help-block">{{
+                          error.adIpAddress
+                        }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <!-- LDAP -->
+                    <div
+                      class="mg-bottom-20"
+                      v-html="
+                        $t(
+                          'dashboard.finish_account_provider_migration_explanation'
+                        )
+                      "
+                    ></div>
+                  </template>
+                </template>
+                <template v-else>
+                  <!-- app will be uninstalled -->
+                  <div
+                    class="mg-bottom-20"
+                    v-html="
+                      $t('dashboard.finish_app_migration_explanation', {
+                        appName: currentApp.name,
+                      })
+                    "
+                  ></div>
+                  <template
+                    v-if="
+                      currentApp.id === 'nethserver-nextcloud' &&
+                        !nextcloudApp.config.props.VirtualHost
+                    "
+                  >
+                    <!-- choose a virtual host for Nextcloud -->
+                    <div class="mg-bottom-20">
+                      <span
+                        >{{ $t("dashboard.virtual_host_explanation") }}
+                      </span>
+                    </div>
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.virtualHost },
+                      ]"
+                    >
+                      <label class="col-sm-4 control-label" for="virtual-host">
+                        {{ $t("dashboard.nextcloud_virtual_host") }}
+                      </label>
+                      <div class="col-sm-7">
+                        <input
+                          v-model.trim="virtualHost"
+                          id="virtual-host"
+                          ref="virtualHost"
+                          class="form-control"
+                        />
+                        <span v-if="error.virtualHost" class="help-block">{{
+                          error.virtualHost
+                        }}</span>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+              </template>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideFinishMigrationModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                @click="finishMigrationFromModal"
+              >
+                {{ $t("dashboard.finish_migration") }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- logout modal -->
+    <div
+      class="modal"
+      id="logout-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.logout_from_ns8_cluster") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <!-- logout not allowed -->
+              <div
+                v-if="someAppsHaveFinishedMigration"
+                v-html="$t('dashboard.logout_not_allowed_explanation')"
+              ></div>
+              <!-- logout allowed -->
+              <div
+                v-else
+                v-html="
+                  $t('dashboard.logout_explanation', {
+                    leaderNode: config.leaderNode,
+                  })
+                "
+              ></div>
+            </div>
+            <div class="modal-footer">
+              <template v-if="someAppsHaveFinishedMigration">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="connectionLogout"
+                >
+                  {{ $t("dashboard.logout") }}
+                </button>
+              </template>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: "Dashboard",
-  props: {
-  },
-  mounted() {
-    this.readDashboardData()
-  },
+  props: {},
   data() {
     return {
-      uiLoaded: false,
-      errorMessage: null,
-      dashboardData: {}
+      isPasswordVisible: false,
+      config: {
+        isConnected: false,
+        tlsVerify: false,
+        leaderNode: "",
+        adminUsername: "",
+        adminPassword: "",
+      },
+      installedApps: [],
+      apps: [],
+      currentApp: null,
+      virtualHost: "",
+      isShownStartMigrationModal: false,
+      isShownFinishMigrationModal: false,
+      isShownLogoutModal: false,
+      adIpAddress: "",
+      adIpAddresses: [],
+      accountProviderConfig: null,
+      loading: {
+        connectionRead: false,
+        connectionUpdate: false,
+        migrationRead: false,
+        migrationUpdate: false,
+        listApplications: false,
+        accountProviderInfo: false,
+      },
+      error: {
+        connectionRead: "",
+        connectionUpdate: "",
+        migrationRead: "",
+        migrationUpdate: "",
+        leaderNode: "",
+        adminUsername: "",
+        adminPassword: "",
+        listApplications: "",
+        accountProviderInfo: "",
+        virtualHost: "",
+        adIpAddress: "",
+        listPackagesToRemove: "",
+        removePackages: "",
+      },
     };
   },
+  computed: {
+    accountProviderApp() {
+      return this.apps.find((app) => app.id === "account-provider");
+    },
+    nextcloudApp() {
+      return this.apps.find((app) => app.id === "nethserver-nextcloud");
+    },
+    accountProviderMigrationStarted() {
+      if (this.accountProviderApp) {
+        return this.accountProviderApp.status === "migrating";
+      }
+      return false;
+    },
+    someAppsHaveFinishedMigration() {
+      return this.apps.some((app) => app.status === "migrated");
+    },
+  },
+  watch: {
+    isShownStartMigrationModal: function() {
+      if (this.isShownStartMigrationModal) {
+        $("#start-migration-modal").modal("show");
+
+        this.$nextTick(() => {
+          if (this.$refs.virtualHost) {
+            this.$refs.virtualHost.focus();
+          }
+        });
+      } else {
+        $("#start-migration-modal").modal("hide");
+      }
+    },
+    isShownFinishMigrationModal: function() {
+      if (this.isShownFinishMigrationModal) {
+        this.error.virtualHost = "";
+        this.error.adIpAddress = "";
+        this.virtualHost = "";
+        this.adIpAddress = "";
+        $("#finish-migration-modal").modal("show");
+      } else {
+        $("#finish-migration-modal").modal("hide");
+      }
+    },
+    isShownLogoutModal: function() {
+      if (this.isShownLogoutModal) {
+        $("#logout-modal").modal("show");
+      } else {
+        $("#logout-modal").modal("hide");
+      }
+    },
+  },
+  mounted() {
+    this.connectionRead();
+  },
   methods: {
-    readDashboardData() {
-      var ctx = this;
+    togglePassword() {
+      this.isPasswordVisible = !this.isPasswordVisible;
+    },
+    isStartMigrationModalNeeded(app) {
+      return true;
+    },
+    startMigration(app) {
+      this.currentApp = app;
+
+      if (this.isStartMigrationModalNeeded(app)) {
+        this.isShownStartMigrationModal = true;
+      } else {
+        this.migrationUpdate(app, "start");
+      }
+    },
+    validateStartMigrationFromModal() {
+      let isValidationOk = true;
+      return isValidationOk;
+    },
+    startMigrationFromModal() {
+      const isValidationOk = this.validateStartMigrationFromModal();
+      if (!isValidationOk) {
+        return;
+      }
+      this.migrationUpdate(this.currentApp, "start");
+      this.hideStartMigrationModal();
+    },
+    validateFinishMigrationFromModal() {
+      let isValidationOk = true;
+
+      if (
+        this.currentApp.id === "nethserver-nextcloud" &&
+        !this.nextcloudApp.config.props.VirtualHost
+      ) {
+        this.error.virtualHost = "";
+
+        if (!this.virtualHost) {
+          this.error.virtualHost = this.$t("validation.virtual_host_empty");
+          this.$refs.virtualHost.focus();
+          isValidationOk = false;
+        }
+      }
+
+      if (
+        this.currentApp.id === "account-provider" &&
+        this.currentApp.provider === "ad"
+      ) {
+        this.error.adIpAddress = "";
+
+        if (!this.adIpAddress) {
+          this.error.adIpAddress = this.$t("validation.ad_ip_address_empty");
+          isValidationOk = false;
+        }
+      }
+      return isValidationOk;
+    },
+    finishMigrationFromModal() {
+      const isValidationOk = this.validateFinishMigrationFromModal();
+      if (!isValidationOk) {
+        return;
+      }
+      this.migrationUpdate(this.currentApp, "finish");
+      this.hideFinishMigrationModal();
+    },
+    finishMigration(app) {
+      this.currentApp = app;
+      this.isShownFinishMigrationModal = true;
+    },
+    syncData(app) {
+      this.migrationUpdate(app, "sync");
+    },
+    connectionLogout() {
+      this.loading.connectionUpdate = true;
+
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.logout_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t("dashboard.logout_failed");
+      const context = this;
       nethserver.exec(
-        ["nethserver-ns8-migration/dashboard/read"],
-        { "appInfo": "dashboardData" },
-        null,
+        ["nethserver-ns8-migration/connection/update"],
+        { action: "logout" },
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
         function(success) {
-          var dashboardOutput = JSON.parse(success);
-          ctx.readDashboardDataSuccess(dashboardOutput)
+          context.loading.connectionUpdate = false;
+          context.connectionRead();
         },
         function(error) {
-          ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_retrieving_dashboard_data"), error)
+          const errorMessage = context.$i18n.t("dashboard.error_logging_out");
+          console.error(errorMessage, error);
+          context.error.connectionUpdate = errorMessage;
+          context.loading.connectionUpdate = false;
+        }
+      );
+      this.hideLogoutModal();
+    },
+    connectionRead() {
+      const context = this;
+      context.loading.connectionRead = true;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/read"],
+        {},
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.connectionReadSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_connection_data"
+          );
+          console.error(errorMessage, error);
+          context.error.connectionRead = errorMessage;
+          context.loading.connectionRead = false;
         }
       );
     },
-    readDashboardDataSuccess(dashboardOutput) {
-      this.dashboardData = dashboardOutput.dashboardData
-      this.uiLoaded = true
+    connectionReadSuccess(output) {
+      const agentStatus = output.configuration.agent.props.status;
+      this.config.isConnected = agentStatus == "enabled";
+      const ns8Config = output.configuration.ns8.props;
+      this.config.leaderNode = ns8Config.Host;
+      this.config.adminUsername = ns8Config.User;
+      this.config.adminPassword = ns8Config.Password;
+      this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
+      this.loading.connectionRead = false;
+
+      if (this.config.isConnected) {
+        this.getAccountProviderInfo();
+      } else {
+        this.$nextTick(() => {
+          this.$refs.leaderNode.focus();
+        });
+      }
     },
-    showErrorMessage(errorMessage, error) {
-      console.error(errorMessage, error) /* eslint-disable-line no-console */
-      this.errorMessage = errorMessage
+    connectionValidate() {
+      this.error.leaderNode = "";
+      this.error.adminUsername = "";
+      this.error.adminPassword = "";
+      this.error.leaderNode = "";
+      this.loading.connectionUpdate = true;
+
+      var validateObj = {
+        action: "login",
+        Host: this.config.leaderNode,
+        User: this.config.adminUsername,
+        Password: this.config.adminPassword,
+        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled",
+      };
+
+      const context = this;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/validate"],
+        validateObj,
+        null,
+        function(success) {
+          try {
+            success = JSON.parse(success);
+          } catch (e) {
+            console.error(e);
+          }
+          context.connectionValidateSuccess(validateObj);
+        },
+        function(error, data) {
+          context.connectionValidateError(error, data);
+        }
+      );
     },
-    closeErrorMessage() {
-      this.errorMessage = null
+    connectionValidateError(error, data) {
+      this.loading.connectionUpdate = false;
+      const errorData = JSON.parse(data);
+
+      for (const e in errorData.attributes) {
+        const attr = errorData.attributes[e];
+        const param = attr.parameter;
+
+        if (param === "Host") {
+          this.error.leaderNode = attr.error;
+          this.$refs.leaderNode.focus();
+        } else if (param === "User") {
+          this.error.adminUsername = attr.error;
+          this.$refs.adminUsername.focus();
+        } else if (param === "Password") {
+          this.error.adminPassword = attr.error;
+          this.$refs.adminPassword.focus();
+        }
+      }
     },
-  }
+    connectionValidateSuccess(validateObj) {
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.connection_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t(
+        "dashboard.connection_failed"
+      );
+      const context = this;
+      nethserver.exec(
+        ["nethserver-ns8-migration/connection/update"],
+        validateObj,
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
+        function(success) {
+          context.loading.connectionUpdate = false;
+          context.connectionRead();
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_connecting_to_ns8"
+          );
+          console.error(errorMessage, error);
+          context.error.connectionUpdate = errorMessage;
+          context.loading.connectionUpdate = false;
+        }
+      );
+    },
+    migrationRead() {
+      const context = this;
+      context.loading.migrationRead = true;
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/read"],
+        {},
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.migrationReadSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_migration_data"
+          );
+          console.error(errorMessage, error);
+          context.error.migrationRead = errorMessage;
+          context.loading.migrationRead = false;
+        }
+      );
+    },
+    migrationReadSuccess(output) {
+      const apps = output.migration.filter(
+        (app) =>
+          this.installedApps.includes(app.id) ||
+          (app.id === "account-provider" &&
+            this.accountProviderConfig.type !== "none") ||
+          app.status !== "not_migrated"
+      );
+
+      const accountProviderApp = apps.find(
+        (app) => app.id === "account-provider"
+      );
+
+      if (accountProviderApp) {
+        const type = this.accountProviderConfig.type;
+        const location = this.accountProviderConfig.location;
+        accountProviderApp.name = this.$t(`dashboard.${location}_${type}`);
+      }
+      this.apps = apps;
+      this.loading.migrationRead = false;
+    },
+    migrationUpdate(app, action) {
+      const context = this;
+      context.loading.migrationUpdate = true;
+      app.status = "syncing";
+
+      const migrationObj = {
+        app: app.id,
+        action: action,
+      };
+
+      if (action === "finish") {
+        // set migration configurations if needed
+
+        if (app.id === "nethserver-nextcloud" && this.virtualHost) {
+          migrationObj.migrationConfig = {
+            virtualHost: this.virtualHost,
+          };
+        }
+      }
+
+      nethserver.notifications.success = this.$i18n.t(
+        "dashboard.synchronization_successful"
+      );
+      nethserver.notifications.error = this.$i18n.t(
+        "dashboard.synchronization_failed"
+      );
+
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/update"],
+        migrationObj,
+        function(stream) {
+          console.info("ns8-migration-update", stream);
+        },
+        function(success) {
+          context.loading.migrationUpdate = false;
+          context.migrationRead();
+
+          if (action === "finish" && app.id !== "account-provider") {
+            // refresh Cockpit shortcuts after app uninstallation
+            cockpit
+              .dbus(null, {
+                bus: "internal",
+              })
+              .call("/packages", "cockpit.Packages", "Reload", []);
+          }
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_migrating_data"
+          );
+          console.error(errorMessage, error);
+          context.error.migrationUpdate = errorMessage;
+          context.loading.migrationUpdate = false;
+        }
+      );
+    },
+    listApplications() {
+      const context = this;
+      context.loading.listApplications = true;
+      nethserver.exec(
+        ["system-apps/read"],
+        {
+          action: "list",
+        },
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.listApplicationsSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_apps"
+          );
+          console.error(errorMessage, error);
+          context.error.listApplications = errorMessage;
+          context.loading.listApplications = false;
+        },
+        false
+      );
+    },
+    listApplicationsSuccess(output) {
+      this.installedApps = output.map((app) => app.id);
+      this.loading.listApplications = false;
+      this.migrationRead();
+    },
+    hideStartMigrationModal() {
+      this.isShownStartMigrationModal = false;
+    },
+    hideFinishMigrationModal() {
+      this.isShownFinishMigrationModal = false;
+    },
+    showLogoutModal() {
+      this.isShownLogoutModal = true;
+    },
+    hideLogoutModal() {
+      this.isShownLogoutModal = false;
+    },
+    getAccountProviderInfo() {
+      this.loading.accountProviderInfo = true;
+      let context = this;
+      nethserver.exec(
+        ["system-accounts-provider/read"],
+        {
+          action: "dump",
+        },
+        null,
+        function(success) {
+          success = JSON.parse(success);
+          const accountProviderConfig = success;
+
+          // provider type
+
+          if (accountProviderConfig.isLdap) {
+            accountProviderConfig.type = "ldap";
+          } else if (accountProviderConfig.isAD) {
+            accountProviderConfig.type = "ad";
+          } else {
+            accountProviderConfig.type = "none";
+          }
+
+          // provider location
+
+          const location = accountProviderConfig.IsLocal ? "local" : "remote";
+          accountProviderConfig.location = location;
+          context.accountProviderConfig = accountProviderConfig;
+          context.loading.accountProviderInfo = false;
+          context.listApplications();
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_account_provider_info"
+          );
+          console.error(errorMessage, error);
+          context.error.getAccountProviderInfo = errorMessage;
+          context.loading.getAccountProviderInfo = false;
+        }
+      );
+    },
+  },
 };
 </script>
+
+<style scoped>
+.connect-title {
+  margin-top: 25px;
+}
+
+.page-description {
+  margin-bottom: 30px;
+}
+
+.app-list {
+  margin-top: 20px;
+  padding-bottom: 40px;
+}
+
+.list-group-item {
+  border-bottom: 1px solid #ededed;
+}
+
+.disconnect-link {
+  margin-left: 8px;
+}
+
+.status-icon {
+  margin-right: 7px;
+  font-size: 16px;
+  position: relative;
+  top: 2px;
+}
+
+.mg-bottom-20 {
+  margin-bottom: 20px;
+}
+
+.migration-buttons {
+  width: 33%;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>

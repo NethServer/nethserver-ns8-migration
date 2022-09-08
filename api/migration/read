@@ -1,0 +1,93 @@
+#!/usr/bin/python
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+import sys
+import subprocess
+import simplejson
+
+
+def get_config(appId):
+    bash_command = "/sbin/e-smith/config getjson {}".format(appId)
+    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    return simplejson.loads(output)
+
+
+def getMigrationStatus(app_name):
+    file_name = "/var/lib/nethserver/agent/{}_ns8_migration".format(app_name)
+
+    try:
+        with open(file_name, 'r') as file:
+            file_content = file.read().replace('\n', '')
+            json = simplejson.loads(file_content)
+            return json['status']
+
+    except IOError as e:
+        return "not_migrated"
+
+
+def get_account_provider_info():
+    return {
+        "id": "account-provider"
+    }
+
+
+def get_nextcloud_info():
+    config = get_config("nextcloud")
+
+    return {
+        "id": "nethserver-nextcloud",
+        "name": "Nextcloud",
+        "config": config
+    }
+
+
+def get_mattermost_info():
+    return {
+        "id": "nethserver-mattermost",
+        "name": "Mattermost"
+    }
+
+
+def get_webmail_info():
+    return {
+        "id": "nethserver-roundcubemail",
+        "name": "Webmail"
+    }
+
+
+try:
+    apps = []
+    apps.append(get_account_provider_info())
+    apps.append(get_nextcloud_info())
+    apps.append(get_mattermost_info())
+    apps.append(get_webmail_info())
+
+    for app in apps:
+        status = getMigrationStatus(app["id"])
+        app["status"] = status
+
+    output = simplejson.dumps({'migration': apps})
+    print(output)
+except Exception as e:
+    print simplejson.dumps({'error': "%s" % e})
+    sys.exit(1)

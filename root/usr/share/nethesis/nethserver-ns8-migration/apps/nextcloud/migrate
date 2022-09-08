@@ -1,10 +1,20 @@
 #!/bin/bash
 
-host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+# read json from stdin
+migration_config=$(cat /dev/stdin)
+if [[ "$migration_config" != "null" ]]; then
+    # read virtual host from migration configuration
+    host=$(echo $migration_config | jq -r '.virtualHost')
+fi
 
 if [ -z "$host" ]; then
-    echo "nextcloud: no VirtualHost defined."
-    exit 1
+    # read virtual host from nextcloud configuration
+    host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+
+    if [ -z "$host" ]; then
+        echo "nextcloud: no VirtualHost defined."
+        exit 1
+    fi
 fi
 
 NC_CONF=/var/lib/nethserver/agent/nextcloud.json
@@ -30,3 +40,8 @@ rm -f $NC_CONF
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
 
 ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
+
+if [ $? -gt 0 ]; then
+    echo "ns8-action configure-module has timed out"
+    exit 1
+fi

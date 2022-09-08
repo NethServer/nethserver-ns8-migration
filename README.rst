@@ -28,6 +28,26 @@ Example: ::
 
   ns8-action cluster get-cluster-status '{}'
 
+Migration APIs
+==============
+
+The API responsible for apps migration is ``api/migration/update``. To initialize app migration this API can be invoked with ``action: "start"`` or ``action: "sync"``. The API will call the following script: ::
+
+  /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export &>>/var/log/ns8-migration.log
+
+where ``$app`` variable contains the name of a directory named after the app to migrate.
+
+Note that script ``stdout`` and ``stderr`` are redirected to the log file ``/var/log/ns8-migration.log``.
+
+To finalize app migration ``api/migration/update`` can be invoked with ``action: "finish"``. In this case the API will execute: ::
+
+  echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate &>>/var/log/ns8-migration.log
+
+where ``$migration_config`` variable possibly contains a json object that contains some configuration data needed to finalize app migration.
+For instance, let's consider Nextcloud migration: if Nextcloud installation on NS7 is not configured with a virtual host, then ``$migration_config`` will contain the name of the Nextcloud virtual host that will be used on NS8 (since virtual host is mandatory on NS8).
+
+After the execution of ``migrate`` script, the migrated app will be uninstalled from NS7.
+
 Ldapproxy
 =========
 
