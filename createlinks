@@ -45,3 +45,13 @@ event_services($event, qw(
     wg-quick@wg0 restart
     agent restart
 ));
+
+#
+# interface-update event
+#
+
+$event = "interface-update";
+
+event_services($event, qw(
+    wg-quick@wg0 restart
+));
