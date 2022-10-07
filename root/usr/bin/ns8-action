@@ -21,7 +21,6 @@
 #
 
 import time
-import ssl
 import sys
 import subprocess
 import argparse
@@ -30,19 +29,14 @@ import hashlib
 import uuid
 from urllib import request, parse
 
-def call(host, token, tlsverify, agent, action, data):
-    # Prepare SSL context
-    ctx = ssl.create_default_context()
-    if not tlsverify:
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-    
+def call(api_endpoint, token, agent, action, data):
+
     jdata = json.dumps({"action": action, "data": data, "extra": {
                        "title": action}}).encode('utf8')
-    req = request.Request(f'https://{host}/cluster-admin/api/{agent}/tasks', data=jdata)
+    req = request.Request(f'{api_endpoint}/api/{agent}/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
-    post = request.urlopen(req, context=ctx)
+    post = request.urlopen(req)
     post_response = json.loads(post.read())
 
     # wait for the cluster queue to grab the request
@@ -58,10 +52,10 @@ def call(host, token, tlsverify, agent, action, data):
                 print("No server response", file=sys.stderr)
                 sys.exit(1)
             try:
-                req = request.Request(f'https://{host}/cluster-admin/api/{agent}/task/{task_id}/status')
+                req = request.Request(f'{api_endpoint}/api/{agent}/task/{task_id}/status')
                 req.add_header('Content-Type', 'application/json')
                 req.add_header('Authorization', f'Bearer {token}')
-                get = request.urlopen(req, context=ctx)
+                get = request.urlopen(req)
                 get_response = json.loads(get.read())
             except:
                 time.sleep(1)
@@ -83,7 +77,6 @@ args = parser.parse_args()
 
 # Load config from config DB
 config = json.loads(subprocess.check_output(['/sbin/e-smith/config', 'getjson', 'ns8']))
-tlsverify = config['props']['TLSVerify'] == 'enabled'
 
 # Prepare login credentials
 loginobj = {
@@ -92,20 +85,16 @@ loginobj = {
 }
 data=json.dumps(loginobj).encode('utf8')
 
-# Prepare SSL context
-ctx = ssl.create_default_context()
-if not tlsverify:
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+api_endpoint = 'http://' + config["props"]["LeaderIpAddress"] + ':9311'
 
 # POST login request
-req = request.Request(f'https://{config["props"]["Host"]}/cluster-admin/api/login', data=data)
+req = request.Request(f'{api_endpoint}/api/login', data=data)
 req.add_header('Content-Type', 'application/json')
-resp = request.urlopen(req, context=ctx)
+resp = request.urlopen(req)
 
 payload = json.loads(resp.read())
 
 # Execute action
-ret = call(config['props']['Host'], payload['token'], tlsverify, args.agent, args.action, json.loads(args.data))
+ret = call(api_endpoint, payload['token'], args.agent, args.action, json.loads(args.data))
 
 print(json.dumps(ret))
