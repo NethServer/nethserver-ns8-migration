@@ -44,18 +44,13 @@ if [[ "$action" == "login" ]]; then
         error "CommandFailed" "See /var/log/messages"
     fi
 
-    # signal event
-
-    /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
-    if [ $? -gt 0 ]; then
-        error "EventFailed" "See /var/log/messages"
-    fi
-
 elif [[ "$action" == "logout" ]]; then
     # disconnect from ns8 cluster
 
-    # //// TODO invoke remove-node action on ns8
+    source /var/lib/nethserver/agent/environment
+    ns8-action cluster remove-node $(sprintf '{"node_id":%d}' ${NODE_ID})
 
+    # reset DB props
     /sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled
     /sbin/e-smith/config setprop agent status disabled
     /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey ""

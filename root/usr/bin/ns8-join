@@ -30,7 +30,7 @@ import hashlib
 import uuid
 from urllib import request, parse
 
-def call(host, action, token, data, tlsverify):
+def call(api_endpoint, action, token, data, tlsverify):
     # Prepare SSL context
     ctx = ssl.create_default_context()
     if not tlsverify:
@@ -39,7 +39,7 @@ def call(host, action, token, data, tlsverify):
     
     jdata = json.dumps({"action": action, "data": data, "extra": {
                        "title": action}}).encode('utf8')
-    req = request.Request(f'https://{host}/cluster-admin/api/cluster/tasks', data=jdata)
+    req = request.Request(f'{api_endpoint}/api/cluster/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
     post = request.urlopen(req, context=ctx)
@@ -58,7 +58,7 @@ def call(host, action, token, data, tlsverify):
                 print("No server response", file=sys.stderr)
                 sys.exit(1)
             try:
-                req = request.Request(f'https://{host}/cluster-admin/api/cluster/task/{task_id}/status')
+                req = request.Request(f'{api_endpoint}/api/cluster/task/{task_id}/status')
                 req.add_header('Content-Type', 'application/json')
                 req.add_header('Authorization', f'Bearer {token}')
                 get = request.urlopen(req, context=ctx)
@@ -95,12 +95,27 @@ if not args.tlsverify:
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
+api_endpoint = f'https://{args.host}/cluster-admin'
+
 # POST login request
-req = request.Request(f'https://{args.host}/cluster-admin/api/login', data=data)
+req = request.Request(f'{api_endpoint}/api/login', data=data)
 req.add_header('Content-Type', 'application/json')
 resp = request.urlopen(req, context=ctx)
 
 payload = json.loads(resp.read())
+
+# Retrieve account provider information
+account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
+account_provider_config = json.loads(account_provider_json)
+if account_provider_config['isAD'] == '1':
+    try:
+        nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
+        nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
+    except:
+        pass # Ignore missing nsdc/IpAddress prop
+    else:
+        sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
+        account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
 
 # Prepare arguments for add-node
 priv_key = subprocess.check_output(['/sbin/e-smith/config', 'getprop', 'wg-quick@wg0', 'SecretKey']).decode('ASCII').rstrip()
@@ -115,7 +130,7 @@ data = {
     "flags": ["nomodules"]
 }
 # Execute add-node
-ret = call(args.host, "add-node", payload['token'], data, args.tlsverify)
+ret = call(api_endpoint, "add-node", payload['token'], data, args.tlsverify)
 
 if not ret['code'] == 200:
     print("Request has failed: {}".format(ret), file=sys.stderr)
@@ -141,3 +156,56 @@ with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
 
 with open('/var/lib/nethserver/agent/environment', 'w') as fp:
     fp.write(f"NODE_ID={ret['node_id']}\n")
+
+# Start the VPN on device wg0
+subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-save'], check=True)
+
+# Endpoint switch: pass through the VPN
+api_endpoint = f"http://{ret['leader_ip_address']}:9311"
+
+#
+# Configure NS7 account provider as external user domain provider in NS8
+#
+if nsdc_ip_address:
+    # Push a route to reach NSDC IP address through the cluster VPN
+    update_routes_request = {"add": [{"network": nsdc_ip_address + '/32', "node_id": ret['node_id']}]}
+    update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
+    if update_routes_response['data']['exit_code'] != 0:
+        print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
+        sys.exit(1)
+    # Configure NSDC as account provider of an external user domain:
+    add_external_domain_request = {
+        "domain": account_provider_domain,
+        "protocol": "ldap",
+        "host": nsdc_ip_address,
+        "port": account_provider_config['port'],
+        "schema": 'ad',
+        "bind_dn": account_provider_config['BindDN'],
+        "bind_password": account_provider_config['BindPassword'],
+        "base_dn": account_provider_config['BaseDN'],
+        "tls": True,
+        "tls_verify": False,
+    }
+    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+    if add_external_domain_response['data']['exit_code'] != 0:
+        print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
+        sys.exit(1)
+
+elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
+    # Configure OpenLDAP as account provider of an external user domain:
+    add_external_domain_request = {
+        "domain": account_provider_domain,
+        "protocol": "ldap",
+        "host": ret["ip_address"],
+        "port": 636,
+        "schema": 'rfc2307',
+        "bind_dn": account_provider_config['BindDN'],
+        "bind_password": account_provider_config['BindPassword'],
+        "base_dn": account_provider_config['BaseDN'],
+        "tls": True,
+        "tls_verify": False,
+    }
+    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+    if add_external_domain_response['data']['exit_code'] != 0:
+        print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
+        sys.exit(1)
