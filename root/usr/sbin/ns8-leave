@@ -30,8 +30,8 @@ ns8-action cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}")
 /sbin/e-smith/config setprop agent status disabled
 /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey ""
 
-# clean up agent state directory
-rm -rf /var/lib/nethserver/agent/*
+# clean up agent state directory, preserving state/ directory
+find /var/lib/nethserver/agent -not -name state -delete
 
 # signal event
 /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
