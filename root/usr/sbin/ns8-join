@@ -156,6 +156,7 @@ with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
 
 with open('/var/lib/nethserver/agent/environment', 'w') as fp:
     fp.write(f"NODE_ID={ret['node_id']}\n")
+    fp.write(f"USER_DOMAIN={account_provider_domain}\n")
 
 # Start the VPN on device wg0
 subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-save'], check=True)
