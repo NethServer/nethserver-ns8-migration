@@ -35,35 +35,19 @@ if [[ "$action" == "login" ]]; then
     # execute ns8-join
 
     if [ "$tls_verify" = "disabled" ]; then
-        /usr/bin/ns8-join --no-tlsverify "$host" "$user" "$password"
+        /usr/sbin/ns8-join --no-tlsverify "$host" "$user" "$password"
     else
-        /usr/bin/ns8-join "$host" "$user" "$password"
+        /usr/sbin/ns8-join "$host" "$user" "$password"
     fi
 
     if [ $? -gt 0 ]; then
         error "CommandFailed" "See /var/log/messages"
     fi
 
-    # signal event
-
-    /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
-    if [ $? -gt 0 ]; then
-        error "EventFailed" "See /var/log/messages"
-    fi
-
 elif [[ "$action" == "logout" ]]; then
     # disconnect from ns8 cluster
 
-    # //// TODO invoke remove-node action on ns8
-
-    /sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled
-    /sbin/e-smith/config setprop agent status disabled
-    /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey ""
-    rm -rf /var/lib/nethserver/agent/*
-
-    # signal event
-
-    /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
+    /usr/sbin/ns8-leave
     if [ $? -gt 0 ]; then
         error "EventFailed" "See /var/log/messages"
     fi

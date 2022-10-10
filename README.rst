@@ -7,12 +7,17 @@ This package will migrate services from NethServer 7 to NethServer 8 (NS8).
 On install the ``nethserver-ns8-migration-update`` event creates a WireGuard private key.
 This key is later used to join NS8 cluster as a special node which *can't* be used to run containers.
 
-The ``ns8-join`` script can be used to retrieve Wireguard configuration: ::
+The ``ns8-join`` command can be used to retrieve Wireguard configuration: ::
 
   ns8-join [--no-tlsverify] <ns8_host> <admin_user> <admin_pass>
 
-After executing the ``ns8-join`` command, the ``nethserver-ns8-migration-save`` event will establish
-the VPN connection.
+During ``ns8-join`` execution, the ``nethserver-ns8-migration-save`` event
+establishes the VPN connection.
+
+Once the VPN is established:
+
+- subsequent NS8 API calls are routed through it
+- a temporary NS8 external user domain is created
 
 Example: ::
 
@@ -27,6 +32,12 @@ After the join, it is possible to execute actions: ::
 Example: ::
 
   ns8-action cluster get-cluster-status '{}'
+
+The ``ns8-leave`` command can be run when all ns7 modules are successfully migrated to ns8. That script,
+
+- removes the temporary external user domain
+- removes the ns7 node account
+- stops the Wireguard VPN and cleans up its settings
 
 Migration APIs
 ==============
@@ -48,19 +59,6 @@ For instance, let's consider Nextcloud migration: if Nextcloud installation on N
 
 After the execution of ``migrate`` script, the migrated app will be uninstalled from NS7.
 
-Ldapproxy
-=========
-
-The ``/usr/share/nethesis/nethserver-ns8-migration/apps/ldapproxy/export`` script configures NS8 ldapproxy to connect
-to the local Samba Active Directory running on NS7.
-
-The script will:
-- create a static route inside nsdc container
-- update NS8 VPN routes to connect local green interface
-- configure ldapproxy for connection to Samba AD using WireGuard VPN
-
-Assumptions:
-- the AD has an IP address of the first green network interface
 
 Nextcloud migration
 ===================

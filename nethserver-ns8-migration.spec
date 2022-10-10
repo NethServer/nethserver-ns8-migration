@@ -37,7 +37,7 @@ mkdir -p %{buildroot}/usr/libexec/nethserver/api/%{name}/
 tar xvf %{SOURCE1} -C %{buildroot}/usr/share/cockpit/%{name}/
 cp -a %{name}.json %{buildroot}/usr/share/cockpit/nethserver/applications/
 cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
-install -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
+install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 
 %{genfilelist} %{buildroot} --file /etc/sudoers.d/50_nsapi_nethserver_ns8_migration 'attr(0440,root,root)' > e-smith-%{version}-filelist
 
