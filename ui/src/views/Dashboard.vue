@@ -191,7 +191,7 @@
             <div class="list-view-pf-actions migration-buttons">
               <button
                 v-if="app.status == 'not_migrated'"
-                @click="startMigration(app)"
+                @click="showStartMigrationModal(app)"
                 :disabled="isStartMigrationButtonDisabled(app)"
                 class="btn btn-default"
               >
@@ -209,7 +209,7 @@
                   {{ $t("dashboard.sync_data") }}
                 </button>
                 <button
-                  @click="finishMigration(app)"
+                  @click="showFinishMigrationModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
                   class="btn btn-default"
                 >
@@ -456,60 +456,64 @@
                       </div>
                     </div>
                   </template>
-                  <!-- virtual host for roundcube -->
-                  <div
-                    v-if="roundcubeApp"
-                    :class="[
-                      'form-group',
-                      { 'has-error': error.roundCubeVirtualHost },
-                    ]"
-                  >
-                    <label
-                      class="col-sm-5 control-label"
-                      for="roundcube-virtual-host"
+                  <template v-if="currentApp.id === 'nethserver-mail'">
+                    <!-- virtual host for roundcube -->
+                    <div
+                      v-if="roundcubeApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.roundCubeVirtualHost },
+                      ]"
                     >
-                      {{ $t("dashboard.roundcube_virtual_host") }}
-                    </label>
-                    <div class="col-sm-6">
-                      <input
-                        v-model.trim="roundCubeVirtualHost"
-                        id="roundcube-virtual-host"
-                        ref="roundcubeVirtualHost"
-                        class="form-control"
-                      />
-                      <span
-                        v-if="error.roundCubeVirtualHost"
-                        class="help-block"
-                        >{{ error.roundCubeVirtualHost }}</span
+                      <label
+                        class="col-sm-5 control-label"
+                        for="roundcube-virtual-host"
                       >
+                        {{ $t("dashboard.roundcube_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="roundCubeVirtualHost"
+                          id="roundcube-virtual-host"
+                          ref="roundcubeVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.roundCubeVirtualHost"
+                          class="help-block"
+                          >{{ error.roundCubeVirtualHost }}</span
+                        >
+                      </div>
                     </div>
-                  </div>
-                  <!-- virtual host for webtop -->
-                  <div
-                    v-if="webtopApp && !webtopApp.config.props.VirtualHost"
-                    :class="[
-                      'form-group',
-                      { 'has-error': error.webtopVirtualHost },
-                    ]"
-                  >
-                    <label
-                      class="col-sm-5 control-label"
-                      for="webtop-virtual-host"
+                    <!-- virtual host for webtop -->
+                    <div
+                      v-if="webtopApp && !webtopApp.config.props.VirtualHost"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.webtopVirtualHost },
+                      ]"
                     >
-                      {{ $t("dashboard.webtop_virtual_host") }}
-                    </label>
-                    <div class="col-sm-6">
-                      <input
-                        v-model.trim="webtopVirtualHost"
-                        id="webtop-virtual-host"
-                        ref="webtopVirtualHost"
-                        class="form-control"
-                      />
-                      <span v-if="error.webtopVirtualHost" class="help-block">{{
-                        error.webtopVirtualHost
-                      }}</span>
+                      <label
+                        class="col-sm-5 control-label"
+                        for="webtop-virtual-host"
+                      >
+                        {{ $t("dashboard.webtop_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="webtopVirtualHost"
+                          id="webtop-virtual-host"
+                          ref="webtopVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.webtopVirtualHost"
+                          class="help-block"
+                          >{{ error.webtopVirtualHost }}</span
+                        >
+                      </div>
                     </div>
-                  </div>
+                  </template>
                 </template>
                 <!-- loading nodes -->
                 <div v-if="loading.getClusterStatus" class="form-group">
@@ -733,9 +737,6 @@ export default {
       virtualHost: "",
       roundCubeVirtualHost: "",
       webtopVirtualHost: "",
-      isShownStartMigrationModal: false,
-      isShownFinishMigrationModal: false,
-      isShownLogoutModal: false,
       adIpAddress: "",
       adIpAddresses: [],
       accountProviderConfig: null,
@@ -799,46 +800,6 @@ export default {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
   },
-  watch: {
-    isShownStartMigrationModal: function() {
-      if (this.isShownStartMigrationModal) {
-        $("#start-migration-modal").modal("show");
-
-        this.$nextTick(() => {
-          if (this.$refs.virtualHost) {
-            this.$refs.virtualHost.focus();
-          }
-        });
-      } else {
-        $("#start-migration-modal").modal("hide");
-      }
-    },
-    isShownFinishMigrationModal: function() {
-      if (this.isShownFinishMigrationModal) {
-        this.error.virtualHost = "";
-        this.error.adIpAddress = "";
-        this.virtualHost = "";
-        this.adIpAddress = "";
-        this.roundCubeVirtualHost = "";
-        this.webtopVirtualHost = "";
-        this.error.roundCubeVirtualHost = "";
-        this.error.webtopVirtualHost = "";
-
-        // get cluster nodes
-        this.migrationReadClusterStatus();
-        $("#finish-migration-modal").modal("show");
-      } else {
-        $("#finish-migration-modal").modal("hide");
-      }
-    },
-    isShownLogoutModal: function() {
-      if (this.isShownLogoutModal) {
-        $("#logout-modal").modal("show");
-      } else {
-        $("#logout-modal").modal("hide");
-      }
-    },
-  },
   mounted() {
     this.connectionRead();
   },
@@ -846,17 +807,44 @@ export default {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
-    isStartMigrationModalNeeded(app) {
-      return true;
+    showLogoutModal() {
+      $("#logout-modal").modal("show");
     },
-    startMigration(app) {
+    hideLogoutModal() {
+      $("#logout-modal").modal("hide");
+    },
+    showStartMigrationModal(app) {
       this.currentApp = app;
+      $("#start-migration-modal").modal("show");
+    },
+    hideStartMigrationModal() {
+      $("#start-migration-modal").modal("hide");
+    },
+    showFinishMigrationModal(app) {
+      this.currentApp = app;
+      this.error.virtualHost = "";
+      this.error.adIpAddress = "";
+      this.virtualHost = "";
+      this.adIpAddress = "";
+      this.roundCubeVirtualHost = "";
+      this.webtopVirtualHost = "";
+      this.error.roundCubeVirtualHost = "";
+      this.error.webtopVirtualHost = "";
 
-      if (this.isStartMigrationModalNeeded(app)) {
-        this.isShownStartMigrationModal = true;
-      } else {
-        this.migrationUpdate(app, "start");
-      }
+      // get cluster nodes
+      this.migrationReadClusterStatus();
+      $("#finish-migration-modal").modal("show");
+
+      this.$nextTick(() => {
+        if (this.$refs.virtualHost) {
+          this.$refs.virtualHost.focus();
+        } else if (this.$refs.roundcubeVirtualHost) {
+          this.$refs.roundcubeVirtualHost.focus();
+        }
+      });
+    },
+    hideFinishMigrationModal() {
+      $("#finish-migration-modal").modal("hide");
     },
     validateStartMigrationFromModal() {
       let isValidationOk = true;
@@ -932,10 +920,6 @@ export default {
       }
       this.migrationUpdate(this.currentApp, "finish");
       this.hideFinishMigrationModal();
-    },
-    finishMigration(app) {
-      this.currentApp = app;
-      this.isShownFinishMigrationModal = true;
     },
     syncData(app) {
       this.migrationUpdate(app, "sync");
@@ -1213,18 +1197,6 @@ export default {
       this.installedApps = output.map((app) => app.id);
       this.loading.listApplications = false;
       this.migrationReadApps();
-    },
-    hideStartMigrationModal() {
-      this.isShownStartMigrationModal = false;
-    },
-    hideFinishMigrationModal() {
-      this.isShownFinishMigrationModal = false;
-    },
-    showLogoutModal() {
-      this.isShownLogoutModal = true;
-    },
-    hideLogoutModal() {
-      this.isShownLogoutModal = false;
     },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;
