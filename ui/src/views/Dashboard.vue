@@ -321,6 +321,119 @@
                     ></div>
                   </div>
                 </template>
+                <!-- loading nodes -->
+                <div v-if="loading.getClusterStatus">
+                  <span class="control-label">
+                    {{ $t("dashboard.loading_nodes") }}
+                  </span>
+                  <div
+                    class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
+                  ></div>
+                </div>
+                <!-- node selection -->
+                <template v-if="clusterNodes.length > 1">
+                  <template v-if="currentApp.id === 'nethserver-mail'">
+                    <!-- node selection for email apps -->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="email-node">
+                        {{ $t("dashboard.destination_node_for_email") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="emailNode"
+                          class="combobox form-control"
+                          id="email-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="roundcubeApp" class="form-group">
+                      <label
+                        class="col-sm-5 control-label"
+                        for="roundcube-node"
+                      >
+                        {{ $t("dashboard.destination_node_for_roundcube") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="roundcubeNode"
+                          class="combobox form-control"
+                          id="roundcube-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="webtopApp" class="form-group">
+                      <label class="col-sm-5 control-label" for="webtop-node">
+                        {{ $t("dashboard.destination_node_for_webtop") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="webtopNode"
+                          class="combobox form-control"
+                          id="webtop-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <!-- node selection for app-->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="app-node">
+                        {{
+                          $t("dashboard.destination_node", {
+                            app: currentApp.name,
+                          })
+                        }}
+                      </label>
+                      <div
+                        v-if="loading.getClusterStatus"
+                        class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
+                      ></div>
+                      <div v-else class="col-sm-6">
+                        <select
+                          v-model="appNode"
+                          class="combobox form-control"
+                          id="app-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
+                </template>
               </template>
             </div>
             <div class="modal-footer">
@@ -335,6 +448,7 @@
                 type="button"
                 class="btn btn-primary"
                 @click="startMigrationFromModal"
+                :disabled="loading.getClusterStatus || !!error.getClusterStatus"
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
@@ -515,119 +629,6 @@
                     </div>
                   </template>
                 </template>
-                <!-- loading nodes -->
-                <div v-if="loading.getClusterStatus" class="form-group">
-                  <label class="col-sm-5 control-label">
-                    {{ $t("dashboard.loading_nodes") }}
-                  </label>
-                  <div
-                    class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
-                  ></div>
-                </div>
-                <!-- node selection -->
-                <template v-if="clusterNodes.length > 1">
-                  <template v-if="currentApp.id === 'nethserver-mail'">
-                    <!-- node selection for email apps -->
-                    <div class="form-group">
-                      <label class="col-sm-5 control-label" for="email-node">
-                        {{ $t("dashboard.destination_node_for_email") }}
-                      </label>
-                      <div class="col-sm-6">
-                        <select
-                          v-model="emailNode"
-                          class="combobox form-control"
-                          id="email-node"
-                        >
-                          <option
-                            v-for="node in clusterNodes"
-                            v-bind:key="node.id"
-                            :value="node.id"
-                            :disabled="!node.online"
-                          >
-                            {{ getNodeLabel(node) }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div v-if="roundcubeApp" class="form-group">
-                      <label
-                        class="col-sm-5 control-label"
-                        for="roundcube-node"
-                      >
-                        {{ $t("dashboard.destination_node_for_roundcube") }}
-                      </label>
-                      <div class="col-sm-6">
-                        <select
-                          v-model="roundcubeNode"
-                          class="combobox form-control"
-                          id="roundcube-node"
-                        >
-                          <option
-                            v-for="node in clusterNodes"
-                            v-bind:key="node.id"
-                            :value="node.id"
-                            :disabled="!node.online"
-                          >
-                            {{ getNodeLabel(node) }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div v-if="webtopApp" class="form-group">
-                      <label class="col-sm-5 control-label" for="webtop-node">
-                        {{ $t("dashboard.destination_node_for_webtop") }}
-                      </label>
-                      <div class="col-sm-6">
-                        <select
-                          v-model="webtopNode"
-                          class="combobox form-control"
-                          id="webtop-node"
-                        >
-                          <option
-                            v-for="node in clusterNodes"
-                            v-bind:key="node.id"
-                            :value="node.id"
-                            :disabled="!node.online"
-                          >
-                            {{ getNodeLabel(node) }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <!-- node selection for app-->
-                    <div class="form-group">
-                      <label class="col-sm-5 control-label" for="app-node">
-                        {{
-                          $t("dashboard.destination_node", {
-                            app: currentApp.name,
-                          })
-                        }}
-                      </label>
-                      <div
-                        v-if="loading.getClusterStatus"
-                        class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
-                      ></div>
-                      <div v-else class="col-sm-6">
-                        <select
-                          v-model="appNode"
-                          class="combobox form-control"
-                          id="app-node"
-                        >
-                          <option
-                            v-for="node in clusterNodes"
-                            v-bind:key="node.id"
-                            :value="node.id"
-                            :disabled="!node.online"
-                          >
-                            {{ getNodeLabel(node) }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                  </template>
-                </template>
               </template>
             </div>
             <div class="modal-footer">
@@ -641,7 +642,6 @@
               <button
                 type="button"
                 class="btn btn-primary"
-                :disabled="loading.getClusterStatus || !!error.getClusterStatus"
                 @click="finishMigrationFromModal"
               >
                 {{ $t("dashboard.finish_migration") }}
@@ -816,6 +816,9 @@ export default {
     showStartMigrationModal(app) {
       this.currentApp = app;
       $("#start-migration-modal").modal("show");
+
+      // get cluster nodes
+      this.migrationReadClusterStatus();
     },
     hideStartMigrationModal() {
       $("#start-migration-modal").modal("hide");
@@ -830,9 +833,6 @@ export default {
       this.webtopVirtualHost = "";
       this.error.roundCubeVirtualHost = "";
       this.error.webtopVirtualHost = "";
-
-      // get cluster nodes
-      this.migrationReadClusterStatus();
       $("#finish-migration-modal").modal("show");
 
       this.$nextTick(() => {
@@ -1116,6 +1116,7 @@ export default {
     migrationUpdate(app, action) {
       const context = this;
       context.loading.migrationUpdate = true;
+      const oldAppStatus = app.status;
       app.status = "syncing";
 
       const migrationObj = {
@@ -1123,13 +1124,30 @@ export default {
         action: action,
       };
 
-      if (action === "finish") {
+      if (action === "start") {
+        if (app.id === "nethserver-mail") {
+          migrationObj.emailNode = this.emailNode;
+          migrationObj.webtopNode = this.webtopNode;
+          migrationObj.roundcubeNode = this.roundcubeNode;
+        } else {
+          migrationObj.appNode = this.appNode;
+        }
+      } else if (action === "finish") {
         // set migration configurations if needed
 
         if (app.id === "nethserver-nextcloud" && this.virtualHost) {
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
           };
+        } else if (app.id === "nethserver-mail") {
+          let migrationConfig = {
+            roundCubeVirtualHost: this.roundCubeVirtualHost,
+          };
+
+          if (this.webtopVirtualHost) {
+            migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
+          }
+          migrationObj.migrationConfig = migrationConfig;
         }
       }
 
@@ -1166,6 +1184,7 @@ export default {
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
+          app.status = oldAppStatus;
         }
       );
     },
@@ -1357,6 +1376,6 @@ export default {
 }
 
 .node-spinner {
-  margin-left: 30px;
+  margin-left: 20px;
 }
 </style>
