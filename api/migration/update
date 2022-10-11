@@ -25,7 +25,7 @@
 set_migration_status() {
     app_id=$1
     status=$2
-    echo "{ \"status\": \"$status\" }" >/var/lib/nethserver/agent/${app_id}_ns8_migration
+    echo "{ \"status\": \"$status\" }" >"/var/lib/nethserver/agent/state/${app_id}.mstatus.json"
 }
 
 echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migrate-data","state":"running","step":0,"pid":0,"action":""}'
