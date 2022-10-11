@@ -28,7 +28,7 @@ set_migration_status() {
     echo "{ \"status\": \"$status\" }" >"/var/lib/nethserver/agent/state/${app_id}.mstatus.json"
 }
 
-echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migrate-data","state":"running","step":0,"pid":0,"action":""}'
+echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migration-sync","state":"running","step":0,"pid":0,"action":""}'
 
 # read json from stdin
 data=$(cat /dev/stdin)
@@ -39,7 +39,7 @@ migration_config=$(echo $data | jq -r '.migrationConfig')
 
 apps_path="/usr/share/nethesis/nethserver-ns8-migration/apps"
 if [[ ! -x "${apps_path}/${app_id}/export" ]] || [[ ! -x "${apps_path}/${app_id}/migrate" ]]; then
-    echo '{"pid":0,"status":"failed","event":"migrate-data"}'
+    echo '{"pid":0,"status":"failed","event":"migration-sync"}'
     error "ApiFailed" "Unknown app ID $app_id"
 fi
 
@@ -49,7 +49,7 @@ if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     "${apps_path}/${app_id}/export" &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
+        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
         error "ApiFailed" "${apps_path}/${app_id}/export failed"
     fi
 
@@ -61,13 +61,13 @@ elif [[ "$action" == "finish" ]]; then
     echo "$migration_config" | "${apps_path}/${app_id}/migrate" &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
+        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
         error "ApiFailed" "${apps_path}/${app_id}/migrate failed"
     fi
 
     set_migration_status "$app_id" "migrated"
 fi
 
-echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migrate-data","state":"done","step":0,"pid":0,"action":""}'
-echo '{"pid":0,"status":"success","event":"migrate-data"}'
+echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migration-sync","state":"done","step":0,"pid":0,"action":""}'
+echo '{"pid":0,"status":"success","event":"migration-sync"}'
 success
