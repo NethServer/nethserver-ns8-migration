@@ -212,8 +212,7 @@
                   @click="finishMigration(app)"
                   :disabled="
                     loading.migrationUpdate ||
-                      app.status == 'syncing' ||
-                      app.id === 'account-provider'
+                      app.status == 'syncing'
                   "
                   class="btn btn-default"
                 >
