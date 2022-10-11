@@ -65,30 +65,6 @@ elif [[ "$action" == "finish" ]]; then
         error "ApiFailed" "${apps_path}/${app_id}/migrate failed"
     fi
 
-    if [[ "$app_id" != "account-provider" ]]; then
-        # uninstall app
-        output=$(echo "{\"action\": \"list-removed\", \"packages\": [\"$app_id\"]}" | /usr/libexec/nethserver/api/system-packages/read)
-        packages=$(echo $output | jq -r '.packages')
-
-        echo "{\"action\": \"remove\", \"packages\": $packages}" | /usr/libexec/nethserver/api/system-packages/update
-        if [ $? -gt 0 ]; then
-            set_migration_status "$app_id" "migrating"
-            echo '{"pid":0,"status":"failed","event":"migrate-data"}'
-            error "ApiFailed" "/usr/libexec/nethserver/api/system-packages/update failed"
-        fi
-
-        js_array=$(echo $packages | jq -r ".[]")
-        # define bash array
-        declare -a packages_arr=($js_array)
-
-        for package in "${packages_arr[@]}"; do
-            # remove pin and shortcut of uninstalled packages
-            echo "{\"action\": \"remove-pin\", \"name\": \"$package\"}" | /usr/libexec/nethserver/api/system-apps/update
-            echo "{\"action\": \"remove-shortcut\", \"name\": \"$package\"}" | /usr/libexec/nethserver/api/system-apps/update
-        done
-
-    fi
-
     set_migration_status "$app_id" "migrated"
 fi
 
