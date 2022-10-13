@@ -22,6 +22,10 @@
 
 set -e
 
+echo "--- $0 ${MIGRATE_ACTION} $(date)" 1>&2
+
+set -x
+
 # Assuming this script is running under the state/account-provider directory
 imdata_file="imdata.json"
 
@@ -37,11 +41,11 @@ export RSYNC_PASSWORD
 rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
 
 # Read nsdc props
-IFS=$'\t' read -r provision_type ipaddress < <( config printjson nsdc | \
+IFS=$'\t' read -r provision_type ipaddress < <( /sbin/e-smith/config printjson nsdc | \
     jq -r '.props | [.ProvisionType, .IpAddress] | join("\t") ' )
 
 # Read sssd props
-IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( config printjson sssd | \
+IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( /sbin/e-smith/config printjson sssd | \
     jq -r '.props | [.Workgroup, .Realm, .BindDN, .BindPassword] | join("\t") ' )
 
 # Generate import.env
