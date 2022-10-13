@@ -1,0 +1,74 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+# Assuming this script is running under the state/account-provider directory
+imdata_file="imdata.json"
+
+if [[ ! -s "${imdata_file}" ]]; then
+    # Start the migration with an import-module API call
+    ns8-action cluster import-module '{"image": "ghcr.io/nethserver/samba:migration", "node": 1, "volumes": ["data"]}' > "${imdata_file}"
+fi
+
+# Extract rsync credentials and endpoint parameters from the imdata file
+IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
+    jq -r '.data.output | [ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+export RSYNC_PASSWORD
+rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
+
+# Read nsdc props
+IFS=$'\t' read -r provision_type ipaddress < <( config printjson nsdc | \
+    jq -r '.props | [.ProvisionType, .IpAddress] | join("\t") ' )
+
+# Read sssd props
+IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( config printjson sssd | \
+    jq -r '.props | [.Workgroup, .Realm, .BindDN, .BindPassword] | join("\t") ' )
+
+# Generate import.env
+cat - >import.env <<EOF
+IPADDRESS=${ipaddress:?}
+PROVISION_TYPE=${provision_type:-unknown}
+NBDOMAIN=${nbdomain:?}
+REALM=${realm:?}
+SVCUSER=${svcuser%%@*}
+SVCPASS=${svcpass}
+EOF
+
+# Send import.env
+rsync -i import.env "${rsync_endpoint}"/data/state/import.env
+
+# Exit handler: remove .export files
+trap 'nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete' EXIT
+
+# Generate .export files, like the pre-backup event handler of NSDC does
+nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]db" -not -name netlogon_creds_cli.tdb)'
+
+# Send .export files and secrets encryption key
+rsync -mtri --include='*/' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
+
+# Remove temporary external user domain
+ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${realm,,}") || :
+
+if [[ "${MIGRATE_ACTION}" == "commit-data" ]]; then
+    rsync -v "${rsync_endpoint}"/terminate
+fi
