@@ -23,7 +23,6 @@
 import sys
 import subprocess
 import simplejson
-import fileinput
 
 
 def get_config(appId):
