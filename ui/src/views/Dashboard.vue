@@ -1126,11 +1126,22 @@ export default {
 
       if (action === "start") {
         if (app.id === "nethserver-mail") {
-          migrationObj.emailNode = this.emailNode;
-          migrationObj.webtopNode = this.webtopNode;
-          migrationObj.roundcubeNode = this.roundcubeNode;
+          let migrationConfig = {
+            emailNode: this.emailNode,
+          };
+
+          if (this.webtopApp) {
+            migrationConfig.webtopNode = this.webtopNode;
+          }
+
+          if (this.roundcubeApp) {
+            migrationConfig.roundcubeNode = this.roundcubeNode;
+          }
+          migrationObj.migrationConfig = migrationConfig;
         } else {
-          migrationObj.appNode = this.appNode;
+          migrationObj.migrationConfig = {
+            appNode: this.appNode,
+          };
         }
       } else if (action === "finish") {
         // set migration configurations if needed
