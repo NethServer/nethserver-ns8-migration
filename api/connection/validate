@@ -29,8 +29,7 @@ def invalid_attribute(parameter, error):
     return {"parameter": parameter, "error": error, "value": ""}
 
 
-line = fileinput.input()[0].rstrip()
-input_json = simplejson.loads(line)
+input_json = simplejson.load(sys.stdin)
 invalid_attributes = []
 
 action_p = 'action'

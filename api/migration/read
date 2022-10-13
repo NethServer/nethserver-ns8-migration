@@ -112,8 +112,7 @@ def get_cluster_status():
 
 
 try:
-    line = fileinput.input()[0].rstrip()
-    input_json = simplejson.loads(line)
+    input_json = simplejson.load(sys.stdin)
     action = input_json["action"]
 
     if action == 'listApps':
