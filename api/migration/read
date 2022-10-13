@@ -75,19 +75,58 @@ def get_webmail_info():
     }
 
 
-try:
+def get_mail_info():
+    return {
+        "id": "nethserver-mail",
+        "name": "Email"
+    }
+
+
+def get_webtop_info():
+    config = get_config("webtop")
+
+    return {
+        "id": "nethserver-webtop5",
+        "name": "WebTop",
+        "config": config
+    }
+
+
+def list_apps():
     apps = []
     apps.append(get_account_provider_info())
     apps.append(get_nextcloud_info())
     apps.append(get_mattermost_info())
+    apps.append(get_mail_info())
     apps.append(get_webmail_info())
+    apps.append(get_webtop_info())
+    return apps
 
-    for app in apps:
-        status = getMigrationStatus(app["id"])
-        app["status"] = status
 
-    output = simplejson.dumps({'migration': apps})
-    print(output)
+def get_cluster_status():
+    bash_command = "/usr/bin/ns8-action cluster get-cluster-status null"
+    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    return simplejson.loads(output)
+
+
+try:
+    input_json = simplejson.load(sys.stdin)
+    action = input_json["action"]
+
+    if action == 'listApps':
+        apps = list_apps()
+
+        for app in apps:
+            status = getMigrationStatus(app["id"])
+            app["status"] = status
+
+        output = simplejson.dumps({'migration': apps})
+        print(output)
+    elif action == 'getClusterStatus':
+        cluster_status = get_cluster_status()
+        output = simplejson.dumps({'clusterStatus': cluster_status})
+        print(output)
 except Exception as e:
     print simplejson.dumps({'error': "%s" % e})
     sys.exit(1)
