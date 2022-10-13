@@ -46,7 +46,8 @@ fi
 if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     set_migration_status "$app_id" "syncing"
 
-    "${apps_path}/${app_id}/export" &>>/var/log/ns8-migration.log
+    echo "$migration_config" | "${apps_path}/${app_id}/export" &>>/var/log/ns8-migration.log
+
     if [ $? -gt 0 ]; then
         set_migration_status "$app_id" "migrating"
         echo '{"pid":0,"status":"failed","event":"migration-sync"}'

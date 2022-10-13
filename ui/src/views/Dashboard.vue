@@ -191,8 +191,8 @@
             <div class="list-view-pf-actions migration-buttons">
               <button
                 v-if="app.status == 'not_migrated'"
-                @click="startMigration(app)"
-                :disabled="loading.migrationUpdate"
+                @click="showStartMigrationModal(app)"
+                :disabled="isStartMigrationButtonDisabled(app)"
                 class="btn btn-default"
               >
                 {{ $t("dashboard.start_migration") }}
@@ -209,11 +209,8 @@
                   {{ $t("dashboard.sync_data") }}
                 </button>
                 <button
-                  @click="finishMigration(app)"
-                  :disabled="
-                    loading.migrationUpdate ||
-                      app.status == 'syncing'
-                  "
+                  @click="showFinishMigrationModal(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.finish_migration") }}
@@ -258,7 +255,20 @@
                     v-else-if="app.status == 'migrating'"
                     class="pficon pficon-maintenance status-icon"
                   ></span>
-                  <span v-html="$t('dashboard.status_' + app.status)"></span>
+                  <span
+                    v-if="
+                      [
+                        'nethserver-roundcubemail',
+                        'nethserver-webtop5',
+                      ].includes(app.id)
+                    "
+                    v-html="$t('dashboard.app_migrated_with_email')"
+                  >
+                  </span>
+                  <span
+                    v-else
+                    v-html="$t('dashboard.status_' + app.status)"
+                  ></span>
                 </div>
               </div>
             </div>
@@ -296,15 +306,133 @@
                   ></div>
                 </template>
                 <template v-else>
+                  <div class="mg-bottom-20">
+                    <div
+                      v-html="
+                        $t('dashboard.app_will_be_migrated', {
+                          appName: currentApp.name,
+                          leaderNode: config.leaderNode,
+                        })
+                      "
+                    ></div>
+                    <div
+                      class="mg-top-10"
+                      v-html="$t('dashboard.roundcube_webtop_migration')"
+                    ></div>
+                  </div>
+                </template>
+                <!-- loading nodes -->
+                <div v-if="loading.getClusterStatus">
+                  <span class="control-label">
+                    {{ $t("dashboard.loading_nodes") }}
+                  </span>
                   <div
-                    class="mg-bottom-20"
-                    v-html="
-                      $t('dashboard.app_will_be_migrated', {
-                        appName: currentApp.name,
-                        leaderNode: config.leaderNode,
-                      })
-                    "
+                    class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
                   ></div>
+                </div>
+                <!-- node selection -->
+                <template v-if="clusterNodes.length > 1">
+                  <template v-if="currentApp.id === 'nethserver-mail'">
+                    <!-- node selection for email apps -->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="email-node">
+                        {{ $t("dashboard.destination_node_for_email") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="emailNode"
+                          class="combobox form-control"
+                          id="email-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="roundcubeApp" class="form-group">
+                      <label
+                        class="col-sm-5 control-label"
+                        for="roundcube-node"
+                      >
+                        {{ $t("dashboard.destination_node_for_roundcube") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="roundcubeNode"
+                          class="combobox form-control"
+                          id="roundcube-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="webtopApp" class="form-group">
+                      <label class="col-sm-5 control-label" for="webtop-node">
+                        {{ $t("dashboard.destination_node_for_webtop") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="webtopNode"
+                          class="combobox form-control"
+                          id="webtop-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <!-- node selection for app-->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="app-node">
+                        {{
+                          $t("dashboard.destination_node", {
+                            app: currentApp.name,
+                          })
+                        }}
+                      </label>
+                      <div
+                        v-if="loading.getClusterStatus"
+                        class="spinner spinner-sm form-spinner-loader adjust-top-loader node-spinner"
+                      ></div>
+                      <div v-else class="col-sm-6">
+                        <select
+                          v-model="appNode"
+                          class="combobox form-control"
+                          id="app-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
                 </template>
               </template>
             </div>
@@ -320,6 +448,7 @@
                 type="button"
                 class="btn btn-primary"
                 @click="startMigrationFromModal"
+                :disabled="loading.getClusterStatus || !!error.getClusterStatus"
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
@@ -346,6 +475,10 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <template v-if="currentApp">
+                <div v-if="error.getClusterStatus" class="alert alert-danger">
+                  <span class="pficon pficon-error-circle-o"></span>
+                  {{ error.getClusterStatus }}
+                </div>
                 <template v-if="currentApp.id === 'account-provider'">
                   <template v-if="currentApp.provider === 'ad'">
                     <!-- choose an IP address for AD -->
@@ -358,7 +491,7 @@
                         { 'has-error': error.adIpAddress },
                       ]"
                     >
-                      <label class="col-sm-4 control-label" for="ad-ip-address">
+                      <label class="col-sm-5 control-label" for="ad-ip-address">
                         {{ $t("dashboard.ad_ip_address") }}
                       </label>
                       <div class="col-sm-6">
@@ -421,10 +554,10 @@
                         { 'has-error': error.virtualHost },
                       ]"
                     >
-                      <label class="col-sm-4 control-label" for="virtual-host">
+                      <label class="col-sm-5 control-label" for="virtual-host">
                         {{ $t("dashboard.nextcloud_virtual_host") }}
                       </label>
-                      <div class="col-sm-7">
+                      <div class="col-sm-6">
                         <input
                           v-model.trim="virtualHost"
                           id="virtual-host"
@@ -434,6 +567,64 @@
                         <span v-if="error.virtualHost" class="help-block">{{
                           error.virtualHost
                         }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-if="currentApp.id === 'nethserver-mail'">
+                    <!-- virtual host for roundcube -->
+                    <div
+                      v-if="roundcubeApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.roundCubeVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="roundcube-virtual-host"
+                      >
+                        {{ $t("dashboard.roundcube_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="roundCubeVirtualHost"
+                          id="roundcube-virtual-host"
+                          ref="roundcubeVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.roundCubeVirtualHost"
+                          class="help-block"
+                          >{{ error.roundCubeVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                    <!-- virtual host for webtop -->
+                    <div
+                      v-if="webtopApp && !webtopApp.config.props.VirtualHost"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.webtopVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="webtop-virtual-host"
+                      >
+                        {{ $t("dashboard.webtop_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="webtopVirtualHost"
+                          id="webtop-virtual-host"
+                          ref="webtopVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.webtopVirtualHost"
+                          class="help-block"
+                          >{{ error.webtopVirtualHost }}</span
+                        >
                       </div>
                     </div>
                   </template>
@@ -544,12 +735,16 @@ export default {
       apps: [],
       currentApp: null,
       virtualHost: "",
-      isShownStartMigrationModal: false,
-      isShownFinishMigrationModal: false,
-      isShownLogoutModal: false,
+      roundCubeVirtualHost: "",
+      webtopVirtualHost: "",
       adIpAddress: "",
       adIpAddresses: [],
       accountProviderConfig: null,
+      appNode: 1,
+      clusterNodes: [],
+      emailNode: 1,
+      webtopNode: 1,
+      roundcubeNode: 1,
       loading: {
         connectionRead: false,
         connectionUpdate: false,
@@ -557,6 +752,7 @@ export default {
         migrationUpdate: false,
         listApplications: false,
         accountProviderInfo: false,
+        getClusterStatus: false,
       },
       error: {
         connectionRead: "",
@@ -572,6 +768,9 @@ export default {
         adIpAddress: "",
         listPackagesToRemove: "",
         removePackages: "",
+        getClusterStatus: "",
+        roundCubeVirtualHost: "",
+        webtopVirtualHost: "",
       },
     };
   },
@@ -591,38 +790,14 @@ export default {
     someAppsHaveFinishedMigration() {
       return this.apps.some((app) => app.status === "migrated");
     },
-  },
-  watch: {
-    isShownStartMigrationModal: function() {
-      if (this.isShownStartMigrationModal) {
-        $("#start-migration-modal").modal("show");
-
-        this.$nextTick(() => {
-          if (this.$refs.virtualHost) {
-            this.$refs.virtualHost.focus();
-          }
-        });
-      } else {
-        $("#start-migration-modal").modal("hide");
-      }
+    emailApp() {
+      return this.apps.find((app) => app.id === "nethserver-mail");
     },
-    isShownFinishMigrationModal: function() {
-      if (this.isShownFinishMigrationModal) {
-        this.error.virtualHost = "";
-        this.error.adIpAddress = "";
-        this.virtualHost = "";
-        this.adIpAddress = "";
-        $("#finish-migration-modal").modal("show");
-      } else {
-        $("#finish-migration-modal").modal("hide");
-      }
+    roundcubeApp() {
+      return this.apps.find((app) => app.id === "nethserver-roundcubemail");
     },
-    isShownLogoutModal: function() {
-      if (this.isShownLogoutModal) {
-        $("#logout-modal").modal("show");
-      } else {
-        $("#logout-modal").modal("hide");
-      }
+    webtopApp() {
+      return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
   },
   mounted() {
@@ -632,17 +807,44 @@ export default {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
     },
-    isStartMigrationModalNeeded(app) {
-      return true;
+    showLogoutModal() {
+      $("#logout-modal").modal("show");
     },
-    startMigration(app) {
+    hideLogoutModal() {
+      $("#logout-modal").modal("hide");
+    },
+    showStartMigrationModal(app) {
       this.currentApp = app;
+      $("#start-migration-modal").modal("show");
 
-      if (this.isStartMigrationModalNeeded(app)) {
-        this.isShownStartMigrationModal = true;
-      } else {
-        this.migrationUpdate(app, "start");
-      }
+      // get cluster nodes
+      this.migrationReadClusterStatus();
+    },
+    hideStartMigrationModal() {
+      $("#start-migration-modal").modal("hide");
+    },
+    showFinishMigrationModal(app) {
+      this.currentApp = app;
+      this.error.virtualHost = "";
+      this.error.adIpAddress = "";
+      this.virtualHost = "";
+      this.adIpAddress = "";
+      this.roundCubeVirtualHost = "";
+      this.webtopVirtualHost = "";
+      this.error.roundCubeVirtualHost = "";
+      this.error.webtopVirtualHost = "";
+      $("#finish-migration-modal").modal("show");
+
+      this.$nextTick(() => {
+        if (this.$refs.virtualHost) {
+          this.$refs.virtualHost.focus();
+        } else if (this.$refs.roundcubeVirtualHost) {
+          this.$refs.roundcubeVirtualHost.focus();
+        }
+      });
+    },
+    hideFinishMigrationModal() {
+      $("#finish-migration-modal").modal("hide");
     },
     validateStartMigrationFromModal() {
       let isValidationOk = true;
@@ -659,28 +861,54 @@ export default {
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
 
-      if (
-        this.currentApp.id === "nethserver-nextcloud" &&
-        !this.nextcloudApp.config.props.VirtualHost
-      ) {
+      if (this.currentApp.id === "nethserver-nextcloud") {
+        // nextcloud
+
         this.error.virtualHost = "";
 
-        if (!this.virtualHost) {
+        if (!this.nextcloudApp.config.props.VirtualHost && !this.virtualHost) {
           this.error.virtualHost = this.$t("validation.virtual_host_empty");
           this.$refs.virtualHost.focus();
           isValidationOk = false;
         }
-      }
+      } else if (this.currentApp.id === "account-provider") {
+        // account provider
 
-      if (
-        this.currentApp.id === "account-provider" &&
-        this.currentApp.provider === "ad"
-      ) {
         this.error.adIpAddress = "";
 
-        if (!this.adIpAddress) {
+        if (this.currentApp.provider === "ad" && !this.adIpAddress) {
           this.error.adIpAddress = this.$t("validation.ad_ip_address_empty");
           isValidationOk = false;
+        }
+      } else if (this.currentApp.id === "nethserver-mail") {
+        // email
+
+        this.error.roundCubeVirtualHost = "";
+        this.error.webtopVirtualHost = "";
+
+        if (!this.roundCubeVirtualHost) {
+          this.error.roundCubeVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.roundcubeVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (
+          !this.webtopApp.config.props.VirtualHost &&
+          !this.webtopVirtualHost
+        ) {
+          this.error.webtopVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.webtopVirtualHost.focus();
+            isValidationOk = false;
+          }
         }
       }
       return isValidationOk;
@@ -692,10 +920,6 @@ export default {
       }
       this.migrationUpdate(this.currentApp, "finish");
       this.hideFinishMigrationModal();
-    },
-    finishMigration(app) {
-      this.currentApp = app;
-      this.isShownFinishMigrationModal = true;
     },
     syncData(app) {
       this.migrationUpdate(app, "sync");
@@ -847,20 +1071,20 @@ export default {
         }
       );
     },
-    migrationRead() {
+    migrationReadApps() {
       const context = this;
       context.loading.migrationRead = true;
       nethserver.exec(
         ["nethserver-ns8-migration/migration/read"],
-        {},
+        { action: "listApps" },
         null,
         function(success) {
           const output = JSON.parse(success);
-          context.migrationReadSuccess(output);
+          context.migrationReadAppsSuccess(output);
         },
         function(error) {
           const errorMessage = context.$i18n.t(
-            "dashboard.error_retrieving_migration_data"
+            "dashboard.error_retrieving_apps_to_migrate"
           );
           console.error(errorMessage, error);
           context.error.migrationRead = errorMessage;
@@ -868,8 +1092,8 @@ export default {
         }
       );
     },
-    migrationReadSuccess(output) {
-      const apps = output.migration.filter(
+    migrationReadAppsSuccess(output) {
+      let apps = output.migration.filter(
         (app) =>
           this.installedApps.includes(app.id) ||
           (app.id === "account-provider" &&
@@ -892,6 +1116,7 @@ export default {
     migrationUpdate(app, action) {
       const context = this;
       context.loading.migrationUpdate = true;
+      const oldAppStatus = app.status;
       app.status = "syncing";
 
       const migrationObj = {
@@ -899,13 +1124,41 @@ export default {
         action: action,
       };
 
-      if (action === "finish") {
+      if (action === "start") {
+        if (app.id === "nethserver-mail") {
+          let migrationConfig = {
+            emailNode: this.emailNode,
+          };
+
+          if (this.webtopApp) {
+            migrationConfig.webtopNode = this.webtopNode;
+          }
+
+          if (this.roundcubeApp) {
+            migrationConfig.roundcubeNode = this.roundcubeNode;
+          }
+          migrationObj.migrationConfig = migrationConfig;
+        } else {
+          migrationObj.migrationConfig = {
+            appNode: this.appNode,
+          };
+        }
+      } else if (action === "finish") {
         // set migration configurations if needed
 
         if (app.id === "nethserver-nextcloud" && this.virtualHost) {
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
           };
+        } else if (app.id === "nethserver-mail") {
+          let migrationConfig = {
+            roundCubeVirtualHost: this.roundCubeVirtualHost,
+          };
+
+          if (this.webtopVirtualHost) {
+            migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
+          }
+          migrationObj.migrationConfig = migrationConfig;
         }
       }
 
@@ -924,7 +1177,7 @@ export default {
         },
         function(success) {
           context.loading.migrationUpdate = false;
-          context.migrationRead();
+          context.migrationReadApps();
 
           if (action === "finish" && app.id !== "account-provider") {
             // refresh Cockpit shortcuts after app uninstallation
@@ -942,6 +1195,7 @@ export default {
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
+          app.status = oldAppStatus;
         }
       );
     },
@@ -972,19 +1226,7 @@ export default {
     listApplicationsSuccess(output) {
       this.installedApps = output.map((app) => app.id);
       this.loading.listApplications = false;
-      this.migrationRead();
-    },
-    hideStartMigrationModal() {
-      this.isShownStartMigrationModal = false;
-    },
-    hideFinishMigrationModal() {
-      this.isShownFinishMigrationModal = false;
-    },
-    showLogoutModal() {
-      this.isShownLogoutModal = true;
-    },
-    hideLogoutModal() {
-      this.isShownLogoutModal = false;
+      this.migrationReadApps();
     },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;
@@ -1027,6 +1269,76 @@ export default {
         }
       );
     },
+    migrationReadClusterStatus() {
+      const context = this;
+      context.clusterNodes = [];
+      context.loading.getClusterStatus = true;
+      context.error.getClusterStatus = "";
+
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/read"],
+        { action: "getClusterStatus" },
+        null,
+        function(success) {
+          const output = JSON.parse(success);
+          context.migrationReadClusterStatusSuccess(output);
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_retrieving_cluster_status"
+          );
+          console.error(errorMessage, error);
+          context.error.getClusterStatus = errorMessage;
+          context.loading.getClusterStatus = false;
+        }
+      );
+    },
+    migrationReadClusterStatusSuccess(output) {
+      // check for ns8 action error
+      if (output.clusterStatus.data.exit_code !== 0) {
+        const errorMessage = this.$i18n.t(
+          "dashboard.error_retrieving_cluster_status"
+        );
+        console.error(errorMessage);
+        this.error.getClusterStatus = errorMessage;
+        this.loading.getClusterStatus = false;
+        return;
+      }
+
+      //// remove mock
+      // let clusterNodes = output.clusterStatus.data.output.nodes;
+      // clusterNodes.push({ id: 2, ui_name: "Second", online: false });
+      // this.clusterNodes = clusterNodes;
+
+      this.clusterNodes = output.clusterStatus.data.output.nodes;
+      this.loading.getClusterStatus = false;
+    },
+    getNodeLabel(node) {
+      let nodeLabel = "";
+
+      if (node.ui_name) {
+        nodeLabel =
+          node.ui_name +
+          " (" +
+          this.$t("dashboard.node_id", { id: node.id }) +
+          ")";
+      } else {
+        nodeLabel = this.$t("dashboard.node_id", { id: node.id });
+      }
+
+      if (!node.online) {
+        return nodeLabel + " [" + this.$t("dashboard.offline") + "]";
+      } else {
+        return nodeLabel;
+      }
+    },
+    isStartMigrationButtonDisabled(app) {
+      return (
+        this.loading.migrationUpdate ||
+        (this.emailApp &&
+          ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
+      );
+    },
   },
 };
 </script>
@@ -1060,6 +1372,10 @@ export default {
   top: 2px;
 }
 
+.mg-top-10 {
+  margin-top: 10px;
+}
+
 .mg-bottom-20 {
   margin-bottom: 20px;
 }
@@ -1068,5 +1384,9 @@ export default {
   width: 33%;
   display: flex;
   justify-content: flex-end;
+}
+
+.node-spinner {
+  margin-left: 20px;
 }
 </style>
