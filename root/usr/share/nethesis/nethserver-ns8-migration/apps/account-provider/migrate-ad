@@ -59,6 +59,14 @@ SVCUSER=${svcuser%%@*}
 SVCPASS=${svcpass}
 EOF
 
+# Wait for the rsyncd server to become available
+while : ; do
+    if rsync -v "${rsync_endpoint}"/ ; then
+        break
+    fi
+    sleep 2
+done
+
 # Send import.env
 rsync -i import.env "${rsync_endpoint}"/data/state/import.env
 
