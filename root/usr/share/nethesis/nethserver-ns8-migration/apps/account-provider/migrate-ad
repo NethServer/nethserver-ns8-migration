@@ -24,8 +24,6 @@ set -e
 
 echo "--- $0 ${MIGRATE_ACTION} $(date)" 1>&2
 
-set -x
-
 # Assuming this script is running under the state/account-provider directory
 imdata_file="imdata.json"
 
@@ -83,8 +81,24 @@ nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]
 # Send .export, *.pem files, secrets encryption key
 rsync -mtri --include='*/' --include='*.pem' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
 
-if [[ "${MIGRATE_ACTION}" == "commit-data" ]]; then
-    # Remove temporary external user domain
-    ns8-action cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
-    rsync -v "${rsync_endpoint}"/terminate
+if [[ "${MIGRATE_ACTION}" != "commit-data" ]]; then
+    exit 0
 fi
+
+# Remove temporary external user domain
+ns8-action cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
+
+# Commit DC migration
+rsync -v "${rsync_endpoint}"/terminate
+
+# Wait for the user domain to be ready
+while : ; do
+    if ns8-action cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
+        break
+    fi
+    sleep 5
+done
+
+# Stop local AD provider (nsdc) and disable it permanently
+/sbin/e-smith/config setprop nsdc status disabled
+systemctl disable --now nsdc || :
