@@ -27,9 +27,11 @@ echo "--- $0 ${MIGRATE_ACTION} $(date)" 1>&2
 # Assuming this script is running under the state/account-provider directory
 imdata_file="imdata.json"
 
+# Start the migration with an import-module API call, if necessary
 if [[ ! -s "${imdata_file}" ]]; then
-    # Start the migration with an import-module API call
-    ns8-action cluster import-module '{"image": "ghcr.io/nethserver/samba:migration", "node": 1, "volumes": ["data"]}' > "${imdata_file}"
+    IFS=$'\t' read -r node_id < <( jq -r '.appNode' )
+    samba_image=$(/sbin/e-smith/config getprop ns8 SambaImage)
+    ns8-action cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["data"]}' "${samba_image:?}" "${node_id:?}" )" > "${imdata_file}"
 fi
 
 # Extract rsync credentials and endpoint parameters from the imdata file
@@ -46,6 +48,9 @@ IFS=$'\t' read -r provision_type ipaddress < <( /sbin/e-smith/config printjson n
 IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( /sbin/e-smith/config printjson sssd | \
     jq -r '.props | [.Workgroup, .Realm, .BindDN, .BindPassword] | join("\t") ' )
 
+# Trim @realm suffix from svcuser
+svcuser="${svcuser%%@*}"
+
 # Generate import.env
 cat - >import.env <<EOF
 HOSTNAME=$(< /var/lib/machines/nsdc/etc/hostname)
@@ -53,7 +58,7 @@ IPADDRESS=${ipaddress:?}
 PROVISION_TYPE=${provision_type:-unknown}
 NBDOMAIN=${nbdomain:?}
 REALM=${realm:?}
-SVCUSER=${svcuser%%@*}
+SVCUSER=${svcuser}
 SVCPASS=${svcpass}
 EOF
 
