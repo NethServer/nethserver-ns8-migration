@@ -50,6 +50,7 @@ IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( /sbin/e-smith/config print
 
 # Generate import.env
 cat - >import.env <<EOF
+HOSTNAME=$(< /var/lib/machines/nsdc/etc/hostname)
 IPADDRESS=${ipaddress:?}
 PROVISION_TYPE=${provision_type:-unknown}
 NBDOMAIN=${nbdomain:?}
@@ -61,18 +62,21 @@ EOF
 # Send import.env
 rsync -i import.env "${rsync_endpoint}"/data/state/import.env
 
+# Send sysvol contents
+rsync -ai /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${rsync_endpoint}"/data/volumes/data/sysvol/
+
 # Exit handler: remove .export files
 trap 'nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete' EXIT
 
 # Generate .export files, like the pre-backup event handler of NSDC does
+# shellcheck disable=SC2016
 nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]db" -not -name netlogon_creds_cli.tdb)'
 
-# Send .export files and secrets encryption key
-rsync -mtri --include='*/' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
-
-# Remove temporary external user domain
-ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${realm,,}") || :
+# Send .export, *.pem files, secrets encryption key
+rsync -mtri --include='*/' --include='*.pem' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
 
 if [[ "${MIGRATE_ACTION}" == "commit-data" ]]; then
+    # Remove temporary external user domain
+    ns8-action cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
     rsync -v "${rsync_endpoint}"/terminate
 fi
