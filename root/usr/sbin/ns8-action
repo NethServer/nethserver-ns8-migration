@@ -69,6 +69,7 @@ def call(api_endpoint, token, agent, action, data):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-A', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
 parser.add_argument('agent', default="cluster")
 parser.add_argument('action')
 parser.add_argument('data')
@@ -97,4 +98,9 @@ payload = json.loads(resp.read())
 # Execute action
 ret = call(api_endpoint, payload['token'], args.agent, args.action, json.loads(args.data))
 
-print(json.dumps(ret))
+if args.attach:
+    json.dump(ret['data']['output'], fp=sys.stdout)
+    sys.stderr.write(ret['data']['error'])
+    sys.exit(int(ret['data']['exit_code']))
+else:
+    print(json.dumps(ret))
