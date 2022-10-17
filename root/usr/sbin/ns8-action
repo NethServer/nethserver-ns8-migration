@@ -31,8 +31,7 @@ from urllib import request, parse
 
 def call(api_endpoint, token, agent, action, data):
 
-    jdata = json.dumps({"action": action, "data": data, "extra": {
-                       "title": action}}).encode('utf8')
+    jdata = json.dumps({"action": action, "data": data, "extra": {"isNotificationHidden": True}}).encode('utf8')
     req = request.Request(f'{api_endpoint}/api/{agent}/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
@@ -72,7 +71,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-A', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
 parser.add_argument('agent', default="cluster")
 parser.add_argument('action')
-parser.add_argument('data')
+parser.add_argument('data', nargs='?')
 
 args = parser.parse_args()
 
@@ -95,8 +94,15 @@ resp = request.urlopen(req)
 
 payload = json.loads(resp.read())
 
+if args.data is None: # send empty string
+    input_data = None
+elif args.data == '-': # read JSON from stdin
+    input_data = json.load(sys.stdin)
+else:
+    input_data = json.loads(args.data)
+
 # Execute action
-ret = call(api_endpoint, payload['token'], args.agent, args.action, json.loads(args.data))
+ret = call(api_endpoint, payload['token'], args.agent, args.action, input_data)
 
 if args.attach:
     json.dump(ret['data']['output'], fp=sys.stdout)
