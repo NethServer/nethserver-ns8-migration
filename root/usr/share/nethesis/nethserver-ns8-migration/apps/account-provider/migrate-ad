@@ -31,12 +31,12 @@ imdata_file="imdata.json"
 if [[ ! -s "${imdata_file}" ]]; then
     IFS=$'\t' read -r node_id < <( jq -r '.appNode' )
     samba_image=$(/sbin/e-smith/config getprop ns8 SambaImage)
-    ns8-action cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["data"]}' "${samba_image:?}" "${node_id:?}" )" > "${imdata_file}"
+    ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["data"]}' "${samba_image:?}" "${node_id:?}" )" > "${imdata_file}"
 fi
 
 # Extract rsync credentials and endpoint parameters from the imdata file
 IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
-    jq -r '.data.output | [ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+    jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
 export RSYNC_PASSWORD
 rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
 
@@ -76,9 +76,6 @@ rsync -i import.env "${rsync_endpoint}"/data/state/import.env
 # Send sysvol contents
 rsync -ai /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${rsync_endpoint}"/data/volumes/data/sysvol/
 
-# Exit handler: remove .export files
-trap 'nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete' EXIT
-
 # Generate .export files, like the pre-backup event handler of NSDC does
 # shellcheck disable=SC2016
 nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]db" -not -name netlogon_creds_cli.tdb)'
@@ -86,19 +83,30 @@ nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]
 # Send .export, *.pem files, secrets encryption key
 rsync -mtri --include='*/' --include='*.pem' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
 
+# Clean up .export files
+nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete
+
 if [[ "${MIGRATE_ACTION}" != "commit-data" ]]; then
     exit 0
 fi
 
 # Remove temporary external user domain
-ns8-action cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
+ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
 
 # Commit DC migration
 rsync -v "${rsync_endpoint}"/terminate
 
 # Wait for the user domain to be ready
+
 while : ; do
-    if ns8-action cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
+    if ns8-action --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q "^${realm,,}$"; then
+        break
+    fi
+    sleep 5
+done
+
+while : ; do
+    if ns8-action --attach cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
         break
     fi
     sleep 5
