@@ -22,7 +22,9 @@
 
 # clean up remote ns8 state
 source /var/lib/nethserver/agent/environment
-ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}")
+if [[ -n "${USER_DOMAIN}" ]]; then
+    ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}")
+fi
 ns8-action cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}")
 
 # reset DB props
