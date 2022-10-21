@@ -99,14 +99,14 @@ rsync -v "${rsync_endpoint}"/terminate
 # Wait for the user domain to be ready
 
 while : ; do
-    if ns8-action --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q "^${realm,,}$"; then
+    if ns8-action --hidden --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q "^${realm,,}$"; then
         break
     fi
     sleep 5
 done
 
 while : ; do
-    if ns8-action --attach cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
+    if ns8-action --hidden --attach cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
         break
     fi
     sleep 5

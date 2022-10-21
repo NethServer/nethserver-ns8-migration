@@ -30,8 +30,15 @@ import uuid
 from urllib import request, parse
 
 def call(api_endpoint, token, agent, action, data):
+    global args
 
-    jdata = json.dumps({"action": action, "data": data, "extra": {"isNotificationHidden": True}}).encode('utf8')
+    data_extra = {
+        "title": agent + "/" + action,
+        "description": "ns8-action endpoint " + api_endpoint,
+        "isNotificationHidden": True if args.hidden else False,
+    }
+
+    jdata = json.dumps({"action": action, "data": data, "extra": data_extra}).encode('utf8')
     req = request.Request(f'{api_endpoint}/api/{agent}/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
@@ -68,7 +75,8 @@ def call(api_endpoint, token, agent, action, data):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-A', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
+parser.add_argument('-a', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
+parser.add_argument('--hidden', default=False, action='store_true', help="run the action without UI notification")
 parser.add_argument('agent', default="cluster")
 parser.add_argument('action')
 parser.add_argument('data', nargs='?')

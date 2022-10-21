@@ -90,14 +90,14 @@ sleep 5
 
 # Wait for the user domain to become ready
 while : ; do
-    if ns8-action --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q '^directory\.nh$'; then
+    if ns8-action --hidden --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q '^directory\.nh$'; then
         break
     fi
     sleep 5
 done
 
 while : ; do
-    if ns8-action --attach cluster list-domain-groups "$(printf '{"domain":"%s"}' "directory.nh")"; then
+    if ns8-action --hidden --attach cluster list-domain-groups "$(printf '{"domain":"%s"}' "directory.nh")"; then
         break
     fi
     sleep 5
