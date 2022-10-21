@@ -115,3 +115,7 @@ done
 # Stop local AD provider (nsdc) and disable it permanently
 /sbin/e-smith/config setprop nsdc status disabled
 systemctl disable --now nsdc || :
+
+# Stop SSSD service and disable it permanently
+/sbin/e-smith/config setprop sssd status disabled
+systemctl disable --now sssd || :
