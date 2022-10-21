@@ -1,0 +1,121 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+echo "--- $0 ${MIGRATE_ACTION} $(date)" 1>&2
+
+# Assuming this script is running under the state/account-provider directory
+imdata_file="imdata.json"
+
+# Start the migration with an import-module API call, if necessary
+if [[ ! -s "${imdata_file}" ]]; then
+    IFS=$'\t' read -r node_id < <( jq -r '.appNode' )
+    samba_image=$(/sbin/e-smith/config getprop ns8 SambaImage)
+    ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["data"]}' "${samba_image:?}" "${node_id:?}" )" > "${imdata_file}"
+fi
+
+# Extract rsync credentials and endpoint parameters from the imdata file
+IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
+    jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+export RSYNC_PASSWORD
+rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
+
+# Read nsdc props
+IFS=$'\t' read -r provision_type ipaddress < <( /sbin/e-smith/config printjson nsdc | \
+    jq -r '.props | [.ProvisionType, .IpAddress] | join("\t") ' )
+
+# Read sssd props
+IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( /sbin/e-smith/config printjson sssd | \
+    jq -r '.props | [.Workgroup, .Realm, .BindDN, .BindPassword] | join("\t") ' )
+
+# Trim @realm suffix from svcuser
+svcuser="${svcuser%%@*}"
+
+# Generate import.env
+cat - >import.env <<EOF
+HOSTNAME=$(< /var/lib/machines/nsdc/etc/hostname)
+IPADDRESS=${ipaddress:?}
+PROVISION_TYPE=${provision_type:-unknown}
+NBDOMAIN=${nbdomain:?}
+REALM=${realm:?}
+SVCUSER=${svcuser}
+SVCPASS=${svcpass}
+EOF
+
+# Wait for the rsyncd server to become available
+while : ; do
+    if rsync -v "${rsync_endpoint}"/ ; then
+        break
+    fi
+    sleep 2
+done
+
+# Send import.env
+rsync -i import.env "${rsync_endpoint}"/data/state/import.env
+
+# Send sysvol contents
+rsync -ai /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${rsync_endpoint}"/data/volumes/data/sysvol/
+
+# Generate .export files, like the pre-backup event handler of NSDC does
+# shellcheck disable=SC2016
+nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]db" -not -name netlogon_creds_cli.tdb)'
+
+# Send .export, *.pem files, secrets encryption key
+rsync -mtri --include='*/' --include='*.pem' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${rsync_endpoint}"/data/volumes/data/
+
+# Clean up .export files
+nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete
+
+if [[ "${MIGRATE_ACTION}" != "commit-data" ]]; then
+    exit 0
+fi
+
+# Remove temporary external user domain
+ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "${realm,,}")" || :
+
+# Commit DC migration
+rsync -v "${rsync_endpoint}"/terminate
+
+# Wait for the user domain to be ready
+
+while : ; do
+    if ns8-action --hidden --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q "^${realm,,}$"; then
+        break
+    fi
+    sleep 5
+done
+
+while : ; do
+    if ns8-action --hidden --attach cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
+        break
+    fi
+    sleep 5
+done
+
+# Stop local AD provider (nsdc) and disable it permanently
+/sbin/e-smith/config setprop nsdc status disabled
+systemctl disable --now nsdc || :
+
+# Stop SSSD service and disable it permanently
+/sbin/e-smith/config setprop sssd status disabled
+systemctl disable --now sssd || :

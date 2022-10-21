@@ -25,10 +25,10 @@
 set_migration_status() {
     app_id=$1
     status=$2
-    echo "{ \"status\": \"$status\" }" >/var/lib/nethserver/agent/${app_id}_ns8_migration
+    echo "{ \"status\": \"$status\" }" >"/var/lib/nethserver/agent/state/${app_id}.mstatus.json"
 }
 
-echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migrate-data","state":"running","step":0,"pid":0,"action":""}'
+echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migration-sync","state":"running","step":0,"pid":0,"action":""}'
 
 # read json from stdin
 data=$(cat /dev/stdin)
@@ -37,26 +37,21 @@ app_id=$(echo $data | jq -r '.app')
 action=$(echo $data | jq -r '.action')
 migration_config=$(echo $data | jq -r '.migrationConfig')
 
-app=""
-if [[ "$app_id" == "account-provider" ]]; then
-    app="ldapproxy"
-elif [[ "$app_id" == "nethserver-nextcloud" ]]; then
-    app="nextcloud"
-elif [[ "$app_id" == "nethserver-mattermost" ]]; then
-    app="mattermost"
-else
-    echo '{"pid":0,"status":"failed","event":"migrate-data"}'
+apps_path="/usr/share/nethesis/nethserver-ns8-migration/apps"
+if [[ ! -x "${apps_path}/${app_id}/export" ]] || [[ ! -x "${apps_path}/${app_id}/migrate" ]]; then
+    echo '{"pid":0,"status":"failed","event":"migration-sync"}'
     error "ApiFailed" "Unknown app ID $app_id"
 fi
 
 if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
     set_migration_status "$app_id" "syncing"
 
-    echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/export &>>/var/log/ns8-migration.log
+    echo "$migration_config" | "${apps_path}/${app_id}/export" &>>/var/log/ns8-migration.log
+
     if [ $? -gt 0 ]; then
         set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
-        error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/export failed"
+        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
+        error "ApiFailed" "${apps_path}/${app_id}/export failed"
     fi
 
     set_migration_status "$app_id" "migrating"
@@ -64,40 +59,25 @@ elif [[ "$action" == "finish" ]]; then
     set_migration_status "$app_id" "syncing"
 
     # if needed, pass additional migration configurations to migrate script (e.g. virtual host for webapps, IP address for AD)
-    echo "$migration_config" | /usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate &>>/var/log/ns8-migration.log
+    echo "$migration_config" | "${apps_path}/${app_id}/migrate" &>>/var/log/ns8-migration.log
     if [ $? -gt 0 ]; then
         set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migrate-data"}'
-        error "ApiFailed" "/usr/share/nethesis/nethserver-ns8-migration/apps/$app/migrate failed"
-    fi
-
-    if [[ "$app_id" != "account-provider" ]]; then
-        # uninstall app
-        output=$(echo "{\"action\": \"list-removed\", \"packages\": [\"$app_id\"]}" | /usr/libexec/nethserver/api/system-packages/read)
-        packages=$(echo $output | jq -r '.packages')
-
-        echo "{\"action\": \"remove\", \"packages\": $packages}" | /usr/libexec/nethserver/api/system-packages/update
-        if [ $? -gt 0 ]; then
-            set_migration_status "$app_id" "migrating"
-            echo '{"pid":0,"status":"failed","event":"migrate-data"}'
-            error "ApiFailed" "/usr/libexec/nethserver/api/system-packages/update failed"
-        fi
-
-        js_array=$(echo $packages | jq -r ".[]")
-        # define bash array
-        declare -a packages_arr=($js_array)
-
-        for package in "${packages_arr[@]}"; do
-            # remove pin and shortcut of uninstalled packages
-            echo "{\"action\": \"remove-pin\", \"name\": \"$package\"}" | /usr/libexec/nethserver/api/system-apps/update
-            echo "{\"action\": \"remove-shortcut\", \"name\": \"$package\"}" | /usr/libexec/nethserver/api/system-apps/update
-        done
-
+        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
+        error "ApiFailed" "${apps_path}/${app_id}/migrate failed"
     fi
 
     set_migration_status "$app_id" "migrated"
+
+    # It is possible to migrate the account provider only as the last
+    # module. After it has been successfully migrated, disconnect from the
+    # cluster.
+    if [[ "${app_id}" == "account-provider" ]]; then
+        if ! /usr/sbin/ns8-leave; then
+            error "EventFailed" "See /var/log/messages"
+        fi
+    fi
 fi
 
-echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migrate-data","state":"done","step":0,"pid":0,"action":""}'
-echo '{"pid":0,"status":"success","event":"migrate-data"}'
+echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migration-sync","state":"done","step":0,"pid":0,"action":""}'
+echo '{"pid":0,"status":"success","event":"migration-sync"}'
 success

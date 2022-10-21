@@ -107,15 +107,6 @@ payload = json.loads(resp.read())
 # Retrieve account provider information
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
-if account_provider_config['isAD'] == '1':
-    try:
-        nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
-        nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
-    except:
-        pass # Ignore missing nsdc/IpAddress prop
-    else:
-        sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
-        account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
 
 # Prepare arguments for add-node
 priv_key = subprocess.check_output(['/sbin/e-smith/config', 'getprop', 'wg-quick@wg0', 'SecretKey']).decode('ASCII').rstrip()
@@ -156,7 +147,6 @@ with open('/var/lib/nethserver/agent/agent.env', 'w') as fp:
 
 with open('/var/lib/nethserver/agent/environment', 'w') as fp:
     fp.write(f"NODE_ID={ret['node_id']}\n")
-    fp.write(f"USER_DOMAIN={account_provider_domain}\n")
 
 # Start the VPN on device wg0
 subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-save'], check=True)
@@ -165,35 +155,48 @@ subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-sa
 api_endpoint = f"http://{ret['leader_ip_address']}:9311"
 
 #
-# Configure NS7 account provider as external user domain provider in NS8
+# Configure NS7 local account provider as external user domain provider in NS8
 #
-if nsdc_ip_address:
-    # Push a route to reach NSDC IP address through the cluster VPN
-    update_routes_request = {"add": [{"network": nsdc_ip_address + '/32', "node_id": ret['node_id']}]}
-    update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
-    if update_routes_response['data']['exit_code'] != 0:
-        print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
-        sys.exit(1)
-    # Configure NSDC as account provider of an external user domain:
-    add_external_domain_request = {
-        "domain": account_provider_domain,
-        "protocol": "ldap",
-        "host": nsdc_ip_address,
-        "port": account_provider_config['port'],
-        "schema": 'ad',
-        "bind_dn": account_provider_config['BindDN'],
-        "bind_password": account_provider_config['BindPassword'],
-        "base_dn": account_provider_config['BaseDN'],
-        "tls": True,
-        "tls_verify": False,
-    }
-    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
-    if add_external_domain_response['data']['exit_code'] != 0:
-        print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
-        sys.exit(1)
+
+if account_provider_config['isAD'] == '1':
+    sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
+    account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
+    try:
+        # If the account provider is AD, assume it is local and try to get nsdc IP address, otherwise skip.
+        nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
+        nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
+    except:
+        pass # Ignore missing nsdc/IpAddress prop
+    else:
+        # Push a route to reach NSDC IP address through the cluster VPN
+        update_routes_request = {"add": [{"network": nsdc_ip_address + '/32', "node_id": ret['node_id']}]}
+        update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
+        if update_routes_response['data']['exit_code'] != 0:
+            print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
+            sys.exit(1)
+        # Configure NSDC as account provider of an external user domain:
+        add_external_domain_request = {
+            "domain": account_provider_domain,
+            "protocol": "ldap",
+            "host": nsdc_ip_address,
+            "port": account_provider_config['port'],
+            "schema": 'ad',
+            "bind_dn": account_provider_config['BindDN'],
+            "bind_password": account_provider_config['BindPassword'],
+            "base_dn": account_provider_config['BaseDN'],
+            "tls": True,
+            "tls_verify": False,
+        }
+        add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+        if add_external_domain_response['data']['exit_code'] != 0:
+            print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
+            sys.exit(1)
+        with open('/var/lib/nethserver/agent/environment', 'a') as fp:
+            fp.write(f"USER_DOMAIN={account_provider_domain}\n")
 
 elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
     # Configure OpenLDAP as account provider of an external user domain:
+    account_provider_domain = "directory.nh"
     add_external_domain_request = {
         "domain": account_provider_domain,
         "protocol": "ldap",
@@ -210,3 +213,5 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
     if add_external_domain_response['data']['exit_code'] != 0:
         print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
         sys.exit(1)
+    with open('/var/lib/nethserver/agent/environment', 'a') as fp:
+        fp.write(f"USER_DOMAIN={account_provider_domain}\n")

@@ -22,13 +22,15 @@
 
 # clean up remote ns8 state
 source /var/lib/nethserver/agent/environment
-ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}")
+if [[ -n "${USER_DOMAIN}" ]]; then
+    ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}")
+fi
 ns8-action cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}")
 
 # reset DB props
-/sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled
+/sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled LeaderIpAddress ""
 /sbin/e-smith/config setprop agent status disabled
-/sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey ""
+/sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey "" RemoteNetwork ""
 
 # clean up agent state directory, preserving state/ directory
 find /var/lib/nethserver/agent -not -name state -delete

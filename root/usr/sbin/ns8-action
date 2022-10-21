@@ -30,9 +30,15 @@ import uuid
 from urllib import request, parse
 
 def call(api_endpoint, token, agent, action, data):
+    global args
 
-    jdata = json.dumps({"action": action, "data": data, "extra": {
-                       "title": action}}).encode('utf8')
+    data_extra = {
+        "title": agent + "/" + action,
+        "description": "ns8-action endpoint " + api_endpoint,
+        "isNotificationHidden": True if args.hidden else False,
+    }
+
+    jdata = json.dumps({"action": action, "data": data, "extra": data_extra}).encode('utf8')
     req = request.Request(f'{api_endpoint}/api/{agent}/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
@@ -69,9 +75,11 @@ def call(api_endpoint, token, agent, action, data):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-a', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
+parser.add_argument('--hidden', default=False, action='store_true', help="run the action without UI notification")
 parser.add_argument('agent', default="cluster")
 parser.add_argument('action')
-parser.add_argument('data')
+parser.add_argument('data', nargs='?')
 
 args = parser.parse_args()
 
@@ -94,7 +102,19 @@ resp = request.urlopen(req)
 
 payload = json.loads(resp.read())
 
-# Execute action
-ret = call(api_endpoint, payload['token'], args.agent, args.action, json.loads(args.data))
+if args.data is None: # send empty string
+    input_data = None
+elif args.data == '-': # read JSON from stdin
+    input_data = json.load(sys.stdin)
+else:
+    input_data = json.loads(args.data)
 
-print(json.dumps(ret))
+# Execute action
+ret = call(api_endpoint, payload['token'], args.agent, args.action, input_data)
+
+if args.attach:
+    json.dump(ret['data']['output'], fp=sys.stdout)
+    sys.stderr.write(ret['data']['error'])
+    sys.exit(int(ret['data']['exit_code']))
+else:
+    print(json.dumps(ret))
