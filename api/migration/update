@@ -67,6 +67,15 @@ elif [[ "$action" == "finish" ]]; then
     fi
 
     set_migration_status "$app_id" "migrated"
+
+    # It is possible to migrate the account provider only as the last
+    # module. After it has been successfully migrated, disconnect from the
+    # cluster.
+    if [[ "${app_id}" == "account-provider" ]]; then
+        if ! /usr/sbin/ns8-leave; then
+            error "EventFailed" "See /var/log/messages"
+        fi
+    fi
 fi
 
 echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migration-sync","state":"done","step":0,"pid":0,"action":""}'
