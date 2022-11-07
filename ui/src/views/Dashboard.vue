@@ -201,7 +201,6 @@
                 v-else-if="app.status == 'migrating' || app.status == 'syncing'"
               >
                 <button
-                  v-if="app.id != 'account-provider'"
                   @click="syncData(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
                   class="btn btn-primary"
