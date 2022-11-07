@@ -294,6 +294,10 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <template v-if="currentApp">
+                <div v-if="error.getClusterStatus" class="alert alert-danger">
+                  <span class="pficon pficon-error-circle-o"></span>
+                  {{ error.getClusterStatus }}
+                </div>
                 <template v-if="currentApp.id === 'account-provider'">
                   <div
                     class="mg-bottom-20"
@@ -475,10 +479,6 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <template v-if="currentApp">
-                <div v-if="error.getClusterStatus" class="alert alert-danger">
-                  <span class="pficon pficon-error-circle-o"></span>
-                  {{ error.getClusterStatus }}
-                </div>
                 <template v-if="currentApp.id === 'account-provider'">
                   <template v-if="currentApp.provider === 'ad'">
                     <!-- choose an IP address for AD -->
@@ -886,7 +886,7 @@ export default {
         this.error.roundCubeVirtualHost = "";
         this.error.webtopVirtualHost = "";
 
-        if (!this.roundCubeVirtualHost) {
+        if (this.roundcubeApp && !this.roundCubeVirtualHost) {
           this.error.roundCubeVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
@@ -898,6 +898,7 @@ export default {
         }
 
         if (
+          this.webtopApp &&
           !this.webtopApp.config.props.VirtualHost &&
           !this.webtopVirtualHost
         ) {
