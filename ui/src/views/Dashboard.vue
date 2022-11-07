@@ -527,7 +527,6 @@
                   </template>
                 </template>
                 <template v-else>
-                  <!-- app will be uninstalled -->
                   <div
                     class="mg-bottom-20"
                     v-html="
@@ -1179,15 +1178,6 @@ export default {
         function(success) {
           context.loading.migrationUpdate = false;
           context.migrationReadApps();
-
-          if (action === "finish" && app.id !== "account-provider") {
-            // refresh Cockpit shortcuts after app uninstallation
-            cockpit
-              .dbus(null, {
-                bus: "internal",
-              })
-              .call("/packages", "cockpit.Packages", "Reload", []);
-          }
         },
         function(error) {
           const errorMessage = context.$i18n.t(
