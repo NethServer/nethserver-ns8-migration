@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+echo "--- $0 ${MIGRATE_ACTION:-migrate} $(date)" 1>&2
+
+# Prepare script runtime environment
+mkdir -vp /var/lib/nethserver/agent/state/nethserver-mail
+cd /var/lib/nethserver/agent/state/nethserver-mail
+
+# Import USER_DOMAIN value
+source /var/lib/nethserver/agent/environment
+hostname -d > mail_domain.txt
+echo "${USER_DOMAIN:?}" > user_domain.txt
+
+# Assuming this script is running under the state/account-provider directory
+imdata_file="imdata.json"
+
+# Start the migration with an import-module API call, if necessary
+if [[ ! -s "${imdata_file}" ]]; then
+    IFS=$'\t' read -r node_id < <( jq -r '.emailNode' )
+    mail_image=$(/sbin/e-smith/config getprop ns8 MailImage)
+    ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["dovecot-data","rspamd-redis","rspamd-data"]}' "${mail_image:?}" "${node_id:?}" )" > "${imdata_file}"
+fi
+
+# Extract rsync credentials and endpoint parameters from the imdata file
+IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
+    jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+export RSYNC_PASSWORD
+rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
+
+# Wait for the rsyncd server to become available
+while : ; do
+    if rsync -v "${rsync_endpoint}"/ ; then
+        break
+    fi
+    sleep 2
+done
+
+/sbin/e-smith/db domains printjson > domains.json
+/sbin/e-smith/db accounts printjson > accounts.json
+/sbin/e-smith/config printjson postfix > postfix.json
+/sbin/e-smith/config printjson dovecot > dovecot.json
+/sbin/e-smith/config printjson rspamd > rspamd.json
+
+# Send configuration files
+rsync -i --remove-source-files user_domain.txt mail_domain.txt {domains,accounts,postfix,dovecot,rspamd}.json "${rsync_endpoint}"/data/state/
+
+# rsync note: using usermap and groupmap arguments because the chown does
+# not work. Using the "catchall" range 1-1000 because "*" does not work
+
+# Send mailboxes
+rsync -i --times --recursive --owner --group --usermap=1-1000:100 --groupmap=1-1000:101 --delete /var/lib/nethserver/vmail/ "${rsync_endpoint}"/data/volumes/dovecot-data/
+
+# Send Redis database, the import-module will rename it properly
+if [[ -f /var/lib/redis/rspamd/dump.rdb ]]; then
+    rsync -i --times --recursive --owner --group --usermap=1-1000:100 --groupmap=1-1000:101 /var/lib/redis/rspamd/dump.rdb "${rsync_endpoint}"/data/volumes/rspamd-redis/dump.rdb
+fi
+
+# Overwrite default DKIM key
+rsync -i --times --recursive --owner --group --usermap=1-1000:101 --groupmap=1-1000:102 /etc/opendkim/keys/default.private "${rsync_endpoint}"/data/volumes/rspamd-data/dkim/default.key
+rsync -i --times --recursive --owner --group --usermap=1-1000:101 --groupmap=1-1000:102 /etc/opendkim/keys/default.txt "${rsync_endpoint}"/data/volumes/rspamd-data/dkim/default.txt
+
+if [[ "${MIGRATE_ACTION}" == "export" ]]; then
+    exit 0
+fi
+
+# Stop and disable local Mail services
+for service in rspamd postfix dovecot opendkim olefy; do
+    /sbin/e-smith/config setprop "${service}" status disabled || :
+    systemctl disable --now "${service}" || :
+done
+
+# Commit Mail migration
+rsync "${rsync_endpoint}"/terminate

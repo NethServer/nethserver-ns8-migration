@@ -104,3 +104,9 @@ Steps:
 3. When ready for the final migration, execute: ::
 
      /usr/share/nethesis/nethserver-ns8-migration/apps/mattermost/migrate
+
+Migration of Email, Webtop, Roundcube
+=====================================
+
+As both Webtop and Roundcube depends on the Email application, the
+migration of the three modules must occur at the same time.
