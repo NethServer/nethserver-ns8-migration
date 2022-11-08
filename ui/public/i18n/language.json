@@ -55,7 +55,7 @@
     "logout_from_ns8_cluster": "Logout from NS8 cluster",
     "logout_explanation": "Do you really want to logout from <strong>{leaderNode}</strong>? You will have to start over the migration process",
     "finish_account_provider_migration_explanation": "The local account provider will be disabled and the cluster connection will be closed",
-    "finish_app_migration_explanation": "Migration will be finalized and <strong>{appName} will be uninstalled</strong> from NethServer 7. From now on, you won't be able to connect to a different NS8 cluster.",
+    "finish_app_migration_explanation": "Migration will be finalized and <strong>{appName} will be stopped and disabled</strong> in NethServer 7.",
     "local_ldap": "Local LDAP",
     "remote_ldap": "Remote LDAP",
     "local_ad": "Local Active Directory",
@@ -78,7 +78,9 @@
     "app_migrated_with_email": "This app is migrated together with <strong>Email</strong> app",
     "roundcube_webtop_migration": "If <strong>Webmail</strong> and/or <strong>WebTop</strong> are currently installed, they will be migrated too.",
     "roundcube_virtual_host": "Webmail virtual host",
-    "webtop_virtual_host": "WebTop virtual host"
+    "webtop_virtual_host": "WebTop virtual host",
+    "remote_account_provider_no_migration": "Remote account provider doesn't need to be migrated",
+    "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",

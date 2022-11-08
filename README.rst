@@ -57,7 +57,7 @@ To finalize app migration ``api/migration/update`` can be invoked with ``action:
 where ``$migration_config`` variable possibly contains a json object that contains some configuration data needed to finalize app migration.
 For instance, let's consider Nextcloud migration: if Nextcloud installation on NS7 is not configured with a virtual host, then ``$migration_config`` will contain the name of the Nextcloud virtual host that will be used on NS8 (since virtual host is mandatory on NS8).
 
-After the execution of ``migrate`` script, the migrated app will be uninstalled from NS7.
+After the execution of ``migrate`` script, the migrated app will be stopped and disabled in NS7.
 
 
 Nextcloud migration
