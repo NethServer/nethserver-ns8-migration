@@ -189,8 +189,37 @@
         <div id="pf-list-default" class="list-group list-view-pf app-list">
           <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
+              <!-- local account provider -->
               <button
-                v-if="app.status == 'not_migrated'"
+                v-if="
+                  app.id == 'account-provider' &&
+                    accountProviderConfig.location == 'local' &&
+                    app.status == 'not_migrated'
+                "
+                @click="showStartMigrationModal(app)"
+                :disabled="
+                  loading.migrationUpdate || !canStartAccountProviderMigration
+                "
+                class="btn btn-default"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+              <!-- remote account provider -->
+              <button
+                v-else-if="
+                  app.id == 'account-provider' &&
+                    accountProviderConfig.location == 'remote' &&
+                    app.status == 'not_migrated'
+                "
+                @click="showStartMigrationModal(app)"
+                disabled
+                class="btn btn-default"
+              >
+                {{ $t("dashboard.start_migration") }}
+              </button>
+              <!-- other apps -->
+              <button
+                v-else-if="app.status == 'not_migrated'"
                 @click="showStartMigrationModal(app)"
                 :disabled="isStartMigrationButtonDisabled(app)"
                 class="btn btn-default"
@@ -241,6 +270,7 @@
                 <div class="list-group-item-heading">
                   <span>{{ app.name }}</span>
                 </div>
+                <!-- migration info -->
                 <div class="list-group-item-text">
                   <div
                     v-if="app.status == 'syncing'"
@@ -254,6 +284,7 @@
                     v-else-if="app.status == 'migrating'"
                     class="pficon pficon-maintenance status-icon"
                   ></span>
+                  <!-- email apps status description -->
                   <span
                     v-if="
                       [
@@ -264,6 +295,26 @@
                     v-html="$t('dashboard.app_migrated_with_email')"
                   >
                   </span>
+                  <!-- remote account provider status description -->
+                  <span
+                    v-else-if="
+                      app.id === 'account-provider' &&
+                        accountProviderConfig.location === 'remote'
+                    "
+                  >
+                    {{ $t("dashboard.remote_account_provider_no_migration") }}
+                  </span>
+                  <!-- local account provider status description -->
+                  <span
+                    v-else-if="
+                      app.id === 'account-provider' &&
+                        accountProviderConfig.location === 'local' &&
+                        !canStartAccountProviderMigration
+                    "
+                  >
+                    {{ $t("dashboard.local_account_provider_migrate_last") }}
+                  </span>
+                  <!-- standard status description -->
                   <span
                     v-else
                     v-html="$t('dashboard.status_' + app.status)"
@@ -797,6 +848,18 @@ export default {
     webtopApp() {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
+    canStartAccountProviderMigration() {
+      // account provider migration can start only if it's local and all other apps have completed migration
+      return !this.apps.some(
+        (app) =>
+          app.status !== "migrated" &&
+          ![
+            "account-provider",
+            "nethserver-roundcubemail",
+            "nethserver-webtop5",
+          ].includes(app.id)
+      );
+    },
   },
   mounted() {
     this.connectionRead();
@@ -1176,7 +1239,14 @@ export default {
         },
         function(success) {
           context.loading.migrationUpdate = false;
-          context.migrationReadApps();
+
+          if (app.id === "account-provider") {
+            // account provider is migrated last, api has already performed logout from ns8
+            context.connectionRead();
+          } else {
+            // reload migration status
+            context.migrationReadApps();
+          }
         },
         function(error) {
           const errorMessage = context.$i18n.t(
@@ -1294,12 +1364,6 @@ export default {
         this.loading.getClusterStatus = false;
         return;
       }
-
-      //// remove mock
-      // let clusterNodes = output.clusterStatus.data.output.nodes;
-      // clusterNodes.push({ id: 2, ui_name: "Second", online: false });
-      // this.clusterNodes = clusterNodes;
-
       this.clusterNodes = output.clusterStatus.data.output.nodes;
       this.loading.getClusterStatus = false;
     },
