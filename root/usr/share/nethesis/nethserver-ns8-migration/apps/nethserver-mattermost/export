@@ -30,7 +30,6 @@ else
     response=$(cat $MM_CONF)
 fi
 
-
 # Read rsync configuration
 user=$(echo $response | jq -r .data.output.credentials[0])
 password=$(echo $response | jq -r .data.output.credentials[1])

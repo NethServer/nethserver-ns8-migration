@@ -20,62 +20,52 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-. /usr/libexec/nethserver/api/lib/helper_functions
+# shellcheck disable=SC1091
 
-set_migration_status() {
-    app_id=$1
-    status=$2
-    echo "{ \"status\": \"$status\" }" >"/var/lib/nethserver/agent/state/${app_id}.mstatus.json"
-}
+set -e
+
+. /usr/libexec/nethserver/api/lib/helper_functions
 
 echo '{"progress":"0.00","time":"0.0","exit":0,"event":"migration-sync","state":"running","step":0,"pid":0,"action":""}'
 
 # read json from stdin
 data=$(cat /dev/stdin)
 
-app_id=$(echo $data | jq -r '.app')
-action=$(echo $data | jq -r '.action')
-migration_config=$(echo $data | jq -r '.migrationConfig')
+app_id=$(jq -r '.app' <<<"$data")
+action=$(jq -r '.action' <<<"$data")
+migration_config=$(jq -r '.migrationConfig' <<<"$data")
 
-apps_path="/usr/share/nethesis/nethserver-ns8-migration/apps"
-if [[ ! -x "${apps_path}/${app_id}/export" ]] || [[ ! -x "${apps_path}/${app_id}/migrate" ]]; then
+exit_apierror ()
+{
     echo '{"pid":0,"status":"failed","event":"migration-sync"}'
-    error "ApiFailed" "Unknown app ID $app_id"
+    error "ApiFailed" "${action} ${app_id} failed"
+}
+
+trap exit_apierror ERR
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR:?}/environment"
+app_idir="${AGENT_INSTALL_DIR:?}/apps/${app_id}"
+app_sdir="${AGENT_STATE_DIR:?}/${app_id}"
+
+set -a # export all variables
+# Map input values from migrationConfig to environment variables
+if [[ -f "${app_idir}/input-${action}.jq" ]]; then
+    eval "$(jq -r -f "${app_idir}/input-${action}.jq" <<<"${migration_config}")"
 fi
 
-if [ "$action" == "start" ] || [ "$action" == "sync" ]; then
-    set_migration_status "$app_id" "syncing"
+echo "----------- ${action} ${app_id}" $(date -R) >>/var/log/ns8-migration.log
 
-    echo "$migration_config" | "${apps_path}/${app_id}/export" &>>/var/log/ns8-migration.log
-
-    if [ $? -gt 0 ]; then
-        set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
-        error "ApiFailed" "${apps_path}/${app_id}/export failed"
-    fi
-
-    set_migration_status "$app_id" "migrating"
+if [ "$action" == "start" ]; then
+    "${app_idir}/bind" &>>/var/log/ns8-migration.log
+elif [[ "$action" == "sync" ]]; then
+    MIGRATE_ACTION="${action}" flock ${app_sdir}/syncing.lock "${app_idir}/migrate" &>>/var/log/ns8-migration.log
 elif [[ "$action" == "finish" ]]; then
-    set_migration_status "$app_id" "syncing"
-
-    # if needed, pass additional migration configurations to migrate script (e.g. virtual host for webapps, IP address for AD)
-    echo "$migration_config" | "${apps_path}/${app_id}/migrate" &>>/var/log/ns8-migration.log
-    if [ $? -gt 0 ]; then
-        set_migration_status "$app_id" "migrating"
-        echo '{"pid":0,"status":"failed","event":"migration-sync"}'
-        error "ApiFailed" "${apps_path}/${app_id}/migrate failed"
-    fi
-
-    set_migration_status "$app_id" "migrated"
-
-    # It is possible to migrate the account provider only as the last
-    # module. After it has been successfully migrated, disconnect from the
-    # cluster.
-    if [[ "${app_id}" == "account-provider" ]]; then
-        if ! /usr/sbin/ns8-leave; then
-            error "EventFailed" "See /var/log/messages"
-        fi
-    fi
+    MIGRATE_ACTION="${action}" flock ${app_sdir}/syncing.lock "${app_idir}/migrate" &>>/var/log/ns8-migration.log
+    touch ${app_sdir}/migrated
+    rm -vf ${app_sdir}/bind.env
+else
+    error "ApiFailed" "unknown action ${action}"
 fi
 
 echo '{"progress":"1.00","time":"0.0","exit":0,"event":"migration-sync","state":"done","step":0,"pid":0,"action":""}'

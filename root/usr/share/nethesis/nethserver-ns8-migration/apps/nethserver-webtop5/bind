@@ -22,7 +22,4 @@
 
 set -e
 
-scripts_dir="/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-mail"
-script_file="${scripts_dir}/migrate"
-
-MIGRATE_ACTION="export" exec "${script_file}" "${@}"
+ns8-bind-app nethserver-webtop5

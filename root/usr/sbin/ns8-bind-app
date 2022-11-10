@@ -1,0 +1,96 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+
+#
+# If the endpoint.env file is missing, start the migration of the given app
+#
+
+set -e
+
+create_remote_module_instance ()
+{
+    local mnode_id jvolumes ruser RSYNC_PASSWORD rhost rport
+    mnode_id=${1:-${MODULE_NODE_ID}}
+    if [[ -z "${mnode_id}" ]]; then
+        # Retrieve the leader NODE_ID and use it as fallback value
+        mnode_id=$(ns8-action --attach cluster get-cluster-status | jq .nodes[0].id)
+    fi
+
+    # Encode VOLUMES as JSON array
+    jvolumes=$(xargs -- jq -c -n "\$ARGS.positional" --args <<<"${MODULE_VOLUMES}")
+    imdata_file=$(mktemp)
+    trap 'rm -f $imdata_file' RETURN EXIT
+    ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": %s}' "${MODULE_IMAGE_URL:?}" "${mnode_id}" "${jvolumes:?}" )" > "${imdata_file}"
+
+    # Extract rsync credentials and endpoint parameters from the imdata file
+    IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
+        jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+
+    echo "[INFO] Created remote module instance ${ruser}" 1>&2
+
+    cat - > bind.env <<EOF
+RSYNC_ENDPOINT="rsync://${ruser:?}@${rhost:?}:${rport:?}"
+RSYNC_PASSWORD=${RSYNC_PASSWORD:?}
+MODULE_INSTANCE_ID=${ruser}
+MODULE_NODE_ID=${mnode_id}
+EOF
+}
+
+app_id=${1:?missing app_id argument}
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR:?}/agent.env"
+source "${AGENT_STATE_DIR:?}/environment"
+app_idir="${AGENT_INSTALL_DIR:?}/apps/${app_id}"
+app_sdir="${AGENT_STATE_DIR:?}/${app_id}"
+
+# Validate the app_id value
+if [[ ! -f "${app_idir}/bind.env" ]]; then
+    echo "[ERROR] Unknown app ID ${app_id}" 1>&2
+    exit 1
+fi
+
+# Create the state subdir and move into it
+mkdir -vp "${app_sdir}"
+cd "${app_sdir}"
+
+# Define environment variables
+set -a # export variables
+# shellcheck disable=SC1090
+source "${app_idir}/bind.env"
+
+if [[ ! -f bind.env ]]; then
+    create_remote_module_instance $2
+fi
+
+# (Re) import rsync endpoint parameters
+# shellcheck disable=SC1091
+source bind.env
+
+set +a
+while : ; do
+    if rsync -v "${RSYNC_ENDPOINT:?}"/ >/dev/null ; then
+        echo "[INFO] App ${app_id} is bound to ${RSYNC_ENDPOINT}" 1>&2
+        break
+    fi
+    sleep 2
+done

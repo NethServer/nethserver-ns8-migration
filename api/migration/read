@@ -23,7 +23,8 @@
 import sys
 import subprocess
 import simplejson
-
+import os
+import fcntl, errno
 
 def get_config(appId):
     bash_command = "/sbin/e-smith/config getjson {}".format(appId)
@@ -31,20 +32,29 @@ def get_config(appId):
     output, error = process.communicate()
     return simplejson.loads(output)
 
-
-def getMigrationStatus(app_name):
-    file_name = "/var/lib/nethserver/agent/state/{}.mstatus.json".format(
-        app_name)
-
+def is_locked(fflag):
     try:
-        with open(file_name, 'r') as file:
-            file_content = file.read().replace('\n', '')
-            json = simplejson.loads(file_content)
-            return json['status']
+        fcntl.flock(open(fflag), fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except IOError as ioex:
+        if ioex.errno == errno.EWOULDBLOCK:
+            return True
+        else:
+            pass
 
-    except IOError as e:
+    return False
+
+def get_migration_status(app_id):
+    migrating_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/bind.env" % app_id
+    migrated_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/migrated" % app_id
+    syncing_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/syncing.lock" % app_id
+    if os.path.exists(migrated_flag):
+        return "migrated"
+    elif is_locked(syncing_flag):
+        return "syncing"
+    elif os.path.exists(migrating_flag):
+        return "migrating"
+    else:
         return "not_migrated"
-
 
 def get_account_provider_info():
     return {
@@ -121,8 +131,7 @@ try:
         apps = list_apps()
 
         for app in apps:
-            status = getMigrationStatus(app["id"])
-            app["status"] = status
+            app["status"] = get_migration_status(app["id"])
 
         output = simplejson.dumps({'migration': apps})
         print(output)

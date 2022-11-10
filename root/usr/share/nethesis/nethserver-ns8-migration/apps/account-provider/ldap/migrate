@@ -22,33 +22,6 @@
 
 set -e
 
-echo "--- $0 ${MIGRATE_ACTION} $(date)" 1>&2
-
-# Assuming this script is running under the state/account-provider directory
-imdata_file="imdata.json"
-
-# Start the migration with an import-module API call, if necessary
-if [[ ! -s "${imdata_file}" ]]; then
-    IFS=$'\t' read -r node_id < <( jq -r '.appNode' )
-    openldap_image=$(/sbin/e-smith/config getprop ns8 OpenldapImage)
-    ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": ["data"]}' "${openldap_image:?}" "${node_id:?}" )" > "${imdata_file}"
-fi
-
-# Extract rsync credentials and endpoint parameters from the imdata file
-IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
-    jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
-export RSYNC_PASSWORD
-rsync_endpoint="rsync://${ruser:?}@${rhost:?}:${rport:?}"
-
-# Wait for the rsyncd server to become available
-while : ; do
-    if rsync -v "${rsync_endpoint}"/ ; then
-        break
-    fi
-    sleep 2
-done
-
-
 ldapservice_password=$(< /var/lib/nethserver/secrets/ldapservice)
 (
     umask 077
@@ -68,15 +41,15 @@ EOF
 )
 
 # Send import.env
-rsync -i import.env "${rsync_endpoint}"/data/state/import.env
+rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
 
 # Send database
-rsync -tri dump-mdb0.ldif "${rsync_endpoint}"/data/volumes/data/dump-mdb0.ldif
+rsync -tri dump-mdb0.ldif "${RSYNC_ENDPOINT}"/data/volumes/data/dump-mdb0.ldif
 
 # Clean up .ldif and .env files
 rm -vf dump-mdb0.ldif import.env
 
-if [[ "${MIGRATE_ACTION}" != "commit-data" ]]; then
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
 
@@ -84,7 +57,7 @@ fi
 ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "directory.nh")" || :
 
 # Commit DC migration
-rsync -v "${rsync_endpoint}"/terminate
+rsync -v "${RSYNC_ENDPOINT}"/terminate
 
 sleep 5
 
