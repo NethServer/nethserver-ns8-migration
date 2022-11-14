@@ -20,6 +20,8 @@
 # along with NethServer.  If not, see COPYING.
 #
 
+# shellcheck disable=SC1091
+
 set -e
 
 source /etc/nethserver/agent.env
@@ -28,25 +30,62 @@ source "${AGENT_STATE_DIR}"/environment
 cd "${AGENT_STATE_DIR}/nethserver-webtop5"
 source bind.env
 
+# Ensure the mail module and the user domain are defined
+: "${MAIL_INSTANCE_ID:?}" "${USER_DOMAIN:?}"
+
 # Ensure endpoint is defined
-: ${RSYNC_ENDPOINT:?}
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
 
+# Sync postgresql webtop5 DB dump
+tmpdump=$(mktemp ./webtop-XXXXXX.sql)
+trap "rm -vf \${tmpdump}" EXIT
+su - postgres -c "pg_dump webtop5 > ${tmpdump}"
+rsync -zi "${tmpdump}" "${RSYNC_ENDPOINT}"/data/state/mdump.sql
 
-# XXX sync commands
-
+# Sync webtop-home
+rsync -i --times --recursive --delete /var/lib/nethserver/webtop/ "${RSYNC_ENDPOINT}"/data/volumes/webtop-home/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
 
-# Stop and disable local Webtop services
-for service in tomcat8@webtop; do
-    /sbin/e-smith/config setprop "${service}" status disabled || :
-    systemctl disable --now "${service}" || :
-done
+# Assert required vars are set
+: "${WEBTOP_VHOST:?}" "${IMPORT_TASK_ID:?}"
 
-: ${WEBTOP_VHOST:?}
-export RSYNC_PASSWORD
+# Stop and disable local Webtop services
+/sbin/e-smith/config setprop tomcat8@webtop status disabled || :
+systemctl disable --now tomcat8@webtop || :
+
+# XXX disable webdav and zpush endpoint in Apache config
 
 # Commit Webtop migration
 rsync "${RSYNC_ENDPOINT}"/terminate
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    /sbin/e-smith/config printjson webtop |
+    jq -c \
+    --arg hostname "${WEBTOP_VHOST}" \
+    --arg mail_module "${MAIL_INSTANCE_ID}" \
+    '.props | {
+        "hostname": $hostname,
+        "mail_module": $mail_module,
+        "timezone": .DefaultTimezone,
+        "locale": .DefaultLocale,
+        "webapp": {
+            "debug": (.Debug == "true"),
+            "min_memory": (.MinMemory | tonumber),
+            "max_memory": (.MaxMemory | tonumber)
+        },
+        "webdav": {
+            "debug": (.Debug == "true"),
+            "loglevel": .DavServerLog
+        },
+        "zpush": {
+            "debug": (.Debug == "true"),
+            "loglevel": .ActiveSyncLog
+        }
+    }')"

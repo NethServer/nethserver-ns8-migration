@@ -44,6 +44,9 @@ def is_locked(fflag):
     return False
 
 def get_migration_status(app_id):
+    if app_id == 'nethserver-webtop5':
+        return get_migration_status('nethserver-mail')
+
     migrating_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/bind.env" % app_id
     migrated_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/migrated" % app_id
     syncing_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/syncing.lock" % app_id

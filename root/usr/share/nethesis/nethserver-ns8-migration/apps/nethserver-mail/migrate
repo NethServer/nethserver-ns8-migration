@@ -52,6 +52,10 @@ echo "${USER_DOMAIN:?}" > user_domain.txt
 : ${RSYNC_ENDPOINT:?}
 export RSYNC_PASSWORD
 
+# Ensure module ID is defined, and export it for Webtop5
+: ${MODULE_INSTANCE_ID:?}
+export MAIL_INSTANCE_ID="${MODULE_INSTANCE_ID}"
+
 # Send configuration files
 rsync -i --remove-source-files user_domain.txt mail_domain.txt {domains,accounts,postfix,dovecot,rspamd}.json "${RSYNC_ENDPOINT}"/data/state/
 
