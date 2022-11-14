@@ -53,5 +53,5 @@ event_services($event, qw(
 $event = "interface-update";
 
 event_services($event, qw(
-    wg-quick@wg0 restart
+    wg-quick@wg0 try-restart
 ));
