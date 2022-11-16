@@ -43,8 +43,8 @@ create_remote_module_instance ()
     ns8-action --attach cluster import-module "$(printf '{"image": "%s", "node": %d, "volumes": %s}' "${MODULE_IMAGE_URL:?}" "${mnode_id}" "${jvolumes:?}" )" > "${imdata_file}"
 
     # Extract rsync credentials and endpoint parameters from the imdata file
-    IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport < <( \
-        jq -r '[ .credentials[0], .credentials[1], .address, .port ] | join("\t")' < "${imdata_file}" )
+    IFS=$'\t' read -r ruser RSYNC_PASSWORD rhost rport taskid < <( \
+        jq -r '[ .credentials[0], .credentials[1], .address, .port, .task ] | join("\t")' < "${imdata_file}" )
 
     echo "[INFO] Created remote module instance ${ruser}" 1>&2
 
@@ -53,6 +53,7 @@ RSYNC_ENDPOINT="rsync://${ruser:?}@${rhost:?}:${rport:?}"
 RSYNC_PASSWORD=${RSYNC_PASSWORD:?}
 MODULE_INSTANCE_ID=${ruser}
 MODULE_NODE_ID=${mnode_id}
+IMPORT_TASK_ID=${taskid}
 EOF
 }
 
@@ -89,7 +90,7 @@ source bind.env
 set +a
 while : ; do
     if rsync -v "${RSYNC_ENDPOINT:?}"/ >/dev/null ; then
-        echo "[INFO] App ${app_id} is bound to ${RSYNC_ENDPOINT}" 1>&2
+        echo "[INFO] App ${app_id} is bound to ${RSYNC_ENDPOINT}, waiting for task ${IMPORT_TASK_ID}" 1>&2
         break
     fi
     sleep 2
