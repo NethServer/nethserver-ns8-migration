@@ -51,7 +51,7 @@ def run_task(api_endpoint, token, agent, action, data):
 
     task_id = post_response["data"]["id"]
 
-    return wait_task(api_endpoint, token, f"{agent}/task/{task_id}")
+    return f"{agent}/task/{task_id}"
 
 def wait_task(api_endpoint, token, task_id):
     """Wait until the task_id response is ready. Timeout in 10 minutes."""
@@ -78,6 +78,7 @@ def wait_task(api_endpoint, token, task_id):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
+parser.add_argument('-d', '--detach', default=False, action='store_true', help="do not wait for completion, instead return the remote task identifier immediately")
 parser.add_argument('--hidden', default=False, action='store_true', help="run the action without UI notification")
 parser.add_argument('agent', help="agent that runs the action. E.g. \"cluster\"")
 parser.add_argument('action', help="action to run. E.g. \"list-actions\"")
@@ -116,7 +117,13 @@ if args.agent == 'wait':
     ret = wait_task(api_endpoint, payload['token'], args.action)
 else:
     # Execute action
-    ret = run_task(api_endpoint, payload['token'], args.agent, args.action, input_data)
+    task_id = run_task(api_endpoint, payload['token'], args.agent, args.action, input_data)
+
+    if args.detach:
+        print(task_id)
+        sys.exit(0)
+
+    ret = wait_task(api_endpoint, payload['token'], task_id)
 
 if args.attach:
     json.dump(ret['data']['output'], fp=sys.stdout)

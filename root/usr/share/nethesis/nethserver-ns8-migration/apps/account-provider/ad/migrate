@@ -70,21 +70,8 @@ ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "
 # Commit DC migration
 rsync -v "${RSYNC_ENDPOINT}"/terminate
 
-# Wait for the user domain to be ready
-
-while : ; do
-    if ns8-action --hidden --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q "^${realm,,}$"; then
-        break
-    fi
-    sleep 5
-done
-
-while : ; do
-    if ns8-action --hidden --attach cluster get-domain-user "$(printf '{"domain":"%s","user":"%s"}' "${realm,,}" "${svcuser}")"; then
-        break
-    fi
-    sleep 5
-done
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
 
 # Stop local AD provider (nsdc) and disable it permanently
 /sbin/e-smith/config setprop nsdc status disabled

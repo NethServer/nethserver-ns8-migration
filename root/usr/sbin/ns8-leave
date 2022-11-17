@@ -23,9 +23,12 @@
 # clean up remote ns8 state
 source /var/lib/nethserver/nethserver-ns8-migration/environment
 if [[ -n "${USER_DOMAIN}" ]]; then
-    ns8-action cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}")
+    ns8-action --attach cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}") || :
 fi
-ns8-action cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}")
+
+if [[ -n "${NODE_ID}" ]]; then
+    ns8-action --detach cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}") || :
+fi
 
 # reset DB props
 /sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled LeaderIpAddress ""
@@ -33,7 +36,7 @@ ns8-action cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}")
 /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey "" RemoteNetwork ""
 
 # clean up agent state directory, preserving state/ directory
-find /var/lib/nethserver/nethserver-ns8-migration -type f -delete
+find /var/lib/nethserver/nethserver-ns8-migration -type f -o -type l | xargs -- rm -vf
 
 # signal event
 /sbin/e-smith/signal-event -j nethserver-ns8-migration-save

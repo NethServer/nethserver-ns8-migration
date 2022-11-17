@@ -59,22 +59,8 @@ ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "
 # Commit DC migration
 rsync -v "${RSYNC_ENDPOINT}"/terminate
 
-sleep 5
-
-# Wait for the user domain to become ready
-while : ; do
-    if ns8-action --hidden --attach cluster list-user-domains | jq -r '.domains[] | .name' | grep -q '^directory\.nh$'; then
-        break
-    fi
-    sleep 5
-done
-
-while : ; do
-    if ns8-action --hidden --attach cluster list-domain-groups "$(printf '{"domain":"%s"}' "directory.nh")"; then
-        break
-    fi
-    sleep 5
-done
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
 
 # Stop local LDAP provider (slapd) and disable it permanently
 /sbin/e-smith/config setprop slapd status disabled
