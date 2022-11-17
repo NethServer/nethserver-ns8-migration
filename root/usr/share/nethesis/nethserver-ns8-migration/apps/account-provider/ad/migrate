@@ -54,8 +54,13 @@ rsync -ai /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${RSYNC_ENDPOINT}"/data/
 # shellcheck disable=SC2016
 nsdc-run -e -- sh -c 'tdbbackup -s .export $(find /var/lib/samba/ -name "*.[t,l]db" -not -name netlogon_creds_cli.tdb)'
 
-# Send .export, *.pem files, secrets encryption key
-rsync -mtri --include='*/' --include='*.pem' --include='*.export' --include="encrypted_secrets.key" --exclude='*' /var/lib/machines/nsdc/var/lib/samba/ "${RSYNC_ENDPOINT}"/data/volumes/data/
+# Send .export, *.pem files, secrets encryption key, dns list...
+rsync -mtri \
+    --exclude="sysvol/" \
+    --exclude="*.tdb" \
+    --exclude="*.ldb" \
+    --exclude="*.bak" \
+    /var/lib/machines/nsdc/var/lib/samba/ "${RSYNC_ENDPOINT}"/data/volumes/data/
 
 # Clean up .export files
 nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete
