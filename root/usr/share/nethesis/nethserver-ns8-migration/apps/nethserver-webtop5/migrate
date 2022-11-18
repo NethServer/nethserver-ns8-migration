@@ -57,7 +57,23 @@ fi
 /sbin/e-smith/config setprop tomcat8@webtop status disabled || :
 systemctl disable --now tomcat8@webtop || :
 
-# XXX disable webdav and zpush endpoint in Apache config
+# Set up web redirects
+mkdir -vp webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Webtop5 Migration</title>
+  </head>
+  <body>
+    <h1>Webtop5 Migration</h1>
+    <p>Site has moved to &#9758; <a href="https://${WEBTOP_VHOST}">${WEBTOP_VHOST}</a></p>
+  </body>
+</html>
+EOF
+/sbin/e-smith/expand-template /etc/httpd/conf.d/00ns8migration.conf
+httpd -k graceful
 
 # Commit Webtop migration
 rsync "${RSYNC_ENDPOINT}"/terminate

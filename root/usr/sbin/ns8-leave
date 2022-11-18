@@ -35,8 +35,8 @@ fi
 /sbin/e-smith/config setprop agent status disabled
 /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey "" RemoteNetwork ""
 
-# clean up agent state directory, preserving state/ directory
-find /var/lib/nethserver/nethserver-ns8-migration -type f -o -type l | xargs -- rm -vf
+# clean up agent state directory
+find /var/lib/nethserver/nethserver-ns8-migration -type f -not -name index.html | xargs -- rm -vf
 
 # signal event
 /sbin/e-smith/signal-event -j nethserver-ns8-migration-save

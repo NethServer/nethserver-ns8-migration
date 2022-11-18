@@ -1,0 +1,24 @@
+{
+    #
+    # 10webtop
+    #
+    $webroot = "/var/lib/nethserver/nethserver-ns8-migration/nethserver-webtop5/webroot";
+    $fragment = qq(
+#
+# App nethserver-webtop5 -- migration
+#
+<Directory "$webroot/">
+   AllowOverride all
+   Require all granted
+</Directory>
+Alias /Microsoft-Server-ActiveSync $webroot/index.html
+Alias /webtop $webroot
+Alias /webtop-dav $webroot
+);
+
+    if( $DB->get_prop('tomcat8@webtop', 'status') ne 'enabled') {
+        $OUT = $fragment;
+    } else {
+        $OUT = ''
+    }
+}

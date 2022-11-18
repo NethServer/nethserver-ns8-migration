@@ -31,19 +31,29 @@ event_actions($event, qw(
     nethserver-ns8-migration-conf 20
 ));
 
+event_templates($event, qw(
+    /etc/httpd/conf.d/00ns8migration.conf
+));
+
+event_services($event, qw(
+    httpd reload
+));
+
 #
 # nethserver-ns8-migration-save event
 #
 
 $event = "nethserver-ns8-migration-save";
 
-event_templates($event,
-   '/etc/wireguard/wg0.conf'
-);
+event_templates($event, qw(
+    /etc/wireguard/wg0.conf
+    /etc/httpd/conf.d/00ns8migration.conf
+));
 
 event_services($event, qw(
     wg-quick@wg0 restart
     agent restart
+    httpd reload
 ));
 
 #
