@@ -29,18 +29,44 @@ cd "${AGENT_STATE_DIR}/nethserver-roundcubemail"
 source bind.env
 
 # Ensure endpoint is defined
-: ${RSYNC_ENDPOINT:?}
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
 
-
-# XXX sync commands
-
+# Sync mysql roundcubemail DB dump
+rm -vf roundcubemail.sql
+mysqldump --single-transaction --quick --add-drop-table -QB "roundcubemail" -r roundcubemail.sql
+rsync -zi roundcubemail.sql "${RSYNC_ENDPOINT}"/data/state/roundcubemail.sql
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
 
-: ${ROUNDCUBE_VHOST:?}
-export RSYNC_PASSWORD
+# Assert required vars are set
+: "${ROUNDCUBE_VHOST:?}" "${IMPORT_TASK_ID:?}"
+
+# Set up web redirects
+mkdir -vp webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Roundcube Migration</title>
+  </head>
+  <body>
+    <h1>Roundcube Migration</h1>
+    <p>Site has moved to &#9758; <a href="https://${ROUNDCUBE_VHOST}">${ROUNDCUBE_VHOST}</a></p>
+  </body>
+</html>
+EOF
+/sbin/e-smith/config setprop roundcubemail migration finished
+/sbin/e-smith/expand-template /etc/httpd/conf.d/00ns8migration.conf
+httpd -k graceful
 
 # Commit Webtop migration
 rsync "${RSYNC_ENDPOINT}"/terminate
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+# XXX invoke configure-module ??

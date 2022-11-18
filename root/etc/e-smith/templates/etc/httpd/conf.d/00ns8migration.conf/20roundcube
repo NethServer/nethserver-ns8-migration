@@ -1,0 +1,23 @@
+{
+    #
+    # 20roundcube
+    #
+    $webroot = "/var/lib/nethserver/nethserver-ns8-migration/nethserver-roundcubemail/webroot";
+    $fragment = qq(
+#
+# App nethserver-roundcubemail -- migration
+#
+<Directory "$webroot/">
+   AllowOverride all
+   Require all granted
+</Directory>
+Alias /roundcubemail $webroot
+Alias /webmail $webroot
+);
+
+    if( $DB->get_prop('roundcubemail', 'migration') eq 'finished') {
+        $OUT = $fragment;
+    } else {
+        $OUT = ''
+    }
+}
