@@ -88,4 +88,7 @@ done
 # Commit Mail migration
 rsync "${RSYNC_ENDPOINT}"/terminate
 
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
 migrate_deps
