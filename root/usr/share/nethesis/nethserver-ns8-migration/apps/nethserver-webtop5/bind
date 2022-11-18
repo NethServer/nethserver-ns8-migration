@@ -22,18 +22,4 @@
 
 set -e
 
-scripts_dir="/usr/share/nethesis/nethserver-ns8-migration/apps/account-provider"
-account_provider_type=$(/sbin/e-smith/config getprop sssd Provider)
-
-script_file="${scripts_dir}/migrate-${account_provider_type}"
-if [[ -x "${script_file}" ]]; then
-    # Prepare script runtime environment
-    mkdir -vp /var/lib/nethserver/agent/state/account-provider
-    cd /var/lib/nethserver/agent/state/account-provider
-    export MIGRATE_ACTION
-    MIGRATE_ACTION=sync-data
-    exec "${script_file}" "${@}"
-else
-    echo "[ERROR]  account provider type ${account_provider_type}" 1>&2
-    exit 2
-fi
+ns8-bind-app nethserver-webtop5

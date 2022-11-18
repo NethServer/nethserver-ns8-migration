@@ -22,12 +22,4 @@
 
 set -e
 
-set -a
-source /etc/nethserver/agent.env
-source "${AGENT_STATE_DIR}"/agent.env
-source "${AGENT_STATE_DIR}"/environment
-
-account_provider_type=$(/sbin/e-smith/config getprop sssd Provider)
-cd "${AGENT_STATE_DIR}/account-provider/${account_provider_type}"
-source bind.env
-command "${AGENT_INSTALL_DIR}/apps/account-provider/${account_provider_type}/migrate"
+ns8-bind-app nethserver-roundcubemail

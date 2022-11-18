@@ -34,6 +34,7 @@ tls_verify=$(echo $data | jq -r '.TLSVerify')
 if [[ "$action" == "login" ]]; then
     # execute ns8-join
 
+    echo "=========== Join cluster" $(date -R) >>/var/log/ns8-migration.log
     if [ "$tls_verify" = "disabled" ]; then
         /usr/sbin/ns8-join --no-tlsverify "$host" "$user" "$password"
     else
@@ -47,6 +48,7 @@ if [[ "$action" == "login" ]]; then
 elif [[ "$action" == "logout" ]]; then
     # disconnect from ns8 cluster
 
+    echo "=========== Leave cluster" $(date -R) >>/var/log/ns8-migration.log
     /usr/sbin/ns8-leave
     if [ $? -gt 0 ]; then
         error "EventFailed" "See /var/log/messages"

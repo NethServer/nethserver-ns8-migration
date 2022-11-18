@@ -28,8 +28,9 @@ import json
 import hashlib
 import uuid
 from urllib import request, parse
+from urllib.error import HTTPError
 
-def call(api_endpoint, token, agent, action, data):
+def run_task(api_endpoint, token, agent, action, data):
     global args
 
     data_extra = {
@@ -47,39 +48,41 @@ def call(api_endpoint, token, agent, action, data):
 
     # wait for the cluster queue to grab the request
     time.sleep(0.5)
-    if post_response["code"] == 201:
-        get_response = {"code": 201}
-        task_id = post_response["data"]["id"]
 
-        # wait until the response is ready
-        watchdog = 0
-        while get_response["code"] == 201:
-            if watchdog >= 300:
-                print("No server response", file=sys.stderr)
-                sys.exit(1)
-            try:
-                req = request.Request(f'{api_endpoint}/api/{agent}/task/{task_id}/status')
-                req.add_header('Content-Type', 'application/json')
-                req.add_header('Authorization', f'Bearer {token}')
-                get = request.urlopen(req)
-                get_response = json.loads(get.read())
-            except:
-                time.sleep(1)
-                pass
-            finally:
-                watchdog = watchdog + 1
+    task_id = post_response["data"]["id"]
 
-        return get_response
+    return f"{agent}/task/{task_id}"
 
-    return None
+def wait_task(api_endpoint, token, task_id):
+    """Wait until the task_id response is ready. Timeout in 10 minutes."""
+    get_response = {"code": 201}
+    watchdog = 0
+    while get_response["code"] == 201:
+        if watchdog >= 300:
+            raise Exception("No server response")
+        try:
+            req = request.Request(f'{api_endpoint}/api/{task_id}/status')
+            req.add_header('Content-Type', 'application/json')
+            req.add_header('Authorization', f'Bearer {token}')
+            get = request.urlopen(req)
+            get_response = json.loads(get.read())
+        except HTTPError as ex:
+            if ex.getcode() in [400, 404]:
+                time.sleep(2)
+            else:
+                raise
+        finally:
+            watchdog = watchdog + 1
 
+    return get_response
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
+parser.add_argument('-d', '--detach', default=False, action='store_true', help="do not wait for completion, instead return the remote task identifier immediately")
 parser.add_argument('--hidden', default=False, action='store_true', help="run the action without UI notification")
-parser.add_argument('agent', default="cluster")
-parser.add_argument('action')
-parser.add_argument('data', nargs='?')
+parser.add_argument('agent', help="agent that runs the action. E.g. \"cluster\"")
+parser.add_argument('action', help="action to run. E.g. \"list-actions\"")
+parser.add_argument('data', nargs='?', help="JSON input data for the action, or \"-\" to read it from standard input")
 
 args = parser.parse_args()
 
@@ -109,8 +112,18 @@ elif args.data == '-': # read JSON from stdin
 else:
     input_data = json.loads(args.data)
 
-# Execute action
-ret = call(api_endpoint, payload['token'], args.agent, args.action, input_data)
+if args.agent == 'wait':
+    # Wait for the given task
+    ret = wait_task(api_endpoint, payload['token'], args.action)
+else:
+    # Execute action
+    task_id = run_task(api_endpoint, payload['token'], args.agent, args.action, input_data)
+
+    if args.detach:
+        print(task_id)
+        sys.exit(0)
+
+    ret = wait_task(api_endpoint, payload['token'], task_id)
 
 if args.attach:
     json.dump(ret['data']['output'], fp=sys.stdout)
