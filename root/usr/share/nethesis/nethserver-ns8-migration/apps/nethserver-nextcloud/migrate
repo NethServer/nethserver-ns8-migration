@@ -20,48 +20,75 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-# read json from stdin
-migration_config=$(cat /dev/stdin)
-if [[ "$migration_config" != "null" ]]; then
-    # read virtual host from migration configuration
-    host=$(echo $migration_config | jq -r '.virtualHost')
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-nextcloud"
+source bind.env
+
+# Assert required vars are set
+: "${RSYNC_ENDPOINT:?}" "${RSYNC_PASSWORD:?}"
+export RSYNC_PASSWORD
+
+# Sync files with uid:gid mapping
+rsync -i --times --recursive --owner --group --usermap=1-1000:82 --groupmap=1-1000:82 --delete --exclude=appdata\* --exclude=nextcloud.log /var/lib/nethserver/nextcloud/ "${RSYNC_ENDPOINT}"/data/volumes/nextcloud-app-data/data/
+
+# Create database dump
+mysqldump -S /run/rh-mariadb105-mariadb/nextcloud-mysql.sock nextcloud > /var/lib/nethserver/nextcloud/dump.sql
+rsync -iz  --times --recursive --remove-source-files /var/lib/nethserver/nextcloud/dump.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+
+# Copy original config
+rsync -i --times /usr/share/nextcloud/config/config.php "${RSYNC_ENDPOINT}"/data/state/config.php
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
 fi
 
-if [ -z "$host" ]; then
-    # read virtual host from nextcloud configuration
-    host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
-
-    if [ -z "$host" ]; then
-        echo "nextcloud: no VirtualHost defined."
-        exit 1
-    fi
+# Fallback to virtualhost prop value, if no input was given
+if [[ -z "${NEXTCLOUD_VHOST}" ]]; then
+    NEXTCLOUD_VHOST="$(/sbin/e-smith/config getprop nextcloud VirtualHost)"
 fi
 
-NC_CONF=/var/lib/nethserver/agent/nextcloud.json
+# Assert required vars are set
+: "${NEXTCLOUD_VHOST:?}" "${IMPORT_TASK_ID:?}" "${USER_DOMAIN:?}"
 
-if [ ! -f $NC_CONF ]; then
-    echo "$NC_CONF not found. Run nextcloud-export first."
-    exit 1
-else
-    response=$(cat $NC_CONF)
-fi
+# Stop and disable local Nextcloud Maria DB service
+/sbin/e-smith/config setprop rh-mariadb105-mariadb@nextcloud status disabled || :
+systemctl disable --now rh-mariadb105-mariadb@nextcloud || :
 
-# Read rsync configuration
-user=$(echo $response | jq -r .data.output.credentials[0])
-password=$(echo $response | jq -r .data.output.credentials[1])
-address=$(echo $response | jq -r .data.output.address)
-port=$(echo $response | jq -r .data.output.port)
+# Set up web redirects
+mkdir -vp webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Nextcloud Migration</title>
+  </head>
+  <body>
+    <h1>Nextcloud Migration</h1>
+    <p>Site has moved to &#9758; <a href="https://${NEXTCLOUD_VHOST}">${NEXTCLOUD_VHOST}</a></p>
+  </body>
+</html>
+EOF
+/sbin/e-smith/expand-template /etc/httpd/conf.d/00ns8migration.conf
+httpd -k graceful
 
-# Terminate the rsync server
-RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
+# Commit Webtop migration
+rsync "${RSYNC_ENDPOINT}"/terminate
 
-rm -f $NC_CONF
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
-
-ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
-
-if [ $? -gt 0 ]; then
-    echo "ns8-action configure-module has timed out"
-    exit 1
-fi
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+    --arg hostname "${NEXTCLOUD_VHOST}" \
+    --arg domain "${USER_DOMAIN}" \
+    '{
+        "host": $hostname,
+        "lets_encrypt": false,
+        "http2https": true,
+        "domain": $domain
+    }')"

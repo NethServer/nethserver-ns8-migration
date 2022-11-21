@@ -1,0 +1,23 @@
+{
+    #
+    # 30nextcloud
+    #
+    $webroot = "/var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot";
+    $fragment = qq(
+#
+# App nethserver-nextcloud -- migration
+#
+<Directory "$webroot/">
+   AllowOverride all
+   Require all granted
+</Directory>
+Alias /nextcloud-moved $webroot
+Redirect temp /nextcloud /nextcloud-moved/index.html?orig=
+);
+
+    if($DB->get_prop('rh-mariadb105-mariadb@nextcloud', 'status') eq 'disabled') {
+        $OUT = $fragment;
+    } else {
+        $OUT = ''
+    }
+}
