@@ -23,7 +23,7 @@
 # clean up remote ns8 state
 source /var/lib/nethserver/nethserver-ns8-migration/environment
 if [[ -n "${USER_DOMAIN}" ]]; then
-    ns8-action --attach cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}") || :
+    ns8-action --hidden --detach cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}") || :
 fi
 
 if [[ -n "${NODE_ID}" ]]; then
