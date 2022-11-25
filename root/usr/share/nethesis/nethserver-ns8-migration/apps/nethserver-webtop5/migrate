@@ -30,8 +30,8 @@ source "${AGENT_STATE_DIR}"/environment
 cd "${AGENT_STATE_DIR}/nethserver-webtop5"
 source bind.env
 
-# Ensure the mail module and the user domain are defined
-: "${MAIL_INSTANCE_ID:?}" "${USER_DOMAIN:?}"
+# Ensure the mail module is defined
+: "${MAIL_INSTANCE_ID:?}"
 
 # Ensure endpoint is defined
 : "${RSYNC_ENDPOINT:?}"
