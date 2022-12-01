@@ -37,11 +37,16 @@ source bind.env
 : "${RSYNC_ENDPOINT:?}"
 export RSYNC_PASSWORD
 
+if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
+    # During the last, "finish" rsync run there must be no changes to
+    # the database: stop the service early.
+    systemctl stop tomcat8@webtop
+fi
+
 # Sync postgresql webtop5 DB dump
-tmpdump=$(mktemp ./webtop-XXXXXX.sql)
-trap "rm -vf \${tmpdump}" EXIT
-su - postgres -c "pg_dump webtop5 > ${tmpdump}"
-rsync -zi "${tmpdump}" "${RSYNC_ENDPOINT}"/data/state/mdump.sql
+su - postgres -c "pg_dump --format=c webtop5" > webtop5.dump
+rsync -zi webtop5.dump "${RSYNC_ENDPOINT}"/data/state/webtop5.dump
+rm -vf webtop5.dump
 
 # Sync webtop-home
 rsync -i --times --recursive --delete /var/lib/nethserver/webtop/ "${RSYNC_ENDPOINT}"/data/volumes/webtop-home/
@@ -81,7 +86,7 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     /sbin/e-smith/config printjson webtop |
     jq -c \
     --arg hostname "${WEBTOP_VHOST}" \
@@ -105,3 +110,11 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
             "loglevel": .ActiveSyncLog
         }
     }')"
+do
+    exit_code="$?"
+    if [[ "${exit_code}" != 3 ]]; then
+        exit "${exit_code}"
+    fi
+    sleep 5
+    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again..."
+done
