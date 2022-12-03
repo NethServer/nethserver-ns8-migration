@@ -69,4 +69,18 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-# XXX invoke configure-module ??
+# invoke configure-module
+while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module \
+    {
+      "host": "${ROUNDCUBE_VHOST}","mail_server_to_use": "${MAIL_INSTANCE_ID}",
+      "http2https": true, "lets_encrypt": false, "plugins": "",
+      "upload_max_filesize": 10
+    }
+do
+    exit_code="$?"
+    if [[ "${exit_code}" != 3 ]]; then
+        exit "${exit_code}"
+    fi
+    sleep 5
+    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again..."
+done
