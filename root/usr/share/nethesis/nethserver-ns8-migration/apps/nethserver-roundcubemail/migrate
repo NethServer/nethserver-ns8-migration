@@ -72,7 +72,7 @@ ns8-action --attach wait "${IMPORT_TASK_ID}"
 # invoke configure-module
 while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module \
     {
-      "host": "${ROUNDCUBE_VHOST}","mail_server_to_use": "${MAIL_INSTANCE_ID}",
+      "host": "${ROUNDCUBE_VHOST}","mail_server": "${MAIL_INSTANCE_ID}",
       "http2https": true, "lets_encrypt": false, "plugins": "",
       "upload_max_filesize": 10
     }
