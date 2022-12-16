@@ -43,6 +43,8 @@ if [[ "$action" == "login" ]]; then
 
     if [ $? -gt 0 ]; then
         error "CommandFailed" "See /var/log/messages"
+    else
+        echo "Joined to cluster leader $host" >>/var/log/ns8-migration.log
     fi
 
 elif [[ "$action" == "logout" ]]; then
