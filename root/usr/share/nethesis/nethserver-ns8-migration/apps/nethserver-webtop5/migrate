@@ -86,6 +86,7 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
+# Repeat the configure-module if it fails because mail module is not found
 while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     /sbin/e-smith/config printjson webtop |
     jq -c \
@@ -116,5 +117,5 @@ do
         exit "${exit_code}"
     fi
     sleep 5
-    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again..."
+    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again to configure Webtop..."
 done
