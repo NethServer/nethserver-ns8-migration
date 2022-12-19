@@ -69,4 +69,24 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-# XXX invoke configure-module ??
+# Repeat the configure-module if it fails because mail module is not found
+while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+    --arg hostname "${ROUNDCUBE_VHOST}" \
+    --arg mail_module "${MAIL_INSTANCE_ID}" \
+    '{
+      "host": $hostname,
+      "http2https": true,
+      "lets_encrypt": false,
+      "mail_server": $mail_module,
+      "plugins": "",
+      "upload_max_filesize": 10,
+    }')"
+do
+    exit_code="$?"
+    if [[ "${exit_code}" != 3 ]]; then
+        exit "${exit_code}"
+    fi
+    sleep 5
+    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again to configure Roundcubemail..."
+done
