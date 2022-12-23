@@ -41,8 +41,13 @@ if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
 
+# Obtain the Mail module UUID for configure-module:
+mail_instance_uuid=$(ns8-action --attach "module/${MAIL_INSTANCE_ID}" list-service-providers \
+  "$(printf '{"service":"imap", "transport":"tcp", "filter":{"module_id":"%s"}}' "${MAIL_INSTANCE_ID}")" \
+  | jq -r '.[0].module_uuid')
+
 # Assert required vars are set
-: "${ROUNDCUBE_VHOST:?}" "${IMPORT_TASK_ID:?}"
+: "${ROUNDCUBE_VHOST:?}" "${IMPORT_TASK_ID:?}" "${mail_instance_uuid:?}"
 
 # Set up web redirects
 mkdir -vp webroot
@@ -73,12 +78,12 @@ ns8-action --attach wait "${IMPORT_TASK_ID}"
 while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
     --arg hostname "${ROUNDCUBE_VHOST}" \
-    --arg mail_module "${MAIL_INSTANCE_ID}" \
+    --arg mail_server "${mail_instance_uuid}" \
     '{
       "host": $hostname,
       "http2https": true,
       "lets_encrypt": false,
-      "mail_server": $mail_module,
+      "mail_server": $mail_server,
       "plugins": "",
       "upload_max_filesize": 10,
     }')"
