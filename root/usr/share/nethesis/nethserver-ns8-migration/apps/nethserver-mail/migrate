@@ -73,14 +73,15 @@ fi
 # Send mailboxes
 rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --delete /var/lib/nethserver/vmail/ "${RSYNC_ENDPOINT}"/data/volumes/dovecot-data/
 
-# Send Redis database, the import-module will rename it properly
+# Send Redis database and rename it properly
 if [[ -f /var/lib/redis/rspamd/dump.rdb ]]; then
-    rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 /var/lib/redis/rspamd/dump.rdb "${RSYNC_ENDPOINT}"/data/volumes/rspamd-redis/dump.rdb
+    rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 /var/lib/redis/rspamd/dump.rdb "${RSYNC_ENDPOINT}"/data/volumes/rspamd-redis/persistent.rdb
 fi
 
 # Overwrite default DKIM key
-rsync -i --archive --usermap=1-1000:101 --groupmap=1-1000:102 /etc/opendkim/keys/default.private "${RSYNC_ENDPOINT}"/data/volumes/rspamd-data/dkim/default.key
-rsync -i --archive --usermap=1-1000:101 --groupmap=1-1000:102 /etc/opendkim/keys/default.txt "${RSYNC_ENDPOINT}"/data/volumes/rspamd-data/dkim/default.txt
+rsync -i --recursive --perms \
+    /etc/opendkim/keys/default.{txt,private} \
+    "${RSYNC_ENDPOINT}"/data/state/dkim.migration/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     migrate_deps
