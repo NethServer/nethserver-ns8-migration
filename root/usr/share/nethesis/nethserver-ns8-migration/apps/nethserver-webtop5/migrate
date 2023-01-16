@@ -43,6 +43,16 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     systemctl stop tomcat8@webtop
 fi
 
+# Check if the ActiveSyncLegacyIds is enabled
+legacy_ids=$(/sbin/e-smith/config getprop webtop ActiveSyncLegacyIds)
+if [[ "${legacy_ids}" == "enabled" ]]; then
+	touch legacy_ids_enabled
+	rsync -i --remove-source-files legacy_ids_enabled "${RSYNC_ENDPOINT}"/data/state/
+fi
+
+# Sync z-push_state
+rsync -i --times --recursive --delete /var/log/z-push/state/ "${RSYNC_ENDPOINT}"/data/volumes/z-push_state/
+
 # Sync postgresql webtop5 DB dump
 su - postgres -c "pg_dump --format=c webtop5" > webtop5.dump
 rsync -zi webtop5.dump "${RSYNC_ENDPOINT}"/data/state/webtop5.dump
