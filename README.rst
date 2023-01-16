@@ -218,7 +218,7 @@ Package uninstallation
 
 To remove the tool and its dependencies (if they are not required by other packages): ::
 
-  yum remove nethserver-ns8-migration kmod-wireguard mariadb wireguard-tools
+  yum remove nethserver-ns8-migration kmod-wireguard wireguard-tools
 
 Clean up configuration database: ::
 
