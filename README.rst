@@ -258,3 +258,25 @@ the services with the following commands.
   httpd -k graceful
   signal-event runlevel-adjust
   signal-event firewall-adjust
+
+
+Migration notes
+===============
+
+.. warning::
+
+  Read carefully the sections below before finishing the migration of any application.
+
+Webtop
+------
+
+If you purchased a Webtop license for additional custom fields or other
+components/integrations the following additional and manual steps are needed:
+
+1. Before finishing the Mail app migration, access the Webtop
+   administrative page and disable any subscribed license.
+
+2. Finish the Mail app migration.
+
+3. In the NS8 module, access the administrative page and enable the
+   licenses again.
