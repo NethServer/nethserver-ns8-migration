@@ -79,11 +79,13 @@ while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
     --arg hostname "${ROUNDCUBE_VHOST}" \
     --arg mail_server "${mail_instance_uuid}" \
+    --arg mail_domain "$(hostname -d)" \
     '{
       "host": $hostname,
       "http2https": true,
       "lets_encrypt": false,
       "mail_server": $mail_server,
+      "mail_domain": $mail_domain,
       "plugins": "",
       "upload_max_filesize": 10,
     }')"
