@@ -50,8 +50,8 @@ if [[ "${legacy_ids}" == "enabled" ]]; then
 	rsync -i --remove-source-files legacy_ids_enabled "${RSYNC_ENDPOINT}"/data/state/
 fi
 
-# Sync z-push_state
-rsync -i --times --recursive --delete /var/log/z-push/state/ "${RSYNC_ENDPOINT}"/data/volumes/z-push_state/
+# Sync z-push_state. uid=82:gid=82 maps to www-data:www-data
+rsync -i --archive --usermap=1-1000:82 --groupmap=1-1000:82 --delete /var/log/z-push/state/ "${RSYNC_ENDPOINT}"/data/volumes/z-push_state/
 
 # Sync postgresql webtop5 DB dump
 su - postgres -c "pg_dump --format=c webtop5" > webtop5.dump
