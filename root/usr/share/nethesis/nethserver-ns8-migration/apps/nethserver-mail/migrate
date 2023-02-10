@@ -73,8 +73,10 @@ fi
 # Send mailboxes
 rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --delete /var/lib/nethserver/vmail/ "${RSYNC_ENDPOINT}"/data/volumes/dovecot-data/
 
-# Send Redis database and rename it properly
 if [[ -f /var/lib/redis/rspamd/dump.rdb ]]; then
+    # Fix rspamd-redis volume root dir perms
+    rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --delete --exclude \* /var/lib/redis/rspamd/ "${RSYNC_ENDPOINT}"/data/volumes/rspamd-redis/
+    # Send Redis database and rename it properly
     rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 /var/lib/redis/rspamd/dump.rdb "${RSYNC_ENDPOINT}"/data/volumes/rspamd-redis/persistent.rdb
 fi
 
