@@ -32,6 +32,8 @@ buildah run gobuilder-core sh -c "cd /usr/src/core/agent && CGO_ENABLED=0 go bui
 buildah run gobuilder-core sh -c "cd /usr/src/core/agent; cat agent" > agent
 
 # Build UI
+NODE_OPTIONS="--openssl-legacy-provider"
+export NODE_OPTIONS
 pushd ui
 npm install
 npm run build
