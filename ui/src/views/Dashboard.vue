@@ -372,6 +372,7 @@
                     <div
                       class="mg-top-10"
                       v-html="$t('dashboard.roundcube_webtop_migration')"
+                      v-if="currentApp.id === 'nethserver-mail'"
                     ></div>
                   </div>
                 </template>
