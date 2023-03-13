@@ -20,31 +20,51 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
+set -e
 
-if [ -z "$host" ]; then
-    echo "mattermost: no VirtualHost defined."
-    exit 1
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-mattermost"
+source bind.env
+
+# Ensure endpoint is defined
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
+
+if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
+    # During the last, "finish" rsync run there must be no changes to
+    # the database: stop the service early.
+    systemctl stop mattermost
 fi
 
-MM_CONF=/var/lib/nethserver/agent/mattermost.json
+# Sync files: --owner --group --chown=2000:2000 are needed to map data for the mattermost user
+rsync -tr --owner --group --chown=2000:2000 --delete  /var/lib/nethserver/mattermost/data/ "${RSYNC_ENDPOINT}"/data/volumes/mattermost-data/
 
-if [ ! -f $MM_CONF ]; then
-    echo "$MM_CONF not found. Run mattermost-export first."
-    exit 1
-else
-    response=$(cat $MM_CONF)
+# Create database dump
+su - postgres -c "scl enable rh-postgresql12 -- pg_dump --port 55434 mattermost > /var/lib/nethserver/mattermost/backup/dump.sql"
+rsync -tr /var/lib/nethserver/mattermost/backup/dump.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rm -f /var/lib/nethserver/mattermost/backup/dump.sql
+
+# Copy original config
+rsync -tr /opt/mattermost/config/config.json "${RSYNC_ENDPOINT}"/data/state/
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
 fi
 
-# Read rsync configuration
-user=$(echo $response | jq -r .data.output.credentials[0])
-password=$(echo $response | jq -r .data.output.credentials[1])
-address=$(echo $response | jq -r .data.output.address)
-port=$(echo $response | jq -r .data.output.port)
+# Assert required vars are set
+: "${IMPORT_TASK_ID:?}"
+
+# Stop and disable Mattemost
+/sbin/e-smith/config setprop mattermost status disabled || :
+systemctl disable --now mattermost || :
 
 # Terminate the rsync server
-RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
+rsync "${RSYNC_ENDPOINT}"/terminate || :
 
-rm -f $MM_CONF
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'
+host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'
