@@ -98,10 +98,14 @@ def get_webmail_info():
 
 
 def get_mail_info():
-    return {
-        "id": "nethserver-mail",
-        "name": "Email"
-    }
+    # list only mail server, not mail relay
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/dovecot/status'):
+        return {
+            "id": "nethserver-mail",
+            "name": "Email"
+        }
+    else:
+        return None
 
 
 def get_webtop_info():
