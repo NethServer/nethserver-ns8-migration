@@ -101,7 +101,7 @@ api_endpoint = 'http://' + config["props"]["LeaderIpAddress"] + ':9311'
 # POST login request
 req = request.Request(f'{api_endpoint}/api/login', data=data)
 req.add_header('Content-Type', 'application/json')
-resp = request.urlopen(req)
+resp = request.urlopen(req, timeout = 20)
 
 payload = json.loads(resp.read())
 
