@@ -91,10 +91,13 @@ def get_mattermost_info():
 
 
 def get_webmail_info():
-    return {
-        "id": "nethserver-roundcubemail",
-        "name": "Webmail"
-    }
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/roundcubemail/type'):
+        return {
+            "id": "nethserver-roundcubemail",
+            "name": "Webmail"
+        }
+    else:
+        return None
 
 
 def get_mail_info():
@@ -109,13 +112,15 @@ def get_mail_info():
 
 
 def get_webtop_info():
-    config = get_config("webtop")
-
-    return {
-        "id": "nethserver-webtop5",
-        "name": "WebTop",
-        "config": config
-    }
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/webtop/type'):
+        config = get_config("webtop")
+        return {
+            "id": "nethserver-webtop5",
+            "name": "WebTop",
+            "config": config
+        }
+    else:
+        return None
 
 
 def list_apps():
