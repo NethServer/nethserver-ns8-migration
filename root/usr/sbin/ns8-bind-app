@@ -89,7 +89,7 @@ source bind.env
 
 set +a
 while : ; do
-    if rsync -v "${RSYNC_ENDPOINT:?}"/ >/dev/null ; then
+    if rsync -v "${RSYNC_ENDPOINT:?}"/ &>/dev/null ; then
         echo "[INFO] App ${app_id} is bound to ${RSYNC_ENDPOINT}, waiting for task ${IMPORT_TASK_ID}" 1>&2
         break
     fi
