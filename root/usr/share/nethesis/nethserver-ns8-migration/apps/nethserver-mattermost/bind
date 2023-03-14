@@ -22,9 +22,4 @@
 
 set -e
 
-host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
-if [ -z "$host" ]; then
-    exit 1
-fi
-
 ns8-bind-app nethserver-mattermost
