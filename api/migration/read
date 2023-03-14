@@ -30,7 +30,10 @@ def get_config(appId):
     bash_command = "/sbin/e-smith/config getjson {}".format(appId)
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
-    return simplejson.loads(output)
+    if output == "1":
+        return None
+    else:
+        return simplejson.loads(output)
 
 def is_locked(fflag):
     try:
@@ -76,10 +79,15 @@ def get_nextcloud_info():
 
 
 def get_mattermost_info():
-    return {
-        "id": "nethserver-mattermost",
-        "name": "Mattermost"
-    }
+    # list Mattermost only if enabled and configured
+    config = get_config("mattermost")
+    if config and config['props']['status'] == 'enabled' and  config['props']['VirtualHost']:
+        return {
+            "id": "nethserver-mattermost",
+            "name": "Mattermost"
+        }
+    else:
+        return None
 
 
 def get_webmail_info():
@@ -90,10 +98,14 @@ def get_webmail_info():
 
 
 def get_mail_info():
-    return {
-        "id": "nethserver-mail",
-        "name": "Email"
-    }
+    # list only mail server, not mail relay
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/dovecot/status'):
+        return {
+            "id": "nethserver-mail",
+            "name": "Email"
+        }
+    else:
+        return None
 
 
 def get_webtop_info():
@@ -108,11 +120,11 @@ def get_webtop_info():
 
 def list_apps():
     apps = []
-    apps.append(get_nextcloud_info())
-    apps.append(get_mattermost_info())
-    apps.append(get_mail_info())
-    apps.append(get_webmail_info())
-    apps.append(get_webtop_info())
+    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop']:
+        info = globals()["get_%s_info" % app]() # call all functions named get_<app>_info
+        if info:
+            # add only non-empty apps
+            apps.append(info)
 
     # show account provider as last app
     apps.append(get_account_provider_info())
