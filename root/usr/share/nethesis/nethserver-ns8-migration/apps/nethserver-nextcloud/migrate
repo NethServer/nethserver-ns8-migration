@@ -20,48 +20,67 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-# read json from stdin
-migration_config=$(cat /dev/stdin)
-if [[ "$migration_config" != "null" ]]; then
-    # read virtual host from migration configuration
-    host=$(echo $migration_config | jq -r '.virtualHost')
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-nextcloud"
+source bind.env
+
+# Ensure endpoint is defined
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
+
+if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
+    # During the last, "finish" rsync run there must be no changes to
+    # the database: stop the service early.
+    systemctl stop httpd
 fi
 
-if [ -z "$host" ]; then
-    # read virtual host from nextcloud configuration
-    host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+# Sync files: --owner --group --chown=82:82 are needed to map data for the www-data user
+rsync -tr --owner --group --chown=82:82 --delete --exclude=appdata\* --exclude=nextcloud.log /var/lib/nethserver/nextcloud/ "${RSYNC_ENDPOINT}"/data/volumes/nextcloud-app-data/data/
 
-    if [ -z "$host" ]; then
-        echo "nextcloud: no VirtualHost defined."
-        exit 1
-    fi
+# Create database dump
+mysqldump -S /run/rh-mariadb105-mariadb/nextcloud-mysql.sock nextcloud > /var/lib/nethserver/nextcloud/dump.sql
+rsync -tr /var/lib/nethserver/nextcloud/dump.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rm -f /var/lib/nethserver/nextcloud/dump.sql
+
+# Copy original config
+rsync -tr /usr/share/nextcloud/config/config.php "${RSYNC_ENDPOINT}"/data/state/
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
 fi
 
-NC_CONF=/var/lib/nethserver/agent/nextcloud.json
+# Assert required vars are set
+: "${IMPORT_TASK_ID:?}" "${NEXTCLOUD_VHOST:?}"
 
-if [ ! -f $NC_CONF ]; then
-    echo "$NC_CONF not found. Run nextcloud-export first."
-    exit 1
-else
-    response=$(cat $NC_CONF)
-fi
-
-# Read rsync configuration
-user=$(echo $response | jq -r .data.output.credentials[0])
-password=$(echo $response | jq -r .data.output.credentials[1])
-address=$(echo $response | jq -r .data.output.address)
-port=$(echo $response | jq -r .data.output.port)
+# Stop and disable Nextcloud
+mkdir -p /etc/e-smith/templates-custom/etc/httpd/conf.d/{default-virtualhost.inc,nextcloud.conf,zz_nextcloud.conf}
+> /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
+> /etc/e-smith/templates-custom/etc/httpd/conf.d/nextcloud.conf/10base
+> /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base
+/sbin/e-smith/expand-template /etc/httpd/conf.d/default-virtualhost.inc
+/sbin/e-smith/expand-template /etc/httpd/conf.d/nextcloud.conf
+/sbin/e-smith/expand-template /etc/httpd/conf.d/zz_nextcloud.conf
 
 # Terminate the rsync server
-RSYNC_PASSWORD=$password rsync /dev/null rsync://$user@$address:$port/terminate 2>/dev/null
+rsync "${RSYNC_ENDPOINT}"/terminate || :
 
-rm -f $NC_CONF
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
 
+# Search for Samba or LDAP domain
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
-
-ns8-action module/$user configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
-
-if [ $? -gt 0 ]; then
-    echo "ns8-action configure-module has timed out"
-    exit 1
+if [ -z "$domain" ]; then
+   domain="directory.nh"
 fi
+host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+
+if [ -z "$host" ]; then
+    host=${NEXTCLOUD_VHOST}
+fi
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
+
+systemctl start httpd
