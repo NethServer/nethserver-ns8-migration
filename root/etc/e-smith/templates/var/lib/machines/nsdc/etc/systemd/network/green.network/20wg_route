@@ -1,0 +1,13 @@
+{
+    use esmith::NetworksDB;
+    my $ndb = esmith::NetworksDB->open();
+    my $network = ${'wg-quick@wg0'}{'RemoteNetwork'} || '';
+    my $bridge = $nsdc{'bridge'} || die ("[ERROR] There is no network bridge for NethServer domain controller");
+    my $gateway = $ndb->get_prop($bridge, 'ipaddr') || '';
+ 
+   if ($network ne '' && $gateway ne '') {
+       $OUT .= "[Route]\n";
+       $OUT .= "Destination=$network\n";
+       $OUT .= "Gateway=$gateway\n";
+   }
+}
