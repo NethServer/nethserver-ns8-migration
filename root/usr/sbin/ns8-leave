@@ -35,6 +35,12 @@ fi
 /sbin/e-smith/config setprop agent status disabled
 /sbin/e-smith/config setprop wg-quick@wg0 status disabled Address "" RemoteEndpoint "" RemoteKey "" RemoteNetwork ""
 
+# reset nsdc routes
+if [ -f /var/lib/machines/nsdc/etc/systemd/network/green.network ]; then
+    /sbin/e-smith/expand-template /var/lib/machines/nsdc/etc/systemd/network/green.network
+    systemctl restart nsdc
+fi
+
 # clean up agent state directory
 find /var/lib/nethserver/nethserver-ns8-migration -type f -not -name index.html | xargs -- rm -vf
 

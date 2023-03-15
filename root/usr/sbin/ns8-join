@@ -174,6 +174,17 @@ if account_provider_config['isAD'] == '1':
         if update_routes_response['data']['exit_code'] != 0:
             print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
             sys.exit(1)
+        # Update nsdc route for wireguard VPN
+        subprocess.run(['/sbin/e-smith/expand-template', '/var/lib/machines/nsdc/etc/systemd/network/green.network'], check=True)
+        subprocess.run(['systemctl', 'restart', 'nsdc'], check=True)
+        # wait for nsdc to start
+        watchdog = 0
+        while subprocess.run(['/usr/bin/nc', '-z', nsdc_ip_address, '636']).returncode != 0:
+            time.sleep(1)
+            watchdog = watchdog + 1
+            if watchdog > 60: # wait max 60 seconds
+                print("nsdc restart has failed", file=sys.stderr)
+                sys.exit(1)
         # Configure NSDC as account provider of an external user domain:
         add_external_domain_request = {
             "domain": account_provider_domain,
