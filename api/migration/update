@@ -67,6 +67,8 @@ elif [[ "$action" == "finish" ]]; then
         echo "=========== Leave cluster" $(date -R) >>/var/log/ns8-migration.log
         /usr/sbin/ns8-leave
     fi
+elif [[ "$action" == "abort" ]]; then
+    /usr/sbin/ns8-abort "${app_id}"
 else
     error "ApiFailed" "unknown action ${action}"
 fi
