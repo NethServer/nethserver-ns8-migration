@@ -56,6 +56,7 @@ applications and APIs:
 - ``ns8-leave``
 - ``ns8-action``
 - ``ns8-bind-app``
+- ``ns8-abort``
 
 Applications
 ============
@@ -191,7 +192,7 @@ basic input payload format is ::
   }
 
 It accepts the following ``action`` values for each NS7 module: ``start``,
-``sync``, ``finish``.
+``sync``, ``finish``, ``abort``.
 
 1. ``start``. Creates one module instance in the NS8 cluster. The local
    NS7 app ``bind`` script is called. Multiple destination modules are
@@ -204,6 +205,9 @@ It accepts the following ``action`` values for each NS7 module: ``start``,
 
 3. ``finish``. Completes the migration by calling the app ``migrate``
    script with the special environment variable ``MIGRATE_ACTION=finish``.
+
+4. ``abort``. Abort module migration. Remove module from NS8 cluster
+   and cleanup local stace.
 
 After the execution of the ``finish`` action the app is stopped and
 disabled in NS7.
