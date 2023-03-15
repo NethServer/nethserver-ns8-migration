@@ -169,7 +169,7 @@ if account_provider_config['isAD'] == '1':
         pass # Ignore missing nsdc/IpAddress prop
     else:
         # Push a route to reach NSDC IP address through the cluster VPN
-        update_routes_request = {"add": [{"network": nsdc_ip_address + '/32', "node_id": ret['node_id']}]}
+        update_routes_request = {"add": [{"ip_address": nsdc_ip_address, "node_id": ret['node_id']}]}
         update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
         if update_routes_response['data']['exit_code'] != 0:
             print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
