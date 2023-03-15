@@ -57,7 +57,7 @@ fi
 ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "directory.nh")" || :
 
 # Commit DC migration
-rsync -v "${RSYNC_ENDPOINT}"/terminate
+rsync -v "${RSYNC_ENDPOINT}"/terminate || :
 
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
