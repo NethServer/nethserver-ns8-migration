@@ -1209,7 +1209,12 @@ export default {
       } else if (action === "finish") {
         // set migration configurations if needed
 
-        if (app.id === "nethserver-nextcloud" && this.virtualHost) {
+
+        if (app.id === "nethserver-nextcloud") {
+          // if nextcloud virtualhost is already set, just uset it
+          if (!this.virtualHost && this.nextcloudApp.config.props.VirtualHost) {
+            this.virtualHost = this.nextcloudApp.config.props.VirtualHost;
+          }
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
           };
