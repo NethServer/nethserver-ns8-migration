@@ -554,9 +554,9 @@
                           <option
                             v-for="(ip, i) in adIpAddresses"
                             v-bind:key="i"
-                            :value="ip"
+                            :value="ip.ipaddress"
                           >
-                            {{ ip }}
+                            {{ ip.ipaddress }} - {{ ip.label }}
                           </option>
                         </select>
                         <span v-if="error.adIpAddress" class="help-block">{{
@@ -1173,6 +1173,13 @@ export default {
         const location = this.accountProviderConfig.location;
         accountProviderApp.name = this.$t(`dashboard.${location}_${type}`);
       }
+
+      apps.forEach(app => {
+        if (app.id === "account-provider" && app.provider === "ad") {
+          this.adIpAddresses = app.ip_addresses;
+        }
+      });
+
       this.apps = apps;
       this.loading.migrationRead = false;
     },
@@ -1227,6 +1234,8 @@ export default {
             migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
           }
           migrationObj.migrationConfig = migrationConfig;
+        } else if (app.id === "account-provider" && app.provider === "ad") {
+          migrationObj.migrationConfig = {"sambaIpAddress": this.adIpAddress};
         }
       }
 
