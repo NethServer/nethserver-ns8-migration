@@ -48,7 +48,7 @@ EOF
 rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
 
 # Send sysvol contents
-rsync -ai /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${RSYNC_ENDPOINT}"/data/volumes/data/sysvol/
+rsync -rlptDi /var/lib/machines/nsdc/var/lib/samba/sysvol/ "${RSYNC_ENDPOINT}"/data/volumes/data/sysvol/
 
 # Generate .export files, like the pre-backup event handler of NSDC does
 # shellcheck disable=SC2016
