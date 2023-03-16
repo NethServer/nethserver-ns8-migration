@@ -38,7 +38,7 @@ fi
 # reset nsdc routes
 if [ -f /var/lib/machines/nsdc/etc/systemd/network/green.network ]; then
     /sbin/e-smith/expand-template /var/lib/machines/nsdc/etc/systemd/network/green.network
-    systemctl restart nsdc
+    systemctl -M nsdc restart systemd-networkd
 fi
 
 # clean up agent state directory
