@@ -63,19 +63,34 @@ def get_migration_status(app_id):
         return "not_migrated"
 
 def get_account_provider_info():
+    provider = 'ldap'
+    ip_addresses = []
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type'):
+        provider = 'ad'
+        process = subprocess.Popen('/usr/libexec/nethserver/api/nethserver-ns8-migration/migration/ad-helper', stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        try:
+            ip_addresses = simplejson.loads(output)
+        except:
+            pass
+
     return {
-        "id": "account-provider"
+        "id": "account-provider",
+        "provider": provider,
+        "ip_addresses": ip_addresses
     }
 
 
 def get_nextcloud_info():
-    config = get_config("nextcloud")
-
-    return {
-        "id": "nethserver-nextcloud",
-        "name": "Nextcloud",
-        "config": config
-    }
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/nextcloud/type'):
+        config = get_config("nextcloud")
+        return {
+            "id": "nethserver-nextcloud",
+            "name": "Nextcloud",
+            "config": config
+        }
+    else:
+        return None
 
 
 def get_mattermost_info():

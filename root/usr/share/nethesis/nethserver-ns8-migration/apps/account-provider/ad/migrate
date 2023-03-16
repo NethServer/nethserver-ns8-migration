@@ -23,8 +23,9 @@
 set -e
 
 # Read nsdc props
-IFS=$'\t' read -r provision_type ipaddress < <( /sbin/e-smith/config printjson nsdc | \
+IFS=$'\t' read -r provision_type cur_ipaddress < <( /sbin/e-smith/config printjson nsdc | \
     jq -r '.props | [.ProvisionType, .IpAddress] | join("\t") ' )
+ipaddress=${SAMBA_IPADDRESS:-$cur_ipaddress}
 
 # Read sssd props
 IFS=$'\t' read -r nbdomain realm svcuser svcpass < <( /sbin/e-smith/config printjson sssd | \
