@@ -60,6 +60,48 @@ fi
 /sbin/e-smith/config setprop mattermost status disabled || :
 systemctl disable --now mattermost || :
 
+# Setup migration page
+mkdir -p ./webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Mattermost Migration</title>
+  </head>
+  <body>
+    <h1>Mattermost Migration</h1>
+    <p>Site has moved, wait for the DNS update.</a></p>
+  </body>
+</html>
+EOF
+
+mkdir -p /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_mattermost.conf/
+cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_mattermost.conf/10base <<EOF
+# ns8migration
+<VirtualHost *:80>
+    IncludeOptional conf.d/default-virtualhost.inc
+</VirtualHost>
+
+<VirtualHost *:80>
+   ServerName {{\$mattermost{'VirtualHost'} || 'mattermost.'.\$DomainName}}
+   RedirectMatch 301 ^(?!/\.well-known/acme-challenge/).* https://{{\$mattermost{'VirtualHost'} || 'mattermost.'.\$DomainName}}
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerName {{\$mattermost{'VirtualHost'} || 'mattermost.'.\$DomainName}}
+
+  Alias / /var/lib/nethserver/nethserver-ns8-migration/nethserver-mattermost/webroot/
+  <Directory "/var/lib/nethserver/nethserver-ns8-migration/nethserver-mattermost/webroot/">
+     AllowOverride all
+     Require all granted
+  </Directory>
+
+</VirtualHost>
+EOF
+/sbin/e-smith/expand-template /etc/httpd/conf.d/zz_mattermost.conf
+systemctl reload httpd
+
 # Terminate the rsync server
 rsync "${RSYNC_ENDPOINT}"/terminate || :
 
