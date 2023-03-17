@@ -1361,7 +1361,7 @@ export default {
     },
     abort(app) {
       const context = this;
-      context.loading.listApplications = true;
+      context.loading.migrationUpdate = true;
       context.hideAbortModal();
       nethserver.exec(
         ["nethserver-ns8-migration/migration/update"],
@@ -1371,15 +1371,17 @@ export default {
         },
         null,
         function(success) {
-          context.listApplications();
+          context.migrationReadApps();
+          context.loading.migrationUpdate = false;
         },
         function(error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_on_abort"
           );
           console.error(errorMessage, error);
-          context.error.listApplications = errorMessage;
-          context.listApplications();
+          context.error.migrationUpdate = errorMessage;
+          context.loading.migrationUpdate = false;
+          context.migrationReadApps();
         },
         false
       );
