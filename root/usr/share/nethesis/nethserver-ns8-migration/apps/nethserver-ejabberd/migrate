@@ -1,0 +1,110 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2023 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-ejabberd"
+source bind.env
+
+# Ensure endpoint is defined
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
+# Sync files: --owner --group --chown=9000:9000 are needed to map data for the ejabberd user
+rsync -tr --owner --group --chown=9000:9000 --delete  /var/lib/nethserver/ejabberd/upload/ "${RSYNC_ENDPOINT}"/data/volumes/upload/
+
+# Sync ejabberd DB dump
+rm -vf /var/lib/nethserver/ejabberd/ejabberd.backup
+/opt/ejabberd-*/bin/ejabberdctl backup /var/lib/nethserver/ejabberd/ejabberd.backup
+rsync -zi /var/lib/nethserver/ejabberd/ejabberd.backup "${RSYNC_ENDPOINT}"/data/state/ejabberd.backup
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
+fi
+
+# Assert required vars are set
+: "${IMPORT_TASK_ID:?}"
+
+# Stop and disable ejabberd
+/sbin/e-smith/config setprop ejabberd status disabled || :
+systemctl disable --now ejabberd || :
+
+# Commit ejabberd migration
+rsync "${RSYNC_ENDPOINT}"/terminate || :
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+ModHttpUploadQuotaMaxDay=$(/sbin/e-smith/config getprop ejabberd ModHttpUploadQuotaMaxDay)
+ModHttpUploadQuotaStatus=$([ $(/sbin/e-smith/config getprop ejabberd ModHttpUploadQuotaStatus) == "enabled" ] && echo "true" || echo "false")
+ModHttpUploadStatus=$([ $(/sbin/e-smith/config getprop ejabberd ModHttpUploadStatus) == "enabled" ] && echo "true" || echo "false")
+ModMamPurgeDBInterval=$(/sbin/e-smith/config getprop ejabberd ModMamPurgeDBInterval)
+ModMamPurgeDBStatus=$([ $(/sbin/e-smith/config getprop ejabberd ModMamPurgeDBStatus) == "enabled" ] && echo "true" || echo "false")
+ModMamStatus=$([ $(/sbin/e-smith/config getprop ejabberd ModMamStatus) == "enabled" ] && echo "true" || echo "false")
+S2S=$([ $(/sbin/e-smith/config getprop ejabberd S2S) == "enabled" ] && echo "true" || echo "false")
+ShaperFast=$(/sbin/e-smith/config getprop ejabberd ShaperFast)
+ShaperNormal=$(/sbin/e-smith/config getprop ejabberd ShaperNormal)
+WebAdmin=$([ $(/sbin/e-smith/config getprop ejabberd WebAdmin) == "enabled" ] && echo "true" || echo "false")
+Host=$(/sbin/e-smith/config get DomainName)
+
+# Search for Samba or LDAP domain
+domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
+if [ -z "$domain" ]; then
+   domain="directory.nh"
+fi
+
+# we find admin users from jabberadmins group
+groupAdmin=$(/usr/libexec/nethserver/list-group-members jabberadmins | sed 's/"//g'| sed 's/^.//' | sed 's/.$//')
+
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+    --arg Host "${Host}" \
+    --argjson WebAdmin "${WebAdmin}" \
+    --arg ShaperNormal "${ShaperNormal}" \
+    --arg ShaperFast "${ShaperFast}" \
+    --argjson S2S "${S2S}" \
+    --argjson ModMamStatus "${ModMamStatus}" \
+    --argjson ModMamPurgeDBStatus "${ModMamPurgeDBStatus}" \
+    --arg ModMamPurgeDBInterval "${ModMamPurgeDBInterval}" \
+    --argjson ModHttpUploadStatus "${ModHttpUploadStatus}" \
+    --argjson ModHttpUploadQuotaStatus "${ModHttpUploadQuotaStatus}" \
+    --arg ModHttpUploadQuotaMaxDay "${ModHttpUploadQuotaMaxDay}" \
+    --arg groupAdmin "${groupAdmin}" \
+    --arg domain "${domain}" \
+  '{
+    "hostname": $Host,
+    "ldap_domain": $domain,
+    "adminsList" : $groupAdmin,
+    "http_upload": $ModHttpUploadStatus,
+    "s2s" : $S2S,
+    "shaper_normal": $ShaperNormal|fromjson,
+    "shaper_fast": $ShaperFast|fromjson,
+    "mod_http_upload_unlimited": $ModHttpUploadQuotaStatus,
+    "purge_httpd_upload_interval": $ModHttpUploadQuotaMaxDay|fromjson,
+    "mod_mam_status": $ModMamStatus,
+    "purge_mnesia_unlimited": $ModMamPurgeDBStatus,
+    "purge_mnesia_interval": $ModMamPurgeDBInterval|fromjson,
+    "lets_encrypt": false,
+    "webadmin": $WebAdmin
+  }')"
