@@ -33,6 +33,10 @@
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.getAccountProviderInfo }}
     </div>
+    <div v-if="error.userDomains" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.userDomains }}
+    </div>
     <div
       v-if="
         loading.listApplications ||
@@ -186,7 +190,7 @@
             $t("dashboard.account_provider_migration_in_progress_description")
           }}
         </div>
-        <div id="pf-list-default" class="list-group list-view-pf app-list">
+        <div id="pf-list-default" class="list-group list-view-pf app-list" v-if="validUserDomains">
           <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
               <!-- local account provider -->
@@ -844,6 +848,8 @@ export default {
       emailNode: 1,
       webtopNode: 1,
       roundcubeNode: 1,
+      validUserDomains: true,
+      localDomain: "",
       loading: {
         connectionRead: false,
         connectionUpdate: false,
@@ -870,6 +876,7 @@ export default {
         getClusterStatus: "",
         roundCubeVirtualHost: "",
         webtopVirtualHost: "",
+        userDomains: ""
       },
     };
   },
@@ -1237,6 +1244,14 @@ export default {
       });
 
       this.apps = apps;
+      this.validUserDomains = output.validDomains;
+      if (!this.validUserDomains) {
+        if (this.accountProviderConfig.location === 'remote') {
+           this.error.userDomains = this.$t("dashboard.external_user_domain_error");
+        } else {
+           this.error.userDomains = this.$t("dashboard.internal_user_domain_error", {"domain": this.localDomain});
+        }
+      }
       this.loading.migrationRead = false;
     },
     migrationUpdate(app, action) {
@@ -1407,6 +1422,7 @@ export default {
             accountProviderConfig.type = "none";
           }
 
+          context.localDomain = accountProviderConfig.BaseDN ? accountProviderConfig.BaseDN.substring(3).replaceAll(",dc=",".") : "";
           // provider location
 
           const location = accountProviderConfig.IsLocal ? "local" : "remote";
