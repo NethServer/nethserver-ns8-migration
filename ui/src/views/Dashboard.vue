@@ -33,6 +33,10 @@
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.getAccountProviderInfo }}
     </div>
+    <div v-if="error.userDomains" class="alert alert-danger">
+      <span class="pficon pficon-error-circle-o"></span>
+      {{ error.userDomains }}
+    </div>
     <div
       v-if="
         loading.listApplications ||
@@ -186,7 +190,7 @@
             $t("dashboard.account_provider_migration_in_progress_description")
           }}
         </div>
-        <div id="pf-list-default" class="list-group list-view-pf app-list">
+        <div id="pf-list-default" class="list-group list-view-pf app-list" v-if="validUserDomains">
           <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
               <!-- local account provider -->
@@ -242,6 +246,13 @@
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.finish_migration") }}
+                </button>
+                <button
+                  @click="showAbortModal(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  class="btn btn-default"
+                >
+                  {{ $t("dashboard.abort") }}
                 </button>
               </template>
               <button
@@ -701,6 +712,47 @@
         </div>
       </div>
     </div>
+    <!-- abort modal -->
+    <div
+      class="modal"
+      id="abort-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.abort") }}: {{abortApp ? abortApp.name : ''}}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <div
+                v-html="$t('dashboard.abort_current_app', {app: abortApp ? abortApp.name : ''})"
+              ></div>
+            </div>
+            <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideAbortModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="abort(abortApp)"
+                >
+                  {{ $t("dashboard.abort") }}
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     <!-- logout modal -->
     <div
       class="modal"
@@ -784,6 +836,7 @@ export default {
       installedApps: [],
       apps: [],
       currentApp: null,
+      abortApp: null,
       virtualHost: "",
       roundCubeVirtualHost: "",
       webtopVirtualHost: "",
@@ -795,6 +848,8 @@ export default {
       emailNode: 1,
       webtopNode: 1,
       roundcubeNode: 1,
+      validUserDomains: true,
+      localDomain: "",
       loading: {
         connectionRead: false,
         connectionUpdate: false,
@@ -821,6 +876,7 @@ export default {
         getClusterStatus: "",
         roundCubeVirtualHost: "",
         webtopVirtualHost: "",
+        userDomains: ""
       },
     };
   },
@@ -868,6 +924,13 @@ export default {
   methods: {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
+    },
+    showAbortModal(app) {
+      this.abortApp = app;
+      $("#abort-modal").modal("show");
+    },
+    hideAbortModal() {
+      $("#abort-modal").modal("hide");
     },
     showLogoutModal() {
       $("#logout-modal").modal("show");
@@ -1181,6 +1244,14 @@ export default {
       });
 
       this.apps = apps;
+      this.validUserDomains = output.validDomains;
+      if (!this.validUserDomains) {
+        if (this.accountProviderConfig.location === 'remote') {
+           this.error.userDomains = this.$t("dashboard.external_user_domain_error");
+        } else {
+           this.error.userDomains = this.$t("dashboard.internal_user_domain_error", {"domain": this.localDomain});
+        }
+      }
       this.loading.migrationRead = false;
     },
     migrationUpdate(app, action) {
@@ -1303,6 +1374,33 @@ export default {
       this.loading.listApplications = false;
       this.migrationReadApps();
     },
+    abort(app) {
+      const context = this;
+      context.loading.migrationUpdate = true;
+      context.hideAbortModal();
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/update"],
+        {
+          action: "abort",
+          app: app.id
+        },
+        null,
+        function(success) {
+          context.migrationReadApps();
+          context.loading.migrationUpdate = false;
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_on_abort"
+          );
+          console.error(errorMessage, error);
+          context.error.migrationUpdate = errorMessage;
+          context.loading.migrationUpdate = false;
+          context.migrationReadApps();
+        },
+        false
+      );
+    },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;
       let context = this;
@@ -1326,6 +1424,7 @@ export default {
             accountProviderConfig.type = "none";
           }
 
+          context.localDomain = accountProviderConfig.BaseDN ? accountProviderConfig.BaseDN.substring(3).replaceAll(",dc=",".") : "";
           // provider location
 
           const location = accountProviderConfig.IsLocal ? "local" : "remote";

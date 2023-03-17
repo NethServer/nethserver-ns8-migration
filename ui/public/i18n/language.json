@@ -80,7 +80,12 @@
     "roundcube_virtual_host": "Webmail virtual host",
     "webtop_virtual_host": "WebTop virtual host",
     "remote_account_provider_no_migration": "Remote account provider doesn't need to be migrated",
-    "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps"
+    "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps",
+    "abort": "Abort migration",
+    "abort_current_app": "Would you like to abort the migration of {app} application? If you change your mind you can restart the migration later.",
+    "error_on_abort": "There was an error during the abort procedure.",
+    "external_user_domain_error": "This machine uses an external account provider. Before starting the migration, you must configure the same external user domain inside NS8 cluster.",
+    "internal_user_domain_error": "The NS8 cluster already has a user domain for the '{domain}' domain. Before starting the migration, remove the '{domain}' domain from the NS8 cluster."
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
