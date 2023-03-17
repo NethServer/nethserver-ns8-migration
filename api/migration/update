@@ -68,7 +68,7 @@ elif [[ "$action" == "finish" ]]; then
         /usr/sbin/ns8-leave
     fi
 elif [[ "$action" == "abort" ]]; then
-    /usr/sbin/ns8-abort "${app_id}"
+    /usr/sbin/ns8-abort "${app_id}" &> /dev/null
 else
     error "ApiFailed" "unknown action ${action}"
 fi

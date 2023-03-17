@@ -243,6 +243,13 @@
                 >
                   {{ $t("dashboard.finish_migration") }}
                 </button>
+                <button
+                  @click="showAbortModal(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  class="btn btn-default"
+                >
+                  {{ $t("dashboard.abort") }}
+                </button>
               </template>
               <button
                 v-else-if="app.status == 'migrated'"
@@ -701,6 +708,47 @@
         </div>
       </div>
     </div>
+    <!-- abort modal -->
+    <div
+      class="modal"
+      id="abort-modal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.abort") }}: {{abortApp ? abortApp.name : ''}}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <div
+                v-html="$t('dashboard.abort_current_app', {app: abortApp ? abortApp.name : ''})"
+              ></div>
+            </div>
+            <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideAbortModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="abort(abortApp)"
+                >
+                  {{ $t("dashboard.abort") }}
+                </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     <!-- logout modal -->
     <div
       class="modal"
@@ -784,6 +832,7 @@ export default {
       installedApps: [],
       apps: [],
       currentApp: null,
+      abortApp: null,
       virtualHost: "",
       roundCubeVirtualHost: "",
       webtopVirtualHost: "",
@@ -868,6 +917,13 @@ export default {
   methods: {
     togglePassword() {
       this.isPasswordVisible = !this.isPasswordVisible;
+    },
+    showAbortModal(app) {
+      this.abortApp = app;
+      $("#abort-modal").modal("show");
+    },
+    hideAbortModal() {
+      $("#abort-modal").modal("hide");
     },
     showLogoutModal() {
       $("#logout-modal").modal("show");
@@ -1302,6 +1358,31 @@ export default {
       this.installedApps = output.map((app) => app.id);
       this.loading.listApplications = false;
       this.migrationReadApps();
+    },
+    abort(app) {
+      const context = this;
+      context.loading.listApplications = true;
+      context.hideAbortModal();
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/update"],
+        {
+          action: "abort",
+          app: app.id
+        },
+        null,
+        function(success) {
+          context.listApplications();
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_on_abort"
+          );
+          console.error(errorMessage, error);
+          context.error.listApplications = errorMessage;
+          context.listApplications();
+        },
+        false
+      );
     },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;

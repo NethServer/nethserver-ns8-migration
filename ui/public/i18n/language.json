@@ -80,7 +80,10 @@
     "roundcube_virtual_host": "Webmail virtual host",
     "webtop_virtual_host": "WebTop virtual host",
     "remote_account_provider_no_migration": "Remote account provider doesn't need to be migrated",
-    "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps"
+    "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps",
+    "abort": "Abort migration",
+    "abort_current_app": "Would you like to abort the migration of {app} application? If you change your mind you can restart the migration later.",
+    "error_on_abort": "There was an error during the abort procedure."
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
