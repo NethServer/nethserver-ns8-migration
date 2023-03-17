@@ -57,13 +57,59 @@ fi
 : "${IMPORT_TASK_ID:?}" "${NEXTCLOUD_VHOST:?}"
 
 # Stop and disable Nextcloud
-mkdir -p /etc/e-smith/templates-custom/etc/httpd/conf.d/{default-virtualhost.inc,nextcloud.conf,zz_nextcloud.conf}
+host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
+# Setup migration page
+mkdir -p ./webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Nextcloud Migration</title>
+  </head>
+  <body>
+    <h1>Nextcloud Migration</h1>
+    <p>Site has moved to &#9758; <a href="https://${host}">${host}</a></p>
+  </body>
+</html>
+EOF
+
+mkdir -p /etc/e-smith/templates-custom/etc/httpd/conf.d/{zz_nextcloud.conf,default-virtualhost.inc}
 > /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
-> /etc/e-smith/templates-custom/etc/httpd/conf.d/nextcloud.conf/10base
-> /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base
+if [ -z "${host}" ]; then
+   cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base <<EOF
+Alias /nextcloud /var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/
+<Directory "/var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/">
+  AllowOverride all
+  Require all granted
+</Directory>
+EOF
+else
+    cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base <<EOF
+<VirtualHost *:80>
+    IncludeOptional conf.d/default-virtualhost.inc
+</VirtualHost>
+
+<VirtualHost *:80>
+   ServerName {{\$nextcloud{'VirtualHost'} || 'nextcloud.'.\$DomainName}}
+   RedirectMatch 301 ^(?!/\.well-known/acme-challenge/).* https://{{\$nextcloud{'VirtualHost'} || 'nextcloud.'.\$DomainName}}
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerName {{\$nextcloud{'VirtualHost'} || 'nextcloud.'.\$DomainName}}
+
+  Alias / /var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/
+  <Directory "/var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/">
+     AllowOverride all
+     Require all granted
+  </Directory>
+
+</VirtualHost>
+EOF
 /sbin/e-smith/expand-template /etc/httpd/conf.d/default-virtualhost.inc
 /sbin/e-smith/expand-template /etc/httpd/conf.d/nextcloud.conf
 /sbin/e-smith/expand-template /etc/httpd/conf.d/zz_nextcloud.conf
+fi
 
 # Terminate the rsync server
 rsync "${RSYNC_ENDPOINT}"/terminate || :
@@ -76,9 +122,8 @@ domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
 if [ -z "$domain" ]; then
    domain="directory.nh"
 fi
-host=$(/sbin/e-smith/config getprop nextcloud VirtualHost)
 
-if [ -z "$host" ]; then
+if [ -z "${host}" ]; then
     host=${NEXTCLOUD_VHOST}
 fi
 ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true, "domain": "'$domain'"}'
