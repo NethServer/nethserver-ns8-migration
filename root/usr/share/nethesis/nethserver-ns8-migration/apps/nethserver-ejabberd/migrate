@@ -81,15 +81,15 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
     --arg Host "${Host}" \
     --argjson WebAdmin "${WebAdmin}" \
-    --arg ShaperNormal "${ShaperNormal}" \
-    --arg ShaperFast "${ShaperFast}" \
+    --argjson ShaperNormal "${ShaperNormal}" \
+    --argjson ShaperFast "${ShaperFast}" \
     --argjson S2S "${S2S}" \
     --argjson ModMamStatus "${ModMamStatus}" \
     --argjson ModMamPurgeDBStatus "${ModMamPurgeDBStatus}" \
-    --arg ModMamPurgeDBInterval "${ModMamPurgeDBInterval}" \
+    --argjson ModMamPurgeDBInterval "${ModMamPurgeDBInterval}" \
     --argjson ModHttpUploadStatus "${ModHttpUploadStatus}" \
     --argjson ModHttpUploadQuotaStatus "${ModHttpUploadQuotaStatus}" \
-    --arg ModHttpUploadQuotaMaxDay "${ModHttpUploadQuotaMaxDay}" \
+    --argjson ModHttpUploadQuotaMaxDay "${ModHttpUploadQuotaMaxDay}" \
     --arg groupAdmin "${groupAdmin}" \
     --arg domain "${domain}" \
   '{
@@ -98,13 +98,13 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     "adminsList" : $groupAdmin,
     "http_upload": $ModHttpUploadStatus,
     "s2s" : $S2S,
-    "shaper_normal": $ShaperNormal|fromjson,
-    "shaper_fast": $ShaperFast|fromjson,
+    "shaper_normal": $ShaperNormal,
+    "shaper_fast": $ShaperFast,
     "mod_http_upload_unlimited": $ModHttpUploadQuotaStatus,
-    "purge_httpd_upload_interval": $ModHttpUploadQuotaMaxDay|fromjson,
+    "purge_httpd_upload_interval": $ModHttpUploadQuotaMaxDay,
     "mod_mam_status": $ModMamStatus,
     "purge_mnesia_unlimited": $ModMamPurgeDBStatus,
-    "purge_mnesia_interval": $ModMamPurgeDBInterval|fromjson,
+    "purge_mnesia_interval": $ModMamPurgeDBInterval,
     "lets_encrypt": false,
     "webadmin": $WebAdmin
   }')"
