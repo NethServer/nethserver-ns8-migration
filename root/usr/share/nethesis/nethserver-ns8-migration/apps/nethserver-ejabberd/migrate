@@ -47,11 +47,11 @@ fi
 : "${IMPORT_TASK_ID:?}"
 
 # Stop and disable ejabberd
-/sbin/e-smith/config setprop ejabberd status disabled || :
-systemctl disable --now ejabberd || :
+/sbin/e-smith/config setprop ejabberd status disabled
+systemctl disable --now ejabberd
 
 # Commit ejabberd migration
-rsync "${RSYNC_ENDPOINT}"/terminate || :
+rsync "${RSYNC_ENDPOINT}"/terminate
 
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
