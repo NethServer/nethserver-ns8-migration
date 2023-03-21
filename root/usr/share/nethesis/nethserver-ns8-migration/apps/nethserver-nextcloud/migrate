@@ -75,9 +75,10 @@ cat - >webroot/index.html <<EOF
 EOF
 
 mkdir -p /etc/e-smith/templates-custom/etc/httpd/conf.d/{zz_nextcloud.conf,default-virtualhost.inc}
-> /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
+echo '# ns8migration' > /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
 if [ -z "${host}" ]; then
    cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base <<EOF
+# ns8migration
 Alias /nextcloud /var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/
 <Directory "/var/lib/nethserver/nethserver-ns8-migration/nethserver-nextcloud/webroot/">
   AllowOverride all
@@ -86,6 +87,7 @@ Alias /nextcloud /var/lib/nethserver/nethserver-ns8-migration/nethserver-nextclo
 EOF
 else
     cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf/10base <<EOF
+# ns8migration
 <VirtualHost *:80>
     IncludeOptional conf.d/default-virtualhost.inc
 </VirtualHost>
