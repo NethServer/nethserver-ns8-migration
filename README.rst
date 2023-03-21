@@ -235,8 +235,15 @@ Post-migration step back
 
 Once a service has been migrated to the remote NS8 host it should not run
 any more on NS7. When the ``migrate`` command completes the application
-services are stopped and disabled. It is possible to manually re-enable
-the services with the following commands.
+services are stopped and disabled.
+
+Please note that some migrated applications may also add some custom templates.
+To list such template fragments use: ::
+
+  grep -lR ns8migration /etc/e-smith/templates-custom/
+
+
+It is possible to manually re-enable the services with the following commands.
 
 ::
 
@@ -253,13 +260,23 @@ the services with the following commands.
   # Roundcube
   config delprop roundcubemail migration
 
+  # Mattermost
+  config setprop mattermost status enabled
+  rm -rf /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_mattermost.conf
+  signal-event nethserver-mattermost-update
+
+  # Nextcloud
+  rm -rf /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf
+  rm -f /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
+  signal-event nethserver-nextcloud-update
+
   # Account provider
   config setprop slapd status enabled
   config setprop nsdc status enabled
   config setprop sssd status enabled
 
-  expand-template /etc/httpd/conf.d/00ns8migration.conf
-  httpd -k graceful
+  # All modules
+  signal-event nethserver-ns8-migration-update
   signal-event runlevel-adjust
   signal-event firewall-adjust
 
