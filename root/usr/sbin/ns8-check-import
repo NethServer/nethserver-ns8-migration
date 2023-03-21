@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2023 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+#
+# Check remote rsync server, restart it if needed
+#
+
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+
+module=$1
+cd "${AGENT_STATE_DIR}/${module}"
+source bind.env
+export RSYNC_PASSWORD
+
+watchdog=0
+taskid=""
+while ! rsync -n --contimeout=5 bind.env "${RSYNC_ENDPOINT}"/data/; do
+    # wait maximums 30 seconds
+    if [ ${watchdog} -gt 30 ]; then
+        exit 1
+    fi
+    # start rsync server and wait for it
+    if [ -z "${taskid}" ]; then
+        source "${AGENT_INSTALL_DIR}/apps/${module}/bind.env"
+        port=$(echo ${RSYNC_ENDPOINT} | awk -F: '{print $3}')
+        jvolumes=$(xargs -- jq -c -n "\$ARGS.positional" --args <<<"${MODULE_VOLUMES}")
+        taskid=$(ns8-action -d module/${MODULE_INSTANCE_ID} import-module '{"credentials": ["'${MODULE_INSTANCE_ID}'", "'${RSYNC_PASSWORD}'"], "port": '$port', "volumes": '$jvolumes'}')
+        cat - > bind.env <<EOF
+RSYNC_ENDPOINT=${RSYNC_ENDPOINT}
+RSYNC_PASSWORD=${RSYNC_PASSWORD}
+MODULE_INSTANCE_ID=${MODULE_INSTANCE_ID}
+MODULE_NODE_ID=${MODULE_NODE_ID}
+IMPORT_TASK_ID=${taskid}
+EOF
+   fi
+   sleep 1
+   watchdog=$(( watchdog + 1 ))
+done
+
+exit 0
