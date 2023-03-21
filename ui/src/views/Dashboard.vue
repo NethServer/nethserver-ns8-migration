@@ -222,14 +222,22 @@
                 {{ $t("dashboard.start_migration") }}
               </button>
               <!-- other apps -->
+              <template v-else-if="app.status == 'not_migrated' || app.status == 'skipped'">
               <button
-                v-else-if="app.status == 'not_migrated'"
                 @click="showStartMigrationModal(app)"
                 :disabled="isStartMigrationButtonDisabled(app)"
                 class="btn btn-default"
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
+              <button
+                  @click="toggleSkip(app)"
+                  :disabled="loading.migrationUpdate || app.status == 'syncing' || app.status == 'migrating' || accountProviderMigrationStarted"
+                  class="btn btn-default"
+                >
+                  {{ app.status == 'skipped' ? $t("dashboard.no_skip") : $t("dashboard.skip") }}
+              </button>
+              </template>
               <template
                 v-else-if="app.status == 'migrating' || app.status == 'syncing'"
               >
@@ -272,7 +280,7 @@
                 />
                 <img
                   v-else
-                  class="apps-icon"
+                  :class="['apps-icon', {'skipped': (app.status == 'skipped')}]"
                   :src="'../' + app.id + '/' + (app.icon || 'logo.png')"
                   @error="$event.target.src = 'logo.png'"
                 />
@@ -294,6 +302,10 @@
                   <span
                     v-else-if="app.status == 'migrating'"
                     class="pficon pficon-maintenance status-icon"
+                  ></span>
+                  <span
+                    v-else-if="app.status == 'skipped'"
+                    class="fa fa-ban status-icon"
                   ></span>
                   <!-- email apps status description -->
                   <span
@@ -906,17 +918,18 @@ export default {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
     canStartAccountProviderMigration() {
-      // account provider migration can start only if it's local and all other apps have completed migration
+      // account provider migration can start only if it's local and all other apps have completed migration or have been skipped
       return !this.apps.some(
         (app) =>
           app.status !== "migrated" &&
+          app.status !== "skipped" &&
           ![
             "account-provider",
             "nethserver-roundcubemail",
             "nethserver-webtop5",
           ].includes(app.id)
       );
-    },
+    }
   },
   mounted() {
     this.connectionRead();
@@ -1401,6 +1414,32 @@ export default {
         false
       );
     },
+    toggleSkip(app) {
+      const context = this;
+      context.loading.migrationUpdate = true;
+      nethserver.exec(
+        ["nethserver-ns8-migration/migration/update"],
+        {
+          action: "toggle-skip",
+          app: app.id
+        },
+        null,
+        function(success) {
+          context.migrationReadApps();
+          context.loading.migrationUpdate = false;
+        },
+        function(error) {
+          const errorMessage = context.$i18n.t(
+            "dashboard.error_on_skip"
+          );
+          console.error(errorMessage, error);
+          context.error.migrationUpdate = errorMessage;
+          context.loading.migrationUpdate = false;
+          context.migrationReadApps();
+        },
+        false
+      );
+    },
     getAccountProviderInfo() {
       this.loading.accountProviderInfo = true;
       let context = this;
@@ -1503,6 +1542,7 @@ export default {
     isStartMigrationButtonDisabled(app) {
       return (
         this.loading.migrationUpdate ||
+        app.status == "skipped" ||
         (this.emailApp &&
           ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
       );
@@ -1556,5 +1596,9 @@ export default {
 
 .node-spinner {
   margin-left: 20px;
+}
+
+.skipped {
+  filter: grayscale(1);
 }
 </style>

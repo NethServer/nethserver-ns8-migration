@@ -53,12 +53,15 @@ def get_migration_status(app_id):
     migrating_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/bind.env" % app_id
     migrated_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/migrated" % app_id
     syncing_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/syncing.lock" % app_id
+    skip_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/skip" % app_id
     if os.path.exists(migrated_flag):
         return "migrated"
     elif is_locked(syncing_flag):
         return "syncing"
     elif os.path.exists(migrating_flag):
         return "migrating"
+    elif os.path.exists(skip_flag):
+        return "skipped"
     else:
         return "not_migrated"
 
