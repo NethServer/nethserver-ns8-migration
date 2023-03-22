@@ -232,7 +232,7 @@
               </button>
               <button
                   @click="toggleSkip(app)"
-                  :disabled="loading.migrationUpdate || app.status == 'syncing' || app.status == 'migrating' || accountProviderMigrationStarted"
+                  :disabled="loading.migrationUpdate || accountProviderMigrationStarted"
                   class="btn btn-default"
                 >
                   {{ app.status == 'skipped' ? $t("dashboard.no_skip") : $t("dashboard.skip") }}

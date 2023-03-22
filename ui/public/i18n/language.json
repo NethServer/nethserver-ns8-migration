@@ -88,7 +88,8 @@
     "internal_user_domain_error": "The NS8 cluster already has a user domain for the '{domain}' domain. Before starting the migration, remove the '{domain}' domain from the NS8 cluster.",
     "skip": "Skip migration",
     "status_skipped": "This application will not be migrated",
-    "no_skip": "Enable migration"
+    "no_skip": "Enable migration",
+    "error_on_skip": "There was an error when changing the skip flag."
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
