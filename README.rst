@@ -128,6 +128,21 @@ Finish command example ::
 
   MIGRATE_ACTION=finish NEXTCLOUD_VHOST=nc.example.com ./migrate
 
+Ejabberd migration
+--------------------
+
+Bind command example ::
+
+  MODULE_NODE_ID=1 ./bind
+
+Sync command example ::
+
+  ./migrate
+
+Finish command example ::
+
+  MIGRATE_ACTION=finish ./migrate
+
 Mattermost migration
 --------------------
 
