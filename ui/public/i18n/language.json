@@ -85,7 +85,11 @@
     "abort_current_app": "Would you like to abort the migration of {app} application? If you change your mind you can restart the migration later.",
     "error_on_abort": "There was an error during the abort procedure.",
     "external_user_domain_error": "This machine uses an external account provider. Before starting the migration, you must configure the same external user domain inside NS8 cluster.",
-    "internal_user_domain_error": "The NS8 cluster already has a user domain for the '{domain}' domain. Before starting the migration, remove the '{domain}' domain from the NS8 cluster."
+    "internal_user_domain_error": "The NS8 cluster already has a user domain for the '{domain}' domain. Before starting the migration, remove the '{domain}' domain from the NS8 cluster.",
+    "skip": "Skip migration",
+    "status_skipped": "This application will not be migrated",
+    "no_skip": "Enable migration",
+    "error_on_skip": "There was an error when changing the skip flag."
   },
   "validation": {
     "leader_node_empty": "Leader node is required",

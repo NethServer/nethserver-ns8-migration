@@ -71,6 +71,8 @@ elif [[ "$action" == "finish" ]]; then
     fi
 elif [[ "$action" == "abort" ]]; then
     /usr/sbin/ns8-abort "${app_id}" &> /dev/null
+elif [[ "$action" == "toggle-skip" ]]; then
+    /usr/sbin/ns8-toggle-skip "${app_id}"
 else
     error "ApiFailed" "unknown action ${action}"
 fi
