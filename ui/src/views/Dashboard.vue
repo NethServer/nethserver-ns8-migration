@@ -190,7 +190,11 @@
             $t("dashboard.account_provider_migration_in_progress_description")
           }}
         </div>
-        <div id="pf-list-default" class="list-group list-view-pf app-list" v-if="validUserDomains">
+        <div
+          id="pf-list-default"
+          class="list-group list-view-pf app-list"
+          v-if="validUserDomains"
+        >
           <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
               <!-- local account provider -->
@@ -222,21 +226,31 @@
                 {{ $t("dashboard.start_migration") }}
               </button>
               <!-- other apps -->
-              <template v-else-if="app.status == 'not_migrated' || app.status == 'skipped'">
-              <button
-                @click="showStartMigrationModal(app)"
-                :disabled="isStartMigrationButtonDisabled(app)"
-                class="btn btn-default"
+              <template
+                v-else-if="
+                  app.status == 'not_migrated' || app.status == 'skipped'
+                "
               >
-                {{ $t("dashboard.start_migration") }}
-              </button>
-              <button
-                  @click="toggleSkip(app)"
-                  :disabled="loading.migrationUpdate || accountProviderMigrationStarted"
+                <button
+                  @click="showStartMigrationModal(app)"
+                  :disabled="isStartMigrationButtonDisabled(app)"
                   class="btn btn-default"
                 >
-                  {{ app.status == 'skipped' ? $t("dashboard.no_skip") : $t("dashboard.skip") }}
-              </button>
+                  {{ $t("dashboard.start_migration") }}
+                </button>
+                <button
+                  @click="toggleSkip(app)"
+                  :disabled="
+                    loading.migrationUpdate || accountProviderMigrationStarted
+                  "
+                  class="btn btn-default"
+                >
+                  {{
+                    app.status == "skipped"
+                      ? $t("dashboard.no_skip")
+                      : $t("dashboard.skip")
+                  }}
+                </button>
               </template>
               <template
                 v-else-if="app.status == 'migrating' || app.status == 'syncing'"
@@ -280,7 +294,7 @@
                 />
                 <img
                   v-else
-                  :class="['apps-icon', {'skipped': (app.status == 'skipped')}]"
+                  :class="['apps-icon', { skipped: app.status == 'skipped' }]"
                   :src="'../' + app.id + '/' + (app.icon || 'logo.png')"
                   @error="$event.target.src = 'logo.png'"
                 />
@@ -736,30 +750,34 @@
         <div class="modal-content">
           <div class="modal-header">
             <h4 class="modal-title">
-              {{ $t("dashboard.abort") }}: {{abortApp ? abortApp.name : ''}}
+              {{ $t("dashboard.abort") }}: {{ abortApp ? abortApp.name : "" }}
             </h4>
           </div>
           <form class="form-horizontal">
             <div class="modal-body">
               <div
-                v-html="$t('dashboard.abort_current_app', {app: abortApp ? abortApp.name : ''})"
+                v-html="
+                  $t('dashboard.abort_current_app', {
+                    app: abortApp ? abortApp.name : '',
+                  })
+                "
               ></div>
             </div>
             <div class="modal-footer">
-                <button
-                  type="button"
-                  class="btn btn-default"
-                  @click="hideAbortModal"
-                >
-                  {{ $t("cancel") }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  @click="abort(abortApp)"
-                >
-                  {{ $t("dashboard.abort") }}
-                </button>
+              <button
+                type="button"
+                class="btn btn-default"
+                @click="hideAbortModal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger"
+                @click="abort(abortApp)"
+              >
+                {{ $t("dashboard.abort") }}
+              </button>
             </div>
           </form>
         </div>
@@ -888,7 +906,7 @@ export default {
         getClusterStatus: "",
         roundCubeVirtualHost: "",
         webtopVirtualHost: "",
-        userDomains: ""
+        userDomains: "",
       },
     };
   },
@@ -929,7 +947,7 @@ export default {
             "nethserver-webtop5",
           ].includes(app.id)
       );
-    }
+    },
   },
   mounted() {
     this.connectionRead();
@@ -1250,7 +1268,7 @@ export default {
         accountProviderApp.name = this.$t(`dashboard.${location}_${type}`);
       }
 
-      apps.forEach(app => {
+      apps.forEach((app) => {
         if (app.id === "account-provider" && app.provider === "ad") {
           this.adIpAddresses = app.ip_addresses;
         }
@@ -1259,10 +1277,15 @@ export default {
       this.apps = apps;
       this.validUserDomains = output.validDomains;
       if (!this.validUserDomains) {
-        if (this.accountProviderConfig.location === 'remote') {
-           this.error.userDomains = this.$t("dashboard.external_user_domain_error");
+        if (this.accountProviderConfig.location === "remote") {
+          this.error.userDomains = this.$t(
+            "dashboard.external_user_domain_error"
+          );
         } else {
-           this.error.userDomains = this.$t("dashboard.internal_user_domain_error", {"domain": this.localDomain});
+          this.error.userDomains = this.$t(
+            "dashboard.internal_user_domain_error",
+            { domain: this.localDomain }
+          );
         }
       }
       this.loading.migrationRead = false;
@@ -1300,7 +1323,6 @@ export default {
       } else if (action === "finish") {
         // set migration configurations if needed
 
-
         if (app.id === "nethserver-nextcloud") {
           // if nextcloud virtualhost is already set, just uset it
           if (!this.virtualHost && this.nextcloudApp.config.props.VirtualHost) {
@@ -1319,7 +1341,7 @@ export default {
           }
           migrationObj.migrationConfig = migrationConfig;
         } else if (app.id === "account-provider" && app.provider === "ad") {
-          migrationObj.migrationConfig = {"sambaIpAddress": this.adIpAddress};
+          migrationObj.migrationConfig = { sambaIpAddress: this.adIpAddress };
         }
       }
 
@@ -1395,7 +1417,7 @@ export default {
         ["nethserver-ns8-migration/migration/update"],
         {
           action: "abort",
-          app: app.id
+          app: app.id,
         },
         null,
         function(success) {
@@ -1403,9 +1425,7 @@ export default {
           context.loading.migrationUpdate = false;
         },
         function(error) {
-          const errorMessage = context.$i18n.t(
-            "dashboard.error_on_abort"
-          );
+          const errorMessage = context.$i18n.t("dashboard.error_on_abort");
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
@@ -1421,7 +1441,7 @@ export default {
         ["nethserver-ns8-migration/migration/update"],
         {
           action: "toggle-skip",
-          app: app.id
+          app: app.id,
         },
         null,
         function(success) {
@@ -1429,9 +1449,7 @@ export default {
           context.loading.migrationUpdate = false;
         },
         function(error) {
-          const errorMessage = context.$i18n.t(
-            "dashboard.error_on_skip"
-          );
+          const errorMessage = context.$i18n.t("dashboard.error_on_skip");
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
@@ -1463,7 +1481,9 @@ export default {
             accountProviderConfig.type = "none";
           }
 
-          context.localDomain = accountProviderConfig.BaseDN ? accountProviderConfig.BaseDN.substring(3).replaceAll(",dc=",".") : "";
+          context.localDomain = accountProviderConfig.BaseDN
+            ? accountProviderConfig.BaseDN.substring(3).replaceAll(",dc=", ".")
+            : "";
           // provider location
 
           const location = accountProviderConfig.IsLocal ? "local" : "remote";
