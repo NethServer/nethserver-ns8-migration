@@ -108,6 +108,18 @@ def get_mattermost_info():
         return None
 
 
+def get_ejabberd_info():
+    # list Ejabberd only if enabled
+    config = get_config("ejabberd")
+    if config and config['props']['status'] == 'enabled':
+        return {
+            "id": "nethserver-ejabberd",
+            "name": "Ejabberd"
+        }
+    else:
+        return None
+
+
 def get_webmail_info():
     if os.path.isfile('/etc/e-smith/db/configuration/defaults/roundcubemail/type'):
         return {
@@ -143,7 +155,7 @@ def get_webtop_info():
 
 def list_apps():
     apps = []
-    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop']:
+    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop', 'ejabberd']:
         info = globals()["get_%s_info" % app]() # call all functions named get_<app>_info
         if info:
             # add only non-empty apps
