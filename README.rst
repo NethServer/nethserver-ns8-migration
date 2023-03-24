@@ -185,12 +185,22 @@ Finally, to finalize nethserver-roundcubemail alone ::
 
   MIGRATE_ACTION=finish MAIL_INSTANCE_ID=mail1 ROUNDCUBE_VHOST=rc.example.com ./migrate
 
+
 Account provider
 ----------------
 
 This application migrates the local account provider. Both AD and LDAP are
 handled. External account provider is not migrated: it must be manually
 configured in NS8 to reach the same LDAP server used by NS7.
+
+
+File server
+-----------
+
+The Samba file server migration is part of Samba Account provider
+migration. It occurs unless the ``skip`` flag is set for the
+``nethserver-samba`` application.
+
 
 Migration APIs
 ==============
@@ -290,11 +300,15 @@ It is possible to manually re-enable the services with the following commands.
   config setprop nsdc status enabled
   config setprop sssd status enabled
 
+  # File server
+  config setprop smb status enabled
+  config setprop smb nmb enabled
+  config setprop smb winbind enabled
+
   # All modules
   signal-event nethserver-ns8-migration-update
   signal-event runlevel-adjust
   signal-event firewall-adjust
-
 
 Migration notes
 ===============
@@ -316,3 +330,16 @@ components/integrations the following additional and manual steps are needed:
 
 3. In the NS8 module, access the administrative page and enable the
    licenses again.
+
+File server
+-----------
+
+File server migration (shared folders) is an optional step of the Samba
+account provider migration. It can be performed if the NS8-based DC IP
+address is in a private network and is routable from the NS7-based DC.
+
+The NS8 DC cannot be assigned the cluster VPN IP address.
+
+.. warning::
+
+  Exposing SMB and other AD services to public networks is dangerous.
