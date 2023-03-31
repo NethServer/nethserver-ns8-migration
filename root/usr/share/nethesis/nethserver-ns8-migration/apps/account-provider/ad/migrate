@@ -76,9 +76,12 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     # NS8 module assumes we want to migrate the share dirs:
     /sbin/e-smith/db accounts printjson > accounts.json
     rsync -i accounts.json "${RSYNC_ENDPOINT:?}"/data/state/accounts.json
+    # Prepare a list of shared folder names for Rsync --exclude-from
+    jq -r 'map(select(.type=="ibay")) | "/" + .[].name + "/"' <accounts.json >shared-folders.lst
     if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
-        # Share data non-finish pass: send shared folders data
-        rsync -i --recursive --times --links /var/lib/nethserver/ibay/ "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        # Share data non-finish pass: send home/ and ibay/ data (high priority last)
+        rsync -i --recursive --times --links --perms --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        rsync -i --recursive --times --links --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/data/volumes/shares/
     fi
 fi
 
@@ -110,8 +113,10 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     done
 
     # Share data last pass: send shared folders including ACLs, owners,
-    # permissions, and the user.DOSATTRIB extended attribute:
-    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs /var/lib/nethserver/ibay/ "${RSYNC_ENDPOINT}"/shares/
+    # permissions, and the user.DOSATTRIB extended attribute. Send home/
+    # before ibay/ for lower priority.
+    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
+    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
 
     # Restore the original sssd.conf contents. No need to stop also the
     # service, because it is stopped and disabled in the next lines.
