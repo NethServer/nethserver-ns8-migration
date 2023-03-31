@@ -83,6 +83,11 @@ def get_account_provider_info():
         except:
             pass
 
+        # The VPN address (wg0) is not eligible for the DC migration if
+        # file server migration is enabled:
+        if get_samba_info() and get_migration_status("nethserver-samba") != "skipped":
+            ip_addresses = list(filter(lambda el: el["label"] != "wg0", ip_addresses))
+
     return {
         "id": "account-provider",
         "provider": provider,
