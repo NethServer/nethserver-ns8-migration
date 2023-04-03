@@ -75,7 +75,8 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     # If /srv/shares/accounts.json exists on the remote side, the
     # NS8 module assumes we want to migrate the share dirs:
     /sbin/e-smith/db accounts printjson > accounts.json
-    rsync -i accounts.json "${RSYNC_ENDPOINT:?}"/data/state/accounts.json
+    hostname -s > nbalias.txt # Alias name for NetBIOS and DNS resolution
+    rsync -i accounts.json nbalias.txt "${RSYNC_ENDPOINT:?}"/data/state/
     # Prepare a list of shared folder names for Rsync --exclude-from
     jq -r 'map(select(.type=="ibay")) | "/" + .[].name + "/"' <accounts.json >shared-folders.lst
     if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
