@@ -22,6 +22,11 @@
 
 set -e
 
+# Migrate shared folder contents if app nethserver-samba is not skipped
+if [[ ! -f "${AGENT_STATE_DIR:?}/nethserver-samba/skip" ]]; then
+    migrate_shared_folders=1
+fi
+
 # Read nsdc props
 IFS=$'\t' read -r provision_type cur_ipaddress < <( /sbin/e-smith/config printjson nsdc | \
     jq -r '.props | [.ProvisionType, .IpAddress] | join("\t") ' )
@@ -66,6 +71,21 @@ rsync -mtri \
 # Clean up .export files
 nsdc-run -e -- find /var/lib/samba/ -name "*.export" -delete
 
+if [[ -n "${migrate_shared_folders}" ]]; then
+    # If /srv/shares/accounts.json exists on the remote side, the
+    # NS8 module assumes we want to migrate the share dirs:
+    /sbin/e-smith/db accounts printjson > accounts.json
+    hostname -s > nbalias.txt # Alias name for NetBIOS and DNS resolution
+    rsync -i accounts.json nbalias.txt "${RSYNC_ENDPOINT:?}"/data/state/
+    # Prepare a list of shared folder names for Rsync --exclude-from
+    jq -r 'map(select(.type=="ibay")) | "/" + .[].name + "/"' <accounts.json >shared-folders.lst
+    if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+        # Share data non-finish pass: send home/ and ibay/ data (high priority last)
+        rsync -i --recursive --times --links --perms --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        rsync -i --recursive --times --links --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/data/volumes/shares/
+    fi
+fi
+
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
@@ -75,6 +95,43 @@ ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "
 
 # Commit DC migration
 rsync -v "${RSYNC_ENDPOINT}"/terminate
+
+if [[ -n "${migrate_shared_folders}" ]]; then
+    # Wait until the second rsyncd server with ACLs support is up:
+    while sleep 2 ; do
+        if rsync -v "${RSYNC_ENDPOINT:?}"/ &>/dev/null ; then
+            break
+        fi
+    done
+
+    # Reconfigure sssd to strip @domain suffix in NSS user and group names
+    # resolution. This is necessary to
+    sed -i -e '/^default_domain_suffix = / d' -e '/^use_fully_qualified_names =/ d' /etc/sssd/sssd.conf
+    systemctl restart sssd.service
+    # Avoid racing against rsync: wait until the new configuration is effective
+    while sleep 1; do
+        { getent passwd administrator | grep -q '@' ; } || break
+    done
+
+    # Share data last pass: send shared folders including ACLs, owners,
+    # permissions, and the user.DOSATTRIB extended attribute. Send home/
+    # before ibay/ for lower priority.
+    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
+    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
+
+    # Restore the original sssd.conf contents. No need to stop also the
+    # service, because it is stopped and disabled in the next lines.
+    /sbin/e-smith/expand-template /etc/sssd/sssd.conf
+
+    # Stop the Samba file server services
+    systemctl disable --now smb.service nmb.service winbind.service
+    /sbin/e-smith/config setprop smb status disabled
+    /sbin/e-smith/config setprop smb nmb disabled
+    /sbin/e-smith/config setprop smb winbind disabled
+
+    # Commit file-server migration
+    rsync -v "${RSYNC_ENDPOINT}"/terminate
+fi
 
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"

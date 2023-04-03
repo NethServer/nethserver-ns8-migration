@@ -47,23 +47,29 @@ def is_locked(fflag):
     return False
 
 def get_migration_status(app_id):
-    if app_id in ['nethserver-webtop5','nethserver-roundcubemail']:
-        return get_migration_status('nethserver-mail')
-
     migrating_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/bind.env" % app_id
     migrated_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/migrated" % app_id
     syncing_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/syncing.lock" % app_id
     skip_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/skip" % app_id
-    if os.path.exists(migrated_flag):
-        return "migrated"
+
+    if os.path.exists(skip_flag):
+        migration_status = "skipped"
+    elif app_id == "nethserver-samba":
+        migration_status = get_migration_status('account-provider')
+    elif app_id == "nethserver-webtop5":
+        migration_status = get_migration_status('nethserver-mail')
+    elif app_id == "nethserver-roundcubemail":
+        migration_status = get_migration_status('nethserver-mail')
+    elif os.path.exists(migrated_flag):
+        migration_status = "migrated"
     elif is_locked(syncing_flag):
-        return "syncing"
+        migration_status = "syncing"
     elif os.path.exists(migrating_flag):
-        return "migrating"
-    elif os.path.exists(skip_flag):
-        return "skipped"
+        migration_status = "migrating"
     else:
-        return "not_migrated"
+        migration_status = "not_migrated"
+
+    return migration_status
 
 def get_account_provider_info():
     provider = 'ldap'
@@ -76,6 +82,11 @@ def get_account_provider_info():
             ip_addresses = simplejson.loads(output)
         except:
             pass
+
+        # The VPN address (wg0) is not eligible for the DC migration if
+        # file server migration is enabled:
+        if get_samba_info() and get_migration_status("nethserver-samba") != "skipped":
+            ip_addresses = list(filter(lambda el: el["label"] != "wg0", ip_addresses))
 
     return {
         "id": "account-provider",
@@ -152,10 +163,20 @@ def get_webtop_info():
     else:
         return None
 
+def get_samba_info():
+    # File server migration is available only with local AD provider
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type') \
+        and os.path.isfile('/etc/e-smith/db/configuration/defaults/smb/type'):
+        return {
+            "id": "nethserver-samba",
+            "name": "File server",
+        }
+    else:
+        return None
 
 def list_apps():
     apps = []
-    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop', 'ejabberd']:
+    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop', 'ejabberd', 'samba']:
         info = globals()["get_%s_info" % app]() # call all functions named get_<app>_info
         if info:
             # add only non-empty apps

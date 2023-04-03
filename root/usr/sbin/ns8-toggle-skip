@@ -24,15 +24,19 @@ set -e
 
 source /etc/nethserver/agent.env
 
-module=$1
-skip_file="${AGENT_STATE_DIR}/$module/skip"
+app_id=${1:?Missing app_id argument}
+app_sdir="${AGENT_STATE_DIR:?}/${app_id}"
 
-if [ -z "$module" ]; then
-    exit 1
-fi
+#
+# As alternative path to "bind/start, sync, finish", ensure the app state
+# dir exists and toggle the file flag
+#
 
-if [ -f "$skip_file" ]; then
-    rm -f "$skip_file"
+mkdir -vp "${app_sdir}"
+cd "${app_sdir}"
+
+if [ -f skip ]; then
+    rm -f skip
 else
-    touch "$skip_file"
+    touch skip
 fi
