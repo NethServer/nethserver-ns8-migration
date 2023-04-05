@@ -46,6 +46,25 @@ def is_locked(fflag):
 
     return False
 
+def can_migrate(app_id):
+    """
+    Assuming the app_id is installed, check if it is also
+    enabled/configured so it can be migrated
+    """
+    can_migrate = True # Assuming migration is possible
+
+    if app_id == 'nethserver-ejabberd':
+        config = get_config("ejabberd")
+        if config and config['props']['status'] != 'enabled':
+            can_migrate = False
+
+    elif app_id == 'nethserver-mattermost':
+        config = get_config("mattermost")
+        if config and (config['props']['status'] != 'enabled' or not config['props']['VirtualHost']):
+            can_migrate = False
+
+    return can_migrate
+
 def get_migration_status(app_id):
     migrating_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/bind.env" % app_id
     migrated_flag = "/var/lib/nethserver/nethserver-ns8-migration/%s/migrated" % app_id
@@ -66,8 +85,10 @@ def get_migration_status(app_id):
         migration_status = "syncing"
     elif os.path.exists(migrating_flag):
         migration_status = "migrating"
-    else:
+    elif can_migrate(app_id):
         migration_status = "not_migrated"
+    else:
+        migration_status = "not_available"
 
     return migration_status
 
@@ -108,9 +129,7 @@ def get_nextcloud_info():
 
 
 def get_mattermost_info():
-    # list Mattermost only if enabled and configured
-    config = get_config("mattermost")
-    if config and config['props']['status'] == 'enabled' and  config['props']['VirtualHost']:
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/mattermost/type'):
         return {
             "id": "nethserver-mattermost",
             "name": "Mattermost"
@@ -120,9 +139,7 @@ def get_mattermost_info():
 
 
 def get_ejabberd_info():
-    # list Ejabberd only if enabled
-    config = get_config("ejabberd")
-    if config and config['props']['status'] == 'enabled':
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/ejabberd/type'):
         return {
             "id": "nethserver-ejabberd",
             "name": "Ejabberd"
