@@ -1454,8 +1454,7 @@ export default {
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
           context.migrationReadApps();
-        },
-        false
+        }
       );
     },
     getAccountProviderInfo() {
