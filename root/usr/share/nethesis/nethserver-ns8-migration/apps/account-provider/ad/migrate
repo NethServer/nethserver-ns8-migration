@@ -22,6 +22,22 @@
 
 set -e
 
+# Rsync command wrapper that ignores some specific exit codes
+function rsync_forced ()
+{
+    local exit_code
+    rsync "${@}"
+    exit_code=$?
+    if [[ ${exit_code} == 23 ]]; then
+        echo "[WARNING] rsync exit code 23 is ignored: Partial transfer due to error"
+        return 0
+    elif [[ ${exit_code} == 24 ]]; then
+        echo "[WARNING] rsync exit code 24 is ignored: Partial transfer due to vanished source files"
+        return 0
+    fi
+    return ${exit_code}
+}
+
 # Migrate shared folder contents if app nethserver-samba is not skipped
 if [[ ! -f "${AGENT_STATE_DIR:?}/nethserver-samba/skip" ]]; then
     migrate_shared_folders=1
@@ -116,8 +132,8 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     # Share data last pass: send shared folders including ACLs, owners,
     # permissions, and the user.DOSATTRIB extended attribute. Send home/
     # before ibay/ for lower priority.
-    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
-    rsync -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
+    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
+    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
 
     # Restore the original sssd.conf contents. No need to stop also the
     # service, because it is stopped and disabled in the next lines.
