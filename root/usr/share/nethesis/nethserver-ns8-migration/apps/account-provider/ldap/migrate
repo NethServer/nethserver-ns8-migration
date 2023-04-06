@@ -66,6 +66,3 @@ ns8-action --attach wait "${IMPORT_TASK_ID}"
 /sbin/e-smith/config setprop slapd status disabled
 systemctl disable --now slapd || :
 
-# Stop SSSD service and disable it permanently
-/sbin/e-smith/config setprop sssd status disabled
-systemctl disable --now sssd || :

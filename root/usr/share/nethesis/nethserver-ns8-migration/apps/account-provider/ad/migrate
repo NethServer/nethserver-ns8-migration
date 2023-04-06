@@ -135,9 +135,10 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
     rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
 
-    # Restore the original sssd.conf contents. No need to stop also the
-    # service, because it is stopped and disabled in the next lines.
+    # Restore the original sssd.conf contents. Now that all modules are
+    # migrated we just want to allow people to log on this system with the sssd cached values
     /sbin/e-smith/expand-template /etc/sssd/sssd.conf
+    systemctl restart sssd.service || :
 
     # Stop the Samba file server services
     systemctl disable --now smb.service nmb.service winbind.service
@@ -155,7 +156,3 @@ ns8-action --attach wait "${IMPORT_TASK_ID}"
 # Stop local AD provider (nsdc) and disable it permanently
 /sbin/e-smith/config setprop nsdc status disabled
 systemctl disable --now nsdc || :
-
-# Stop SSSD service and disable it permanently
-/sbin/e-smith/config setprop sssd status disabled
-systemctl disable --now sssd || :
