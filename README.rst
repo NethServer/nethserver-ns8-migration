@@ -66,6 +66,7 @@ The migration tool can migrate a pre-defined set of NS7 applications (apps):
 - nethserver-mail (with nethserver-webtop5, nethserver-roundcubemail)
 - nethserver-nextcloud
 - nethserver-mattermost
+- nethserver-ejabberd
 - account-provider (both local AD and LDAP)
 
 Each application has two directories
@@ -343,3 +344,13 @@ The NS8 DC cannot be assigned the cluster VPN IP address.
 .. warning::
 
   Exposing SMB and other AD services to public networks is dangerous.
+
+
+Account provider
+----------------
+
+When the migration finishes, the local account provider (both AD and LDAP)
+is stopped and disabled. In this state, SSSD allows logging on the system
+with its local cache. If some services are left on the system it is
+necessary to remove the local account provider and configure NS8 as the
+remote account provider.
