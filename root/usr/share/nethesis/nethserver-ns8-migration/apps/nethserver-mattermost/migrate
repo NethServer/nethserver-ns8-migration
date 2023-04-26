@@ -56,6 +56,20 @@ fi
 # Assert required vars are set
 : "${IMPORT_TASK_ID:?}"
 
+# Terminate the rsync server
+rsync "${RSYNC_ENDPOINT}"/terminate || :
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'
+
+# Do not disable local services if test mode is enabled
+if [[ "${TEST}" == "true" ]]; then
+    exit 0
+fi
+
 # Stop and disable Mattemost
 /sbin/e-smith/config setprop mattermost status disabled || :
 systemctl disable --now mattermost || :
@@ -101,12 +115,3 @@ cat - >/etc/e-smith/templates-custom/etc/httpd/conf.d/zz_mattermost.conf/10base 
 EOF
 /sbin/e-smith/expand-template /etc/httpd/conf.d/zz_mattermost.conf
 systemctl reload httpd
-
-# Terminate the rsync server
-rsync "${RSYNC_ENDPOINT}"/terminate || :
-
-# Wait until the import-module task has completed
-ns8-action --attach wait "${IMPORT_TASK_ID}"
-
-host=$(/sbin/e-smith/config getprop mattermost VirtualHost)
-ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"host": "'$host'", "lets_encrypt": false, "http2https": true}'
