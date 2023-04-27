@@ -42,7 +42,8 @@
         loading.listApplications ||
           loading.connectionRead ||
           loading.migrationRead ||
-          loading.accountProviderInfo
+          loading.accountProviderInfo ||
+          loading.abortAction
       "
       class="spinner spinner-lg"
     ></div>
@@ -234,6 +235,7 @@
                 <button
                   @click="showStartMigrationModal(app)"
                   :disabled="isStartMigrationButtonDisabled(app)"
+                  v-if="!isMailChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.start_migration") }}
@@ -243,6 +245,7 @@
                   :disabled="
                     loading.migrationUpdate || accountProviderMigrationStarted
                   "
+                  v-if="!isMailChild(app)"
                   class="btn btn-default"
                 >
                   {{
@@ -258,6 +261,7 @@
                 <button
                   @click="syncData(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  v-if="!isMailChild(app)"
                   class="btn btn-primary"
                 >
                   {{ $t("dashboard.sync_data") }}
@@ -265,6 +269,7 @@
                 <button
                   @click="showFinishMigrationModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  v-if="!isMailChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.finish_migration") }}
@@ -272,13 +277,14 @@
                 <button
                   @click="showAbortModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
+                  v-if="!isMailChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.abort") }}
                 </button>
               </template>
               <button
-                v-else-if="app.status == 'migrated'"
+                v-else-if="app.status == 'migrated' && !isMailChild(app)"
                 disabled
                 class="btn btn-default"
               >
@@ -327,7 +333,7 @@
                       [
                         'nethserver-roundcubemail',
                         'nethserver-webtop5',
-                      ].includes(app.id)
+                      ].includes(app.id) && app.status != 'skipped'
                     "
                     v-html="$t('dashboard.app_migrated_with_email')"
                   >
@@ -888,6 +894,7 @@ export default {
         listApplications: false,
         accountProviderInfo: false,
         getClusterStatus: false,
+        abortAction: false
       },
       error: {
         connectionRead: "",
@@ -1412,6 +1419,7 @@ export default {
     abort(app) {
       const context = this;
       context.loading.migrationUpdate = true;
+      context.loading.abortAction = true;
       context.hideAbortModal();
       nethserver.exec(
         ["nethserver-ns8-migration/migration/update"],
@@ -1423,12 +1431,14 @@ export default {
         function(success) {
           context.migrationReadApps();
           context.loading.migrationUpdate = false;
+          context.loading.abortAction = false;
         },
         function(error) {
           const errorMessage = context.$i18n.t("dashboard.error_on_abort");
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
           context.loading.migrationUpdate = false;
+          context.loading.abortAction = false;
           context.migrationReadApps();
         },
         false
@@ -1566,6 +1576,10 @@ export default {
           ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
       );
     },
+    isMailChild(app) {
+      return (this.emailApp &&
+          ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
+    }
   },
 };
 </script>
