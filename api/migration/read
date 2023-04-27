@@ -74,7 +74,11 @@ def get_migration_status(app_id):
     if os.path.exists(skip_flag):
         migration_status = "skipped"
     elif app_id == "nethserver-samba":
-        migration_status = get_migration_status('account-provider')
+        # nethserver-samba can be migrated only when used with local AD
+        if not os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type'):
+            migration_status = "not_migratable"
+        else:
+            migration_status = get_migration_status('account-provider')
     elif app_id == "nethserver-webtop5":
         migration_status = get_migration_status('nethserver-mail')
     elif app_id == "nethserver-roundcubemail":
@@ -182,14 +186,11 @@ def get_webtop_info():
 
 def get_samba_info():
     # File server migration is available only with local AD provider
-    if os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type') \
-        and os.path.isfile('/etc/e-smith/db/configuration/defaults/smb/type'):
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/smb/type'):
         return {
             "id": "nethserver-samba",
             "name": "File server",
         }
-    else:
-        return None
 
 def list_apps():
     apps = []
