@@ -333,7 +333,7 @@
                       [
                         'nethserver-roundcubemail',
                         'nethserver-webtop5',
-                      ].includes(app.id)
+                      ].includes(app.id) && app.status != 'skipped'
                     "
                     v-html="$t('dashboard.app_migrated_with_email')"
                   >
