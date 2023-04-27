@@ -70,6 +70,12 @@ elif [[ "$action" == "finish" ]]; then
         /usr/sbin/ns8-leave
     fi
 elif [[ "$action" == "abort" ]]; then
+    if [[ "${app_id}" == "nethserver-mail" ]]; then
+        # Abort also roundcube and webtop migration: both apps must be migrated
+        # together with the mail server
+        /usr/sbin/ns8-abort nethserver-webtop5 &> /dev/null
+        /usr/sbin/ns8-abort nethserver-roundcubemail &> /dev/null
+    fi
     /usr/sbin/ns8-abort "${app_id}" &> /dev/null
 elif [[ "$action" == "toggle-skip" ]]; then
     /usr/sbin/ns8-toggle-skip "${app_id}"
