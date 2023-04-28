@@ -235,7 +235,7 @@
                 <button
                   @click="showStartMigrationModal(app)"
                   :disabled="isStartMigrationButtonDisabled(app)"
-                  v-if="!isMailChild(app)"
+                  v-if="!isMailChild(app) && !isAdChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.start_migration") }}
@@ -261,7 +261,7 @@
                 <button
                   @click="syncData(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
-                  v-if="!isMailChild(app)"
+                  v-if="!isMailChild(app) && !isAdChild(app)"
                   class="btn btn-primary"
                 >
                   {{ $t("dashboard.sync_data") }}
@@ -269,7 +269,7 @@
                 <button
                   @click="showFinishMigrationModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
-                  v-if="!isMailChild(app)"
+                  v-if="!isMailChild(app) && !isAdChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.finish_migration") }}
@@ -277,14 +277,14 @@
                 <button
                   @click="showAbortModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
-                  v-if="!isMailChild(app)"
+                  v-if="!isMailChild(app) && !isAdChild(app) "
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.abort") }}
                 </button>
               </template>
               <button
-                v-else-if="app.status == 'migrated' && !isMailChild(app)"
+                v-else-if="app.status == 'migrated' && !isMailChild(app) && !isAdChild(app)"
                 disabled
                 class="btn btn-default"
               >
@@ -336,6 +336,12 @@
                       ].includes(app.id) && app.status != 'skipped'
                     "
                     v-html="$t('dashboard.app_migrated_with_email')"
+                  >
+                  </span>
+                  <!-- samba app status description -->
+                  <span
+                    v-else-if="app.id === 'nethserver-samba' && app.status != 'skipped' && app.status != 'not_migratable'"
+                    v-html="$t('dashboard.app_migrated_with_ad')"
                   >
                   </span>
                   <!-- remote account provider status description -->
@@ -952,6 +958,7 @@ export default {
             "account-provider",
             "nethserver-roundcubemail",
             "nethserver-webtop5",
+            "nethserver-samba",
           ].includes(app.id)
       );
     },
@@ -1579,6 +1586,9 @@ export default {
     isMailChild(app) {
       return (this.emailApp &&
           ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
+    },
+    isAdChild(app) {
+      return (app.id == "nethserver-samba")
     }
   },
 };

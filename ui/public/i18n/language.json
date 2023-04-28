@@ -29,6 +29,7 @@
     "finish_migration": "Finish migration",
     "sync_data": "Sync data",
     "status_not_migrated": "Not migrated",
+    "status_not_migratable": "This app can't be migrated",
     "status_migrating": "Migration initialized. Click <strong>Sync data</strong> and then <strong>Finish migration</strong> when you are ready",
     "status_syncing": "Syncing data",
     "status_migrated": "Migration completed",
@@ -90,7 +91,8 @@
     "status_not_available": "This app is disabled or not configured",
     "status_skipped": "This application will not be migrated",
     "no_skip": "Enable migration",
-    "error_on_skip": "There was an error when changing the skip flag."
+    "error_on_skip": "There was an error when changing the skip flag.",
+    "app_migrated_with_ad": "This app is migrated together with <strong>Local Active Directory</strong> app"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
