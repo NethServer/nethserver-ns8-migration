@@ -587,7 +587,7 @@
                     </div>
                     <div
                       :class="[
-                        'form-group',
+                        'form-group', 'mg-bottom-20',
                         { 'has-error': error.adIpAddress },
                       ]"
                     >
@@ -613,6 +613,14 @@
                         }}</span>
                       </div>
                     </div>
+                    <div
+                      class="mg-bottom-20"
+                      v-html="
+                        $t(
+                          'dashboard.finish_account_provider_migration_explanation'
+                        )
+                      "
+                    ></div>
                   </template>
                   <template v-else>
                     <!-- LDAP -->
