@@ -93,11 +93,9 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     /sbin/e-smith/db accounts printjson > accounts.json
     hostname -s > nbalias.txt # Alias name for NetBIOS and DNS resolution
     rsync -i accounts.json nbalias.txt "${RSYNC_ENDPOINT:?}"/data/state/
-    # Prepare a list of shared folder names for Rsync --exclude-from
-    jq -r 'map(select(.type=="ibay")) | "/" + .[].name + "/"' <accounts.json >shared-folders.lst
     if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
-        # Share data non-finish pass: send home/ and ibay/ data (high priority last)
-        rsync -i --recursive --times --links --perms --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        # non-finish pass: send home/ and ibay/ data
+        rsync -i --recursive --times --links --perms --delete /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/data/volumes/homes/
         rsync -i --recursive --times --links --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/data/volumes/shares/
     fi
 fi
@@ -129,11 +127,10 @@ if [[ -n "${migrate_shared_folders}" ]]; then
         { getent passwd administrator | grep -q '@' ; } || break
     done
 
-    # Share data last pass: send shared folders including ACLs, owners,
-    # permissions, and the user.DOSATTRIB extended attribute. Send home/
-    # before ibay/ for lower priority.
-    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete --exclude-from=shared-folders.lst /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/shares/
-    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/shares/
+    # last pass: send shared folders and homedirs, including ACLs, owners,
+    # permissions, and the user.DOSATTRIB extended attribute.
+    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/homes/
+    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/ "${RSYNC_ENDPOINT}"/shares/
 
     # Restore the original sssd.conf contents. Now that all modules are
     # migrated we just want to allow people to log on this system with the sssd cached values
