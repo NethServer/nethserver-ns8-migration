@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.0
+Version: 1.0.1
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -47,6 +47,9 @@ install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Wed May 10 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.1-1
+- Migrate home dirs to Samba "homes" volume -- NethServer/dev#6747
+
 * Fri Apr 28 2023 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.0-1
 - First public release for NS8 Beta 1
 
