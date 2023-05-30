@@ -32,7 +32,7 @@ source bind.env
 : "${RSYNC_ENDPOINT:?}"
 export RSYNC_PASSWORD
 # Sync files: --owner --group --chown=9000:9000 are needed to map data for the ejabberd user
-rsync -tr --owner --group --chown=9000:9000 --delete  /var/lib/nethserver/ejabberd/upload/ "${RSYNC_ENDPOINT}"/data/volumes/upload/
+rsync -tr --owner --group --chown=9000:9000 -s --delete  /var/lib/nethserver/ejabberd/upload/ "${RSYNC_ENDPOINT}"/data/volumes/upload/
 
 # Sync ejabberd DB dump
 rm -vf /var/lib/nethserver/ejabberd/ejabberd.backup

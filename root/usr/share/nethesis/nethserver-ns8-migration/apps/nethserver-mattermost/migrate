@@ -39,7 +39,7 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
 fi
 
 # Sync files: --owner --group --chown=2000:2000 are needed to map data for the mattermost user
-rsync -tr --owner --group --chown=2000:2000 --delete  /var/lib/nethserver/mattermost/data/ "${RSYNC_ENDPOINT}"/data/volumes/mattermost-data/
+rsync -tr --owner --group --chown=2000:2000 -s --delete  /var/lib/nethserver/mattermost/data/ "${RSYNC_ENDPOINT}"/data/volumes/mattermost-data/
 
 # Create database dump
 su - postgres -c "scl enable rh-postgresql12 -- pg_dump --port 55434 mattermost > /var/lib/nethserver/mattermost/backup/dump.sql"
