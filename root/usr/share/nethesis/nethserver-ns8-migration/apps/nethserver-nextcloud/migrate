@@ -39,7 +39,7 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
 fi
 
 # Sync files: --owner --group --chown=82:82 are needed to map data for the www-data user
-rsync -tr --owner --group --chown=82:82 --delete --exclude=appdata\* --exclude=nextcloud.log /var/lib/nethserver/nextcloud/ "${RSYNC_ENDPOINT}"/data/volumes/nextcloud-app-data/data/
+rsync -tr --owner --group --chown=82:82 -s --delete --exclude=appdata\* --exclude=nextcloud.log /var/lib/nethserver/nextcloud/ "${RSYNC_ENDPOINT}"/data/volumes/nextcloud-app-data/data/
 
 # Create database dump
 mysqldump -S /run/rh-mariadb105-mariadb/nextcloud-mysql.sock nextcloud > /var/lib/nethserver/nextcloud/dump.sql
