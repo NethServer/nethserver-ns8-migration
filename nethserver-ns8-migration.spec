@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.1
+Version: 1.0.2
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -47,6 +47,9 @@ install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Tue May 30 2023 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.2-1
+- rsync on ns7 does not expand wildcard of --chown nethserver-ns8-migration/pull/41
+
 * Wed May 10 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.1-1
 - Migrate home dirs to Samba "homes" volume -- NethServer/dev#6747
 
