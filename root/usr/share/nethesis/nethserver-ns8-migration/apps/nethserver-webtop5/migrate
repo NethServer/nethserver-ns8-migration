@@ -101,10 +101,12 @@ while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     /sbin/e-smith/config printjson webtop |
     jq -c \
     --arg hostname "${WEBTOP_VHOST}" \
+    --arg mail_domain "$(hostname -d)" \
     --arg mail_module "${MAIL_INSTANCE_ID}" \
     '.props | {
         "hostname": $hostname,
         "mail_module": $mail_module,
+        "mail_domain": $mail_domain,
         "timezone": .DefaultTimezone,
         "locale": .DefaultLocale,
         "webapp": {
