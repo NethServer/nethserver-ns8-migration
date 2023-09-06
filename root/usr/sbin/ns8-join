@@ -117,7 +117,6 @@ data = {
     "node_pwh": node_pwh,
     "public_key": pub_key,
     "endpoint": "",
-    "listen_port": 55820,
     "flags": ["nomodules"]
 }
 # Execute add-node
