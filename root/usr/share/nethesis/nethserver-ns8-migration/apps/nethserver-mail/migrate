@@ -72,7 +72,7 @@ fi
 # not work. Using the "catchall" range 1-1000 because "*" does not work
 
 # Send mailboxes
-rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --delete /var/lib/nethserver/vmail/ "${RSYNC_ENDPOINT}"/data/volumes/dovecot-data/
+rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --exclude lucene-indexes/ --delete /var/lib/nethserver/vmail/ "${RSYNC_ENDPOINT}"/data/volumes/dovecot-data/
 
 if [[ -f /var/lib/redis/rspamd/dump.rdb ]]; then
     # Fix rspamd-redis volume root dir perms
