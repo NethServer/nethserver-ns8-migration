@@ -65,7 +65,7 @@ rsync -i --remove-source-files user_domain.txt mail_domain.txt {users,groups,dom
 if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     # During the last, "finish" rsync run there must be no changes to
     # contents of maildirs: stop the services early.
-    systemctl stop postfix dovecot rspamd
+    systemctl stop postfix dovecot rspamd || :
 fi
 
 # rsync note: using usermap and groupmap arguments because the chown does
