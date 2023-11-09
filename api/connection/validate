@@ -61,6 +61,10 @@ if (user_p not in input_json) or (not input_json[user_p]):
 
 if (password_p not in input_json) or (not input_json[password_p]):
     invalid_attributes.append(invalid_attribute(password_p, "empty"))
+else:
+    password_verify = input_json[password_p]
+    if '|' in password_verify:
+        invalid_attributes.append(invalid_attribute(password_p, "not_allowed"))
 
 # tls verify
 
