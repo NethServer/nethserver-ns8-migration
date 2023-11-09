@@ -1,0 +1,10 @@
+[main]
+host = https://www.transifex.com
+
+[o:nethserver:p:nethserver:r:ns8migration]
+source_file            = ui/public/i18n/language.json
+source_lang            = en
+type                   = KEYVALUEJSON
+replace_edited_strings = false
+keep_translations      = false
+
