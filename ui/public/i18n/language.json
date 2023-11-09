@@ -99,7 +99,8 @@
     "admin_username_empty": "Admin username is required",
     "admin_password_empty": "Admin password is required",
     "virtual_host_empty": "Virtual host is required",
-    "ad_ip_address_empty": "Active Directory IP address is required"
+    "ad_ip_address_empty": "Active Directory IP address is required",
+    "admin_password_not_allowed":"The `|` character is not allowed"
   },
   "docs": {},
   "are_you_sure": "Are you sure",
