@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.2
+Version: 1.0.3
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -47,6 +47,9 @@ install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Nov 09 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.3-1
+- Pipe character in nethserver-ns8-migration corrupts config DB - Bug NethServer/dev#6769
+
 * Tue May 30 2023 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.2-1
 - rsync on ns7 does not expand wildcard of --chown nethserver-ns8-migration/pull/41
 
