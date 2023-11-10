@@ -25,9 +25,8 @@ set -e
 # Rsync command wrapper that ignores some specific exit codes
 function rsync_forced ()
 {
-    local exit_code
-    rsync "${@}"
-    exit_code=$?
+    local exit_code=0
+    rsync "${@}" || exit_code=$?
     if [[ ${exit_code} == 23 ]]; then
         echo "[WARNING] rsync exit code 23 is ignored: Partial transfer due to error"
         return 0
