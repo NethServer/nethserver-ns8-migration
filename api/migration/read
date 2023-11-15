@@ -269,5 +269,6 @@ try:
         output = simplejson.dumps({'clusterStatus': cluster_status})
         print(output)
 except Exception as e:
-    print simplejson.dumps({'error': "%s" % e})
+    output = simplejson.dumps({'error': "%s" % e})
+    print(output)
     sys.exit(1)
