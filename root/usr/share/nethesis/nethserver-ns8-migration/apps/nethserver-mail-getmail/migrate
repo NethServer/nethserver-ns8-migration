@@ -28,6 +28,9 @@ source "${AGENT_STATE_DIR}"/environment
 cd "${AGENT_STATE_DIR}/nethserver-mail-getmail"
 source bind.env
 
+# Ensure the mail module is defined
+: "${MAIL_INSTANCE_ID:?}"
+
 # Ensure endpoint is defined
 : "${RSYNC_ENDPOINT:?}"
 export RSYNC_PASSWORD
