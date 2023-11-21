@@ -37,6 +37,10 @@ migrate_deps ()
     if [[ -f "${AGENT_STATE_DIR}/nethserver-roundcubemail/bind.env" ]]; then
         command "${AGENT_INSTALL_DIR}/apps/nethserver-roundcubemail/migrate"
     fi
+
+    if [[ -f "${AGENT_STATE_DIR}/nethserver-mail-getmail/bind.env" ]]; then
+        command "${AGENT_INSTALL_DIR}/apps/nethserver-mail-getmail/migrate"
+    fi
 }
 
 hostname -d > mail_domain.txt
