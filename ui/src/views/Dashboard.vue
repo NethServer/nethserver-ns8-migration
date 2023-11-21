@@ -333,6 +333,7 @@
                       [
                         'nethserver-roundcubemail',
                         'nethserver-webtop5',
+                        'nethserver-mail-getmail'
                       ].includes(app.id) && app.status != 'skipped'
                     "
                     v-html="$t('dashboard.app_migrated_with_email')"
@@ -492,6 +493,27 @@
                           v-model="webtopNode"
                           class="combobox form-control"
                           id="webtop-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="getmailApp" class="form-group">
+                      <label class="col-sm-5 control-label" for="getmail-node">
+                        {{ $t("dashboard.destination_node_for_getmail") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="getmailNode"
+                          class="combobox form-control"
+                          id="getmail-node"
                         >
                           <option
                             v-for="node in clusterNodes"
@@ -898,6 +920,7 @@ export default {
       emailNode: 1,
       webtopNode: 1,
       roundcubeNode: 1,
+      getmailNode: 1,
       validUserDomains: true,
       localDomain: "",
       loading: {
@@ -956,6 +979,9 @@ export default {
     webtopApp() {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
+    getmailApp() {
+      return this.apps.find((app) => app.id === "nethserver-mail-getmail");
+    },
     canStartAccountProviderMigration() {
       // account provider migration can start only if it's local and all other apps have completed migration or have been skipped
       return !this.apps.some(
@@ -966,6 +992,7 @@ export default {
             "account-provider",
             "nethserver-roundcubemail",
             "nethserver-webtop5",
+            "nethserver-mail-getmail",
             "nethserver-samba",
           ].includes(app.id)
       );
@@ -1333,6 +1360,10 @@ export default {
             migrationConfig.webtopNode = this.webtopNode;
           }
 
+          if (this.getmailApp) {
+            migrationConfig.getmailNode = this.getmailNode;
+          }
+
           if (this.roundcubeApp) {
             migrationConfig.roundcubeNode = this.roundcubeNode;
           }
@@ -1428,6 +1459,12 @@ export default {
     },
     listApplicationsSuccess(output) {
       this.installedApps = output.map((app) => app.id);
+      // some rpms are listed inside provides:[nethserver-mail-getmail, .. , ..]
+      output.forEach((app) => {
+        app.provides.forEach((item) => {
+          this.installedApps.push(item);
+        });
+      });
       this.loading.listApplications = false;
       this.migrationReadApps();
     },
@@ -1588,12 +1625,12 @@ export default {
         this.loading.migrationUpdate ||
         app.status == "skipped" ||
         (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
+          ["nethserver-roundcubemail", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
       );
     },
     isMailChild(app) {
       return (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-webtop5"].includes(app.id))
+          ["nethserver-roundcubemail", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
     },
     isAdChild(app) {
       return (app.id == "nethserver-samba")

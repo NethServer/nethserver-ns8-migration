@@ -34,7 +34,7 @@ fi
 
 # Getmail is not a service
 if [[ -f /etc/e-smith/events/actions/nethserver-getmail-conf ]]; then
-    ns8-bind-app nethserver-mail-getmail "${IMAPSYNC_NODE_ID}" &
+    ns8-bind-app nethserver-mail-getmail "${GETMAIL_NODE_ID}" &
 fi
 
 for pid in $(jobs -p); do
