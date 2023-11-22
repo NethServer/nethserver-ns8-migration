@@ -168,7 +168,7 @@ def get_connector_info():
     if os.path.isfile('/etc/e-smith/events/actions/nethserver-getmail-conf'):
         return {
             "id": "nethserver-mail-getmail",
-            "name": "Connector"
+            "name": "POP3/IMAP Connector"
         }
     else:
         return None

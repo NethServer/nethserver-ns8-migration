@@ -77,7 +77,7 @@
     "destination_node_for_roundcube": "Destination node for Webmail",
     "loading_nodes": "Loading nodes",
     "app_migrated_with_email": "This app is migrated together with <strong>Email</strong> app",
-    "roundcube_webtop_migration": "If <strong>Webmail</strong>, <strong>WebTop</strong> and/or <strong>GetMail</strong> are currently installed, they will be migrated too.",
+    "roundcube_webtop_migration": "If <strong>Webmail</strong>, <strong>WebTop</strong> and/or <strong>POP3/IMAP Connector</strong> are currently installed, they will be migrated too.",
     "roundcube_virtual_host": "Webmail virtual host",
     "webtop_virtual_host": "WebTop virtual host",
     "remote_account_provider_no_migration": "Remote account provider doesn't need to be migrated",
