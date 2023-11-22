@@ -159,16 +159,16 @@ Finish command example ::
 
   MIGRATE_ACTION=finish MATTERMOST_VHOST=mattermost.example.com ./migrate
 
-Email, Webtop, Roundcube migration
-----------------------------------
+Email, Webtop, Roundcube migration, Getmail
+-------------------------------------------
 
-As both Webtop and Roundcube depends on the Email application, the
-migration of the three modules must occur at the same time and is
+As both Getmail, Webtop and Roundcube depends on the Email application, the
+migration of the four modules must occur at the same time and is
 controlled by the nethserver-mail app.
 
 Bind command example ::
 
-  MODULE_NODE_ID=1 WEBTOP_NODE_ID=1 ROUNDCUBE_NODE_ID=2 ./bind
+  MODULE_NODE_ID=1 WEBTOP_NODE_ID=1 ROUNDCUBE_NODE_ID=2 GETMAIL_NODE_ID=1 ./bind
 
 Sync command example ::
 
