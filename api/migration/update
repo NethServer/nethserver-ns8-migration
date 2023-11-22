@@ -71,7 +71,7 @@ elif [[ "$action" == "finish" ]]; then
     fi
 elif [[ "$action" == "abort" ]]; then
     if [[ "${app_id}" == "nethserver-mail" ]]; then
-        # Abort also roundcube and webtop migration: both apps must be migrated
+        # Abort also getmail, roundcube and webtop migration: both apps must be migrated
         # together with the mail server
         if [ -f '/etc/e-smith/db/configuration/defaults/webtop/type' ]; then
             /usr/sbin/ns8-abort nethserver-webtop5 &> /dev/null
