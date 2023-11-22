@@ -22,21 +22,4 @@
 
 set -e
 
-ns8-bind-app nethserver-mail &
-
-if [[ -f /etc/e-smith/db/configuration/defaults/webtop/type ]]; then
-    ns8-bind-app nethserver-webtop5 "${WEBTOP_NODE_ID}" &
-fi
-
-if [[ -f /etc/e-smith/db/configuration/defaults/roundcubemail/type ]]; then
-    ns8-bind-app nethserver-roundcubemail "${ROUNDCUBE_NODE_ID}" &
-fi
-
-# Getmail is not a service
-if [[ -f /etc/e-smith/events/actions/nethserver-getmail-conf ]]; then
-    ns8-bind-app nethserver-mail-getmail "${GETMAIL_NODE_ID}" &
-fi
-
-for pid in $(jobs -p); do
-    wait "${pid}"
-done
+ns8-bind-app nethserver-mail-getmail

@@ -3,4 +3,5 @@
 #
 "MODULE_NODE_ID=\(.emailNode)",
 "WEBTOP_NODE_ID=\(.webtopNode)",
-"ROUNDCUBE_NODE_ID=\(.roundcubeNode)"
+"ROUNDCUBE_NODE_ID=\(.roundcubeNode)",
+"GETMAIL_NODE_ID=\(.getmailNode)"
