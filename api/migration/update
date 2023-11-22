@@ -79,6 +79,9 @@ elif [[ "$action" == "abort" ]]; then
         if [ -f '/etc/e-smith/db/configuration/defaults/roundcubemail/type' ]; then
             /usr/sbin/ns8-abort nethserver-roundcubemail &> /dev/null
         fi
+        if [ -f '/etc/e-smith/events/actions/nethserver-getmail-conf' ]; then
+            /usr/sbin/ns8-abort nethserver-mail-getmail &> /dev/null
+        fi
     fi
     /usr/sbin/ns8-abort "${app_id}" &> /dev/null
 elif [[ "$action" == "toggle-skip" ]]; then
