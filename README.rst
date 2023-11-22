@@ -159,10 +159,10 @@ Finish command example ::
 
   MIGRATE_ACTION=finish MATTERMOST_VHOST=mattermost.example.com ./migrate
 
-Email, Webtop, Roundcube migration, Getmail
--------------------------------------------
+Email, Webtop, Roundcube migration, POP3/IMAP Connector
+-------------------------------------------------------
 
-As Getmail, Webtop and Roundcube depend on the Email application, the
+As POP3/IMAP Connector, Webtop and Roundcube depend on the Email application, the
 migration of the four modules must occur at the same time and is
 controlled by the nethserver-mail app.
 
