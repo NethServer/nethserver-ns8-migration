@@ -162,7 +162,7 @@ Finish command example ::
 Email, Webtop, Roundcube migration, Getmail
 -------------------------------------------
 
-As both Getmail, Webtop and Roundcube depends on the Email application, the
+As Getmail, Webtop and Roundcube depend on the Email application, the
 migration of the four modules must occur at the same time and is
 controlled by the nethserver-mail app.
 
