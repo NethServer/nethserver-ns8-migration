@@ -44,6 +44,15 @@ if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
 fi
 
+# disabled getmail service
+# Read JSON data from file
+json_data=$(cat getmail.json)
+# Modify "status" field using jq
+modified_json=$(echo "$json_data" | jq '.[].props |= if .status == "enabled" then .status = "disabled" else . end')
+echo "$modified_json" |  /sbin/e-smith/db getmail setjson -
+# expand the getmail configuration with disabled status
+/usr/sbin/e-smith/signal-event nethserver-getmail-save
+
 # Obtain the Mail module UUID for configure-module:
 mail_instance_uuid=$(ns8-action --attach "module/${MAIL_INSTANCE_ID}" list-service-providers \
   "$(printf '{"service":"imap", "transport":"tcp", "filter":{"module_id":"%s"}}' "${MAIL_INSTANCE_ID}")" \
