@@ -52,7 +52,6 @@ event_templates($event, qw(
 
 event_services($event, qw(
     wg-quick@ns8 restart
-    agent restart
     httpd reload
 ));
 
