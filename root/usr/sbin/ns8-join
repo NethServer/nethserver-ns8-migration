@@ -113,6 +113,25 @@ priv_key = subprocess.check_output(['cat', '/var/lib/nethserver/secrets/ns8wg'])
 pub_key = subprocess.check_output(['wg', 'pubkey'], input=priv_key.encode('ASCII')).decode('ASCII').rstrip()
 node_pw = str(uuid.uuid4())
 node_pwh = hashlib.sha256(node_pw.encode('ASCII')).hexdigest()
+
+#
+# Ensure we never joined this cluster. If a node with the same public key
+# exists, remove it:
+#
+ret_cstatus = call(api_endpoint, "get-cluster-status", payload['token'], {}, args.tlsverify)
+if not ret_cstatus['code'] == 200:
+    print("Request get-cluster-status has failed: {}".format(ret_cstatus), file=sys.stderr)
+    sys.exit(3)
+
+if not ret_cstatus['data']['exit_code'] == 0:
+    print("Task get-cluster-status has failed: {}".format(ret_cstatus['data']), file=sys.stderr)
+    sys.exit(3)
+
+for onode in ret_cstatus['data']['output']['nodes']:
+    if onode['vpn']['public_key'] == pub_key:
+        # Remove the old node with our public key
+        call(api_endpoint, "remove-node", payload['token'], {"node_id", onode['id']}, args.tlsverify)
+
 data = {
     "node_pwh": node_pwh,
     "public_key": pub_key,
@@ -188,6 +207,7 @@ if account_provider_config['isAD'] == '1':
             "tls": True,
             "tls_verify": False,
         }
+        call(api_endpoint, "remove-external-domain", payload['token'], {"domain": account_provider_domain}, False)
         add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
         if add_external_domain_response['data']['exit_code'] != 0:
             print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
@@ -210,6 +230,7 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
         "tls": True,
         "tls_verify": False,
     }
+    call(api_endpoint, "remove-external-domain", payload['token'], {"domain": account_provider_domain}, False)
     add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
     if add_external_domain_response['data']['exit_code'] != 0:
         print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
