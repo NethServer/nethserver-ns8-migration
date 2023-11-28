@@ -1146,6 +1146,7 @@ export default {
         },
         function(success) {
           context.loading.connectionUpdate = false;
+          context.error.connectionUpdate = "";
           context.connectionRead();
         },
         function(error) {
@@ -1264,6 +1265,7 @@ export default {
         },
         function(success) {
           context.loading.connectionUpdate = false;
+          context.error.connectionUpdate = "";
           context.connectionRead();
         },
         function(error) {
