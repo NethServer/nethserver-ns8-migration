@@ -252,7 +252,7 @@ To remove the tool and its dependencies (if they are not required by other packa
 
 Clean up configuration database: ::
 
-  config delete wg-quick@wg0
+  config delete wg-quick@ns8
   config delete agent
   config delete ns8
 

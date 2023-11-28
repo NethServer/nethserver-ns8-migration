@@ -109,7 +109,7 @@ account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-tes
 account_provider_config = json.loads(account_provider_json)
 
 # Prepare arguments for add-node
-priv_key = subprocess.check_output(['/sbin/e-smith/config', 'getprop', 'wg-quick@wg0', 'SecretKey']).decode('ASCII').rstrip()
+priv_key = subprocess.check_output(['/sbin/e-smith/config', 'getprop', 'wg-quick@ns8', 'SecretKey']).decode('ASCII').rstrip()
 pub_key = subprocess.check_output(['wg', 'pubkey'], input=priv_key.encode('ASCII')).decode('ASCII').rstrip()
 node_pw = str(uuid.uuid4())
 node_pwh = hashlib.sha256(node_pw.encode('ASCII')).hexdigest()
@@ -133,7 +133,7 @@ if not ret['data']['exit_code'] == 0:
 ret = ret['data']['output']
 
 # Save config inside config db
-subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@wg0", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@ns8", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
 subprocess.run(["/sbin/e-smith/config", "setprop", "agent", "status", "enabled"], check=True)
 subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", args.host, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
 
@@ -147,7 +147,7 @@ with open('/var/lib/nethserver/nethserver-ns8-migration/agent.env', 'w') as fp:
 with open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'w') as fp:
     fp.write(f"NODE_ID={ret['node_id']}\n")
 
-# Start the VPN on device wg0
+# Start the VPN on device ns8
 subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-save'], check=True)
 
 # Endpoint switch: pass through the VPN

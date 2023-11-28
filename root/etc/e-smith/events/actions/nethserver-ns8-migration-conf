@@ -20,11 +20,11 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-priv=$(/sbin/e-smith/config getprop wg-quick@wg0 SecretKey)
+priv=$(/sbin/e-smith/config getprop wg-quick@ns8 SecretKey)
 
 if [ -z "$priv" ]; then
     priv=$(wg genkey | tee /etc/wireguard/private.key)
-    /sbin/e-smith/config setprop wg-quick@wg0 SecretKey "$priv"
+    /sbin/e-smith/config setprop wg-quick@ns8 SecretKey "$priv"
 fi
 echo "$priv" | wg pubkey > /etc/wireguard/public.key
 chmod 0600 /etc/wireguard/private.key /etc/wireguard/public.key

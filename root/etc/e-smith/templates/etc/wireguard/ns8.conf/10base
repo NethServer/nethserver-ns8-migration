@@ -1,0 +1,8 @@
+[Interface]
+Address = {${'wg-quick@ns8'}{'Address'}}
+PrivateKey = {${'wg-quick@ns8'}{'SecretKey'}}
+
+[Peer]
+PublicKey = {${'wg-quick@ns8'}{'RemoteKey'}}
+AllowedIPs = {${'wg-quick@ns8'}{'RemoteNetwork'}}
+Endpoint = {${'wg-quick@ns8'}{'RemoteEndpoint'}}
