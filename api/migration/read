@@ -240,13 +240,7 @@ def check_user_domains():
     bash_command = "/usr/sbin/ns8-action cluster list-user-domains"
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
-    try:
-        obj = simplejson.loads(output)
-    except:
-        # can't access remote domain info, something is wrong
-        return False
-
-
+    obj = simplejson.loads(output)
     if local_config["IsLocal"]:
         # is source account provider is internal, NS8 must not contain the same provider
         for domain in obj['data']['output']['domains']:
