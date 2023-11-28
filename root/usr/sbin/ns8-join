@@ -109,7 +109,7 @@ account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-tes
 account_provider_config = json.loads(account_provider_json)
 
 # Prepare arguments for add-node
-priv_key = subprocess.check_output(['/sbin/e-smith/config', 'getprop', 'wg-quick@ns8', 'SecretKey']).decode('ASCII').rstrip()
+priv_key = subprocess.check_output(['cat', '/var/lib/nethserver/secrets/ns8wg']).decode('ASCII').rstrip()
 pub_key = subprocess.check_output(['wg', 'pubkey'], input=priv_key.encode('ASCII')).decode('ASCII').rstrip()
 node_pw = str(uuid.uuid4())
 node_pwh = hashlib.sha256(node_pw.encode('ASCII')).hexdigest()
