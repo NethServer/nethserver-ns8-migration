@@ -1,6 +1,0 @@
-{
-    # Disable the agent service
-    $DB->get_value_and_delete('agent') || return '';
-    system('systemctl', 'disable', '--now', 'agent');
-    '';
-}
