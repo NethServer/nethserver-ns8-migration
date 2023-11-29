@@ -22,6 +22,12 @@
 
 set -e
 
+function has_subdirs ()
+{
+    [[ -d "$1" ]] && [[ -n "$(find "$1" -mindepth 1 -maxdepth 1 -type d -print -quit)" ]]
+    return $?
+}
+
 # Rsync command wrapper that ignores some specific exit codes
 function rsync_forced ()
 {
@@ -95,7 +101,9 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
         # non-finish pass: send home/ and ibay/ data
         rsync -i --recursive --times --links --perms --delete /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/data/volumes/homes/
-        rsync -i --recursive --times --links --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        if has_subdirs /var/lib/nethserver/ibay ; then
+            rsync -i --recursive --times --links --delete /var/lib/nethserver/ibay/* "${RSYNC_ENDPOINT}"/data/volumes/shares/
+        fi
     fi
 fi
 
@@ -129,7 +137,9 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     # last pass: send shared folders and homedirs, including ACLs, owners,
     # permissions, and the user.DOSATTRIB extended attribute.
     rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/home/ "${RSYNC_ENDPOINT}"/homes/
-    rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/ "${RSYNC_ENDPOINT}"/shares/
+    if has_subdirs /var/lib/nethserver/ibay ; then
+        rsync_forced -i --recursive --times --links --acls --owner --group --perms --xattrs --delete /var/lib/nethserver/ibay/ "${RSYNC_ENDPOINT}"/shares/
+    fi
 
     # Restore the original sssd.conf contents. Now that all modules are
     # migrated we just want to allow people to log on this system with the sssd cached values
