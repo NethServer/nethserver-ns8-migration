@@ -1132,6 +1132,7 @@ export default {
     },
     connectionLogout() {
       this.loading.connectionUpdate = true;
+      this.error.connectionUpdate = "";
 
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.logout_successful"
@@ -1146,7 +1147,6 @@ export default {
         },
         function(success) {
           context.loading.connectionUpdate = false;
-          context.error.connectionUpdate = "";
           context.connectionRead();
         },
         function(error) {
@@ -1202,6 +1202,7 @@ export default {
       this.error.adminPassword = "";
       this.error.leaderNode = "";
       this.loading.connectionUpdate = true;
+      this.error.connectionUpdate = "";
 
       var validateObj = {
         action: "login",
@@ -1265,7 +1266,6 @@ export default {
         },
         function(success) {
           context.loading.connectionUpdate = false;
-          context.error.connectionUpdate = "";
           context.connectionRead();
         },
         function(error) {
