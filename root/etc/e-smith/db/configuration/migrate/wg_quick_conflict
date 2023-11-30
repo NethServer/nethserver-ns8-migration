@@ -5,6 +5,6 @@
     $newRecord->merge_props($oldRecord->props);
     $oldRecord->delete();
     system('systemctl', 'disable', '--now', 'wg-quick@wg0');
-    unlink('/etc/wireguard/wg0.conf');
+    rename('/etc/wireguard/wg0.conf', '/etc/wireguard/ns8.conf');
     '';
 }
