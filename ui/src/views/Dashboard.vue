@@ -1132,6 +1132,7 @@ export default {
     },
     connectionLogout() {
       this.loading.connectionUpdate = true;
+      this.error.connectionUpdate = "";
 
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.logout_successful"
@@ -1179,9 +1180,8 @@ export default {
       );
     },
     connectionReadSuccess(output) {
-      const agentStatus = output.configuration.agent.props.status;
-      this.config.isConnected = agentStatus == "enabled";
       const ns8Config = output.configuration.ns8.props;
+      this.config.isConnected = ns8Config.Host != "";
       this.config.leaderNode = ns8Config.Host;
       this.config.adminUsername = ns8Config.User;
       this.config.adminPassword = ns8Config.Password;
@@ -1202,6 +1202,7 @@ export default {
       this.error.adminPassword = "";
       this.error.leaderNode = "";
       this.loading.connectionUpdate = true;
+      this.error.connectionUpdate = "";
 
       var validateObj = {
         action: "login",
