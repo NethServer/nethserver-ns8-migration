@@ -961,6 +961,9 @@ export default {
     nextcloudApp() {
       return this.apps.find((app) => app.id === "nethserver-nextcloud");
     },
+    nethvoiceApp() {
+      return this.apps.find((app) => app.id === "nethserver-nethvoice");
+    },
     accountProviderMigrationStarted() {
       if (this.accountProviderApp) {
         return this.accountProviderApp.status === "migrating";
@@ -1075,6 +1078,9 @@ export default {
           this.error.virtualHost = this.$t("validation.virtual_host_empty");
           this.$refs.virtualHost.focus();
           isValidationOk = false;
+        }
+      } else if (this.currentApp.id === "nethserver-nethvoice") {
+        // nethvoice
         }
       } else if (this.currentApp.id === "account-provider") {
         // account provider
@@ -1383,6 +1389,10 @@ export default {
           }
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
+          };
+        } else if (app.id === "nethserver-nethvoice") {
+          migrationObj.migrationConfig = {
+            virtualHost: 'test',
           };
         } else if (app.id === "nethserver-mail") {
           let migrationConfig = {
