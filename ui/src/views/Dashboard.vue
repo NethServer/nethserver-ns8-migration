@@ -1081,7 +1081,6 @@ export default {
         }
       } else if (this.currentApp.id === "nethserver-nethvoice") {
         // nethvoice
-        }
       } else if (this.currentApp.id === "account-provider") {
         // account provider
 
