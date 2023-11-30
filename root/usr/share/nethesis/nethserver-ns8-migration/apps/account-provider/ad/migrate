@@ -147,7 +147,7 @@ if [[ -n "${migrate_shared_folders}" ]]; then
     systemctl restart sssd.service || :
 
     # Stop the Samba file server services
-    systemctl disable --now smb.service nmb.service winbind.service
+    systemctl disable --now smb.service nmb.service winbind.service || :
     /sbin/e-smith/config setprop smb status disabled
     /sbin/e-smith/config setprop smb nmb disabled
     /sbin/e-smith/config setprop smb winbind disabled
