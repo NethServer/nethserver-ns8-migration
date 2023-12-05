@@ -110,10 +110,10 @@ def get_account_provider_info():
         except:
             pass
 
-        # The VPN address (wg0) is not eligible for the DC migration if
+        # The VPN address (ns8) is not eligible for the DC migration if
         # file server migration is enabled:
         if get_samba_info() and get_migration_status("nethserver-samba") != "skipped":
-            ip_addresses = list(filter(lambda el: el["label"] != "wg0", ip_addresses))
+            ip_addresses = list(filter(lambda el: el["label"] != "ns8", ip_addresses))
 
     return {
         "id": "account-provider",
@@ -240,13 +240,7 @@ def check_user_domains():
     bash_command = "/usr/sbin/ns8-action cluster list-user-domains"
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
-    try:
-        obj = simplejson.loads(output)
-    except:
-        # can't access remote domain info, something is wrong
-        return False
-
-
+    obj = simplejson.loads(output)
     if local_config["IsLocal"]:
         # is source account provider is internal, NS8 must not contain the same provider
         for domain in obj['data']['output']['domains']:

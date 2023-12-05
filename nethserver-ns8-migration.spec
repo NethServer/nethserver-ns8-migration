@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.4
+Version: 1.0.5
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -9,7 +9,6 @@ Source: %{name}-%{version}.tar.gz
 Source1: %{name}-cockpit.tar.gz
 
 %global debug_package %{nil} 
-Source2: agent
 
 BuildRequires: nethserver-devtools
 Requires: wireguard-tools, kmod-wireguard
@@ -37,7 +36,6 @@ mkdir -p %{buildroot}/usr/libexec/nethserver/api/%{name}/
 tar xvf %{SOURCE1} -C %{buildroot}/usr/share/cockpit/%{name}/
 cp -a %{name}.json %{buildroot}/usr/share/cockpit/nethserver/applications/
 cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
-install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 
 %{genfilelist} %{buildroot} --file /etc/sudoers.d/50_nsapi_nethserver_ns8_migration 'attr(0440,root,root)' > e-smith-%{version}-filelist
 
@@ -47,6 +45,12 @@ install -D -m 0755 %{SOURCE2} %{buildroot}/%{_bindir}/agent
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Dec 01 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.5-1
+- Migration of Samba fails without file server - Bug NethServer/dev#6785
+- Sticky error connecting to NS8 in migration tool - Bug NethServer/dev#6783
+- Migration tool wg0 interface name conflict - Bug NethServer/dev#6782
+- Migrate Getmail configuration to NS8 - NethServer/dev#6776
+
 * Fri Nov 10 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.4-1
 - Fix File Server migration
 - Add Transifex configuration

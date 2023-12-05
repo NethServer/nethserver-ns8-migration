@@ -1,0 +1,11 @@
+{
+    use NethServer::Password;
+    '';
+}[Interface]
+Address = {${'wg-quick@ns8'}{'Address'}}
+PrivateKey = {NethServer::Password::store('ns8wg')}
+
+[Peer]
+PublicKey = {${'wg-quick@ns8'}{'RemoteKey'}}
+AllowedIPs = {${'wg-quick@ns8'}{'RemoteNetwork'}}
+Endpoint = {${'wg-quick@ns8'}{'RemoteEndpoint'}}

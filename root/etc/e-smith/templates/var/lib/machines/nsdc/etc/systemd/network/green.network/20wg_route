@@ -1,7 +1,7 @@
 {
     use esmith::NetworksDB;
     my $ndb = esmith::NetworksDB->open();
-    my $network = ${'wg-quick@wg0'}{'RemoteNetwork'} || '';
+    my $network = ${'wg-quick@ns8'}{'RemoteNetwork'} || '';
     my $bridge = $nsdc{'bridge'} || die ("[ERROR] There is no network bridge for NethServer domain controller");
     my $gateway = $ndb->get_prop($bridge, 'ipaddr') || '';
  

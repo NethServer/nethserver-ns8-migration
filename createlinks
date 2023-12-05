@@ -46,13 +46,12 @@ event_services($event, qw(
 $event = "nethserver-ns8-migration-save";
 
 event_templates($event, qw(
-    /etc/wireguard/wg0.conf
+    /etc/wireguard/ns8.conf
     /etc/httpd/conf.d/00ns8migration.conf
 ));
 
 event_services($event, qw(
-    wg-quick@wg0 restart
-    agent restart
+    wg-quick@ns8 restart
     httpd reload
 ));
 
@@ -63,5 +62,5 @@ event_services($event, qw(
 $event = "interface-update";
 
 event_services($event, qw(
-    wg-quick@wg0 try-restart
+    wg-quick@ns8 try-restart
 ));
