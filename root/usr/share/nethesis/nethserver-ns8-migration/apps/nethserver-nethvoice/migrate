@@ -41,26 +41,29 @@ fi
 # Sync files: --owner --group --chown=82:82 are needed to map data for the www-data user
 for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 1  -mindepth 1 -type d -exec basename {} \; | grep -v nethcti); do
 	mkdir -p "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/custom/
-	rsync -tr --owner --group --chown=494205:494206 -s --delete /var/lib/asterisk/sounds/${lang}/custom/ "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/custom/
+	rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/sounds/${lang}/custom/ "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/custom/
 done
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
-rsync -tr --owner --group --chown=990:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
-rsync -tr --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
-rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
-rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/ #TODO fix tancredi user and group here
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/ #TODO fix tancredi user and group here
 
-# Create mysql dump
+# Create mysql asterisk dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date asterisk > /var/lib/asterisk/asterisk.dump
+# Create mysql asteriskcdrdb dump
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date asteriskcdrdb > /var/lib/asterisk/asteriskcdrdb.dump
 # Create astdb dump
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 # copy dumps
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/asterisk.dump "${RSYNC_ENDPOINT}"/data/state/restore/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3 "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/asterisk.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/asteriskcdrdb.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --owner --group --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/astdb.sqlite3 "${RSYNC_ENDPOINT}"/data/state/restore/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
@@ -92,5 +95,7 @@ BRAND_NAME=$(/sbin/e-smith/db configuration getprop nethvoice BrandName)
 # TODO add all nethcti and subscription props
 ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"nethvoice_host": "'$NETHVOICE_HOST'", "lets_encrypt": true, "http2https": true, "domain": "'$domain'"}'
 
-
-
+# Try to reboot all phones
+for EXTENSION in $(/usr/bin/mysql --defaults-file=/root/.my.cnf -N --batch asterisk -e "SELECT extension FROM rest_devices_phones WHERE type='physical' AND mac IS NOT NULL AND extension IS NOT NULL"); do
+	/usr/sbin/asterisk -rx "pjsip send notify reboot-yealink endpoint $EXTENSION" 2>&1 > /dev/null
+done
