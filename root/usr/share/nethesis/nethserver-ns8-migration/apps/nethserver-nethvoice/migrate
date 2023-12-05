@@ -40,19 +40,19 @@ fi
 
 # Sync custom audio files
 for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -name custom | cut -d/ -f 6); do
-    rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete \
+    rsync -tr --owner --group --chown=990:991 -s --delete \
         /var/lib/asterisk/sounds/${lang}/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/
 done
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/ #TODO fix tancredi user and group here
+rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
+rsync -tr --owner --group --chown=990:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
+rsync -tr --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
+rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
+rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/ #TODO fix tancredi user and group here
 
 # Create mysql asterisk dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date asterisk > /var/lib/asterisk/asterisk.dump
@@ -61,9 +61,9 @@ rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/tancre
 # Create astdb dump
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 # copy dumps
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/asterisk.dump "${RSYNC_ENDPOINT}"/data/state/restore/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/asteriskcdrdb.dump "${RSYNC_ENDPOINT}"/data/state/restore/
-rsync -tr --usermap=1-1000:990 --groupmap=1-1000:991 -s --delete /var/lib/asterisk/astdb.sqlite3 "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/asterisk.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/asteriskcdrdb.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
