@@ -25,7 +25,7 @@ set -e
 source /etc/nethserver/agent.env
 source "${AGENT_STATE_DIR}"/agent.env
 source "${AGENT_STATE_DIR}"/environment
-cd "${AGENT_STATE_DIR}/nethserver-nethvoice"
+cd "${AGENT_STATE_DIR}/nethserver-nethvoice14"
 source bind.env
 
 # Ensure endpoint is defined

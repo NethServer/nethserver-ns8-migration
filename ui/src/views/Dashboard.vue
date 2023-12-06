@@ -962,7 +962,7 @@ export default {
       return this.apps.find((app) => app.id === "nethserver-nextcloud");
     },
     nethvoiceApp() {
-      return this.apps.find((app) => app.id === "nethserver-nethvoice");
+      return this.apps.find((app) => app.id === "nethserver-nethvoice14");
     },
     accountProviderMigrationStarted() {
       if (this.accountProviderApp) {
@@ -1079,7 +1079,7 @@ export default {
           this.$refs.virtualHost.focus();
           isValidationOk = false;
         }
-      } else if (this.currentApp.id === "nethserver-nethvoice") {
+      } else if (this.currentApp.id === "nethserver-nethvoice14") {
         // nethvoice
       } else if (this.currentApp.id === "account-provider") {
         // account provider
@@ -1390,7 +1390,7 @@ export default {
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
           };
-        } else if (app.id === "nethserver-nethvoice") {
+        } else if (app.id === "nethserver-nethvoice14") {
           migrationObj.migrationConfig = {
             virtualHost: 'test',
           };
