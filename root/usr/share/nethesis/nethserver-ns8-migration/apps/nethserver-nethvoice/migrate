@@ -57,16 +57,22 @@ rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/tancredi/data "${
 # Create mysql asterisk structure dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asterisk > /var/lib/asterisk/10_asterisk_structure.sql
 # Create mysql asterisk data dump
-/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-create-info --databases asterisk > /var/lib/asterisk/40_asterisk_data.sql
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asterisk > /var/lib/asterisk/60_asterisk_data.sql
+# Create mysql nethcti3 structure dump
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases nethcti3 > /var/lib/asterisk/20_nethcti3_structure.sql
+# Create mysql nethcti3 data dump
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases nethcti3 > /var/lib/asterisk/70_nethcti3_data.sql
 # Create mysql asteriskcdrdb structure dump
-/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/20_asteriskcdrdb_structure.sql
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/30_asteriskcdrdb_structure.sql
 # Create mysql asteriskcdrdb data dump
-/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/50_asteriskcdrdb_data.sql
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
+
+
 # Create astdb dump
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 
 # copy dumps
-rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/*asterisk*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
 rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
