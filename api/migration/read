@@ -122,6 +122,18 @@ def get_account_provider_info():
     }
 
 
+def get_nethvoice_info():
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/nethvoice/type'):
+        config = get_config("nethvoice")
+        return {
+            "id": "nethserver-nethvoice14",
+            "name": "NethVoice",
+            "config": config
+        }
+    else:
+        return None
+
+
 def get_nextcloud_info():
     if os.path.isfile('/etc/e-smith/db/configuration/defaults/nextcloud/type'):
         config = get_config("nextcloud")
@@ -206,7 +218,7 @@ def get_samba_info():
 
 def list_apps():
     apps = []
-    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop', 'ejabberd', 'samba', 'connector']:
+    for app in ['mattermost', 'nextcloud', 'mail', 'webmail', 'webtop', 'ejabberd', 'samba', 'connector', 'nethvoice']:
         info = globals()["get_%s_info" % app]() # call all functions named get_<app>_info
         if info:
             # add only non-empty apps
