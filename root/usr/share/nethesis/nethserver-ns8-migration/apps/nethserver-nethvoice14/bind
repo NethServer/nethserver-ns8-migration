@@ -22,4 +22,4 @@
 
 set -e
 
-ns8-bind-app nethserver-nethvoice
+ns8-bind-app nethserver-nethvoice14
