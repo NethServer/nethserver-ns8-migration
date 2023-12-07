@@ -484,6 +484,30 @@
                         </select>
                       </div>
                     </div>
+                    <div v-if="nethvoiceApp" class="form-group">
+                      <label
+                        class="col-sm-5 control-label"
+                        for="nethvoice-node"
+                      >
+                        {{ $t("dashboard.destination_node_for_nethvoice") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="nethvoiceNode"
+                          class="combobox form-control"
+                          id="nethvoice-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
                     <div v-if="webtopApp" class="form-group">
                       <label class="col-sm-5 control-label" for="webtop-node">
                         {{ $t("dashboard.destination_node_for_webtop") }}
@@ -728,6 +752,61 @@
                         >
                       </div>
                     </div>
+                    <!-- virtual host for nethvoice and CTI -->
+                    <div
+                      v-if="nethvoiceApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.nethVoiceVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="nethvoice-virtual-host"
+                      >
+                        {{ $t("dashboard.nethvoice_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="nethVoiceVirtualHost"
+                          id="nethvoice-virtual-host"
+                          ref="nethVoiceVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.nethVoiceCubeVirtualHost"
+                          class="help-block"
+                          >{{ error.nethVoiceVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      v-if="nethvoiceApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.ctiVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="cti-virtual-host"
+                      >
+                        {{ $t("dashboard.cti_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="ctiVirtualHost"
+                          id="cti-virtual-host"
+                          ref="ctiVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.ctiCubeVirtualHost"
+                          class="help-block"
+                          >{{ error.ctiVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
                     <!-- virtual host for webtop -->
                     <div
                       v-if="webtopApp && !webtopApp.config.props.VirtualHost"
@@ -911,6 +990,8 @@ export default {
       abortApp: null,
       virtualHost: "",
       roundCubeVirtualHost: "",
+      nethVoiceVirtualHost: "",
+      ctiVirtualHost: "",
       webtopVirtualHost: "",
       adIpAddress: "",
       adIpAddresses: [],
@@ -949,6 +1030,8 @@ export default {
         removePackages: "",
         getClusterStatus: "",
         roundCubeVirtualHost: "",
+        nethVoiceVirtualHost: "",
+        ctiVirtualHost: "",
         webtopVirtualHost: "",
         userDomains: "",
       },
@@ -979,6 +1062,9 @@ export default {
     roundcubeApp() {
       return this.apps.find((app) => app.id === "nethserver-roundcubemail");
     },
+    nethvoiceApp() {
+      return this.apps.find((app) => app.id === "nethserver-nethvoice14");
+    },
     webtopApp() {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
@@ -994,6 +1080,7 @@ export default {
           ![
             "account-provider",
             "nethserver-roundcubemail",
+            "nethserver-nethvoice14",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
             "nethserver-samba",
@@ -1038,8 +1125,12 @@ export default {
       this.virtualHost = "";
       this.adIpAddress = "";
       this.roundCubeVirtualHost = "";
+      this.nethVoiceVirtualHost = "",
+      this.ctiVirtualHost = "",
       this.webtopVirtualHost = "";
       this.error.roundCubeVirtualHost = "";
+      this.error.nethVoiceVirtualHost = "";
+      this.error.ctiVirtualHost = "";
       this.error.webtopVirtualHost = "";
       $("#finish-migration-modal").modal("show");
 
@@ -1048,6 +1139,10 @@ export default {
           this.$refs.virtualHost.focus();
         } else if (this.$refs.roundcubeVirtualHost) {
           this.$refs.roundcubeVirtualHost.focus();
+        } else if (this.$refs.nethVoiceVirtualHost) {
+          this.$refs.nethVoiceVirtualHost.focus();
+        } else if (this.$refs.ctiVirtualHost) {
+          this.$refs.ctiVirtualHost.focus();
         }
       });
     },
@@ -1094,6 +1189,8 @@ export default {
         // email
 
         this.error.roundCubeVirtualHost = "";
+        this.error.nethVoiceVirtualHost = "";
+        this.error.ctiVirtualHost = "";
         this.error.webtopVirtualHost = "";
 
         if (this.roundcubeApp && !this.roundCubeVirtualHost) {
@@ -1103,6 +1200,28 @@ export default {
 
           if (isValidationOk) {
             this.$refs.roundcubeVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.nethvoiceApp && !this.nethVoiceVirtualHost) {
+          this.error.nethVoiceVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.nethVoiceVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.nethvoiceApp && !this.ctiVirtualHost) {
+          this.error.ctiVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
             isValidationOk = false;
           }
         }
@@ -1373,6 +1492,11 @@ export default {
           if (this.roundcubeApp) {
             migrationConfig.roundcubeNode = this.roundcubeNode;
           }
+
+          if (this.nethvoiceApp) {
+            migrationConfig.nethvoiceNode = this.nethvoiceNode;
+          }
+
           migrationObj.migrationConfig = migrationConfig;
         } else {
           migrationObj.migrationConfig = {
@@ -1391,8 +1515,9 @@ export default {
             virtualHost: this.virtualHost,
           };
         } else if (app.id === "nethserver-nethvoice14") {
-          migrationObj.migrationConfig = {
-            virtualHost: 'test',
+          let migrationConfig = {
+            nethVoiceVirtualHost: this.nethVoiceVirtualHost,
+            ctiVirtualHost: this.ctiVirtualHost,
           };
         } else if (app.id === "nethserver-mail") {
           let migrationConfig = {
