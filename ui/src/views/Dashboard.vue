@@ -784,7 +784,6 @@
                   <template v-if="currentApp.id === 'nethserver-nethvoice14'">
                     <!-- virtual host for nethvoice and CTI -->
                     <div
-                      v-if="nethvoiceApp"
                       :class="[
                         'form-group',
                         { 'has-error': error.nethVoiceVirtualHost },
@@ -811,7 +810,6 @@
                       </div>
                     </div>
                     <div
-                      v-if="nethvoiceApp"
                       :class="[
                         'form-group',
                         { 'has-error': error.ctiVirtualHost },
