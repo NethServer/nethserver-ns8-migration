@@ -58,12 +58,20 @@ applications and APIs:
 - ``ns8-bind-app``
 - ``ns8-abort``
 
+Logs
+====
+
+- The trace of bind and migrate procedures is sent to `/var/log/ns8-migration.log`. This log file can be read also from the UI interface and is the most important for troubleshooting.
+- E-smith events, installation/uninstallation and related command output is recorded by `/var/log/messages`, as usual.
+- On the NS8 destination cluster, look at the destination application log. The invoked module actions are tipically `import-module` and `configure-module`.
+
 Applications
 ============
 
 The migration tool can migrate a pre-defined set of NS7 applications (apps):
 
 - nethserver-mail (with nethserver-webtop5, nethserver-roundcubemail)
+- nethserver-mail-getmail
 - nethserver-nextcloud
 - nethserver-mattermost
 - nethserver-ejabberd
