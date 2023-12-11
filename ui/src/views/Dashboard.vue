@@ -1516,6 +1516,7 @@ export default {
             nethVoiceVirtualHost: this.nethVoiceVirtualHost,
             ctiVirtualHost: this.ctiVirtualHost,
           };
+          migrationObj.migrationConfig = migrationConfig;
         } else if (app.id === "nethserver-mail") {
           let migrationConfig = {
             roundCubeVirtualHost: this.roundCubeVirtualHost,
