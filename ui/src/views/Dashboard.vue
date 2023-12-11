@@ -1044,9 +1044,6 @@ export default {
     nextcloudApp() {
       return this.apps.find((app) => app.id === "nethserver-nextcloud");
     },
-    nethvoiceApp() {
-      return this.apps.find((app) => app.id === "nethserver-nethvoice14");
-    },
     accountProviderMigrationStarted() {
       if (this.accountProviderApp) {
         return this.accountProviderApp.status === "migrating";
