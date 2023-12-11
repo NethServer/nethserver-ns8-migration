@@ -774,7 +774,7 @@
                           class="form-control"
                         />
                         <span
-                          v-if="error.nethVoiceCubeVirtualHost"
+                          v-if="error.nethVoiceVirtualHost"
                           class="help-block"
                           >{{ error.nethVoiceVirtualHost }}</span
                         >
@@ -801,7 +801,7 @@
                           class="form-control"
                         />
                         <span
-                          v-if="error.ctiCubeVirtualHost"
+                          v-if="error.ctiVirtualHost"
                           class="help-block"
                           >{{ error.ctiVirtualHost }}</span
                         >
