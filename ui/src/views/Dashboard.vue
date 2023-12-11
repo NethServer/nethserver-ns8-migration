@@ -781,6 +781,63 @@
                       </div>
                     </div>
                   </template>
+                  <template v-if="currentApp.id === 'nethserver-nethvoice14'">
+                    <!-- virtual host for nethvoice and CTI -->
+                    <div
+                      v-if="nethvoiceApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.nethVoiceVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="nethvoice-virtual-host"
+                      >
+                        {{ $t("dashboard.nethvoice_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="nethVoiceVirtualHost"
+                          id="nethvoice-virtual-host"
+                          ref="nethVoiceVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.nethVoiceVirtualHost"
+                          class="help-block"
+                          >{{ error.nethVoiceVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      v-if="nethvoiceApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.ctiVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="cti-virtual-host"
+                      >
+                        {{ $t("dashboard.cti_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="ctiVirtualHost"
+                          id="cti-virtual-host"
+                          ref="ctiVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.ctiVirtualHost"
+                          class="help-block"
+                          >{{ error.ctiVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                  </template>
                 </template>
               </template>
             </div>
