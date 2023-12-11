@@ -103,16 +103,7 @@ SUBSCRIPTION_SYSTEMID=$(/sbin/e-smith/db configuration getprop subscription Syst
 SUBSCRIPTION_SECRET=$(/sbin/e-smith/db configuration getprop subscription Secret)
 
 # TODO add all nethcti and subscription props
-ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module \
-    '{"nethvoice_host": "'$NETHVOICE_HOST'", \
-    "nethcti_ui_host": "'$NETHCTI_UI_HOST'", \
-    "lets_encrypt": true, \
-    "http2https": true, \
-    "domain": "'$domain'", \
-    "subscription_systemid": "'$SUBSCRIPTION_SYSTEMID'", \
-    "subscription_secret": "'$SUBSCRIPTION_SECRET'", \
-    "reports_international_prefix": "'${INTERNATIONAL_PREFIX:=+39}'"\
-    }'
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"nethvoice_host": "'$NETHVOICE_HOST'", "nethcti_ui_host": "'$NETHCTI_UI_HOST'", "lets_encrypt": true, "http2https": true, "domain": "'$domain'", "subscription_systemid": "'$SUBSCRIPTION_SYSTEMID'", "subscription_secret": "'$SUBSCRIPTION_SECRET'", "reports_international_prefix": "'${INTERNATIONAL_PREFIX:=+39}'"}'
 
 # Try to reboot all phones
 for EXTENSION in $(/usr/bin/mysql --defaults-file=/root/.my.cnf -N --batch asterisk -e "SELECT extension FROM rest_devices_phones WHERE type='physical' AND mac IS NOT NULL AND extension IS NOT NULL"); do
