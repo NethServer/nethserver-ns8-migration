@@ -54,6 +54,10 @@ rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicem
 rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
 rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/ #TODO fix tancredi user and group here
 
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
+fi
+
 # Create mysql asterisk structure dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asterisk > /var/lib/asterisk/10_asterisk_structure.sql
 # Create mysql asterisk data dump
@@ -67,17 +71,12 @@ rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/tancredi/data "${
 # Create mysql asteriskcdrdb data dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
 
-
 # Create astdb dump
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 
 # copy dumps
 rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
 rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
-
-if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
-    exit 0
-fi
 
 # Assert required vars are set
 : "${IMPORT_TASK_ID:?}"
