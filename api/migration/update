@@ -49,6 +49,7 @@ app_idir="${AGENT_INSTALL_DIR:?}/apps/${app_id}"
 app_sdir="${AGENT_STATE_DIR:?}/${app_id}"
 
 set -a # export all variables
+MODULE_NODE_ID=$(jq -r '.appNode // 1' <<<"${migration_config}")
 # Map input values from migrationConfig to environment variables
 if [[ -f "${app_idir}/input-${action}.jq" ]]; then
     eval "$(jq -r -f "${app_idir}/input-${action}.jq" <<<"${migration_config}")"
