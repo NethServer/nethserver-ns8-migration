@@ -66,6 +66,10 @@ fi
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases nethcti3 > /var/lib/asterisk/20_nethcti3_structure.sql
 # Create mysql nethcti3 data dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases nethcti3 > /var/lib/asterisk/70_nethcti3_data.sql
+# Create mysql phonebook structure dump
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases phonebook > /var/lib/asterisk/20_phonebook_structure.sql
+# Create mysql phonebook data dump
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases phonebook > /var/lib/asterisk/70_phonebook_data.sql
 # Create mysql asteriskcdrdb structure dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/30_asteriskcdrdb_structure.sql
 # Create mysql asteriskcdrdb data dump
