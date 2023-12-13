@@ -260,10 +260,13 @@ def check_user_domains():
                     return False
         return True
     else:
-        # if source account provider is external, NS8 must contain the same external provider
+        # if source account provider is external, NS8 must be already configured with the same domain
         for domain in obj['data']['output']['domains']:
-            if domain['location'] == 'external' and domain['base_dn'] == local_config['BaseDN']:
-                if (domain['schema'] == 'rfc2307' and local_config['isLdap']) or (domain['schema'] == 'ad' and local_config['isAd']):
+            if domain['base_dn'] == local_config['BaseDN'] \
+                and ( \
+                    (domain['schema'] == 'rfc2307' and local_config['isLdap']) \
+                    or (domain['schema'] == 'ad' and local_config['isAD']) \
+                ):
                     return True
         return False
 
