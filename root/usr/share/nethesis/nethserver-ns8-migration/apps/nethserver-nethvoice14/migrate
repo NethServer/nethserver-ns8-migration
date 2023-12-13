@@ -43,16 +43,16 @@ for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -n
     rsync -tr --owner --group --chown=990:991 -s --delete \
         /var/lib/asterisk/sounds/${lang}/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/
 done
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
-rsync -tr --owner --group --chown=990:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
-rsync -tr --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
-rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
-rsync -tr --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
-rsync -tr --owner --group --usermap=apache:33 --groupmap=apache:33 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
+rsync -trv --owner --group --chown=990:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
+rsync -trv --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
+rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
+rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -trv --owner --group --usermap=apache:33 --groupmap=apache:33 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
     exit 0
