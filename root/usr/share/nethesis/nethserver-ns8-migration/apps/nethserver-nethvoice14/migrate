@@ -40,12 +40,12 @@ fi
 
 # Sync custom audio files
 for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -name custom | cut -d/ -f 6); do
-    rsync -tr --owner --group --chown=990:991 -s --delete \
+    rsync -trv --owner --group --chown=990:991 -s --delete \
         /var/lib/asterisk/sounds/${lang}/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/
 done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
 rsync -trv --owner --group --chown=990:991 -s --delete /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
-rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
+rsync -trv --owner --group --chown=990:991 -s --exclude-from=agi-bin_exclude /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
 rsync -trv --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
 rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
