@@ -107,4 +107,4 @@ SUBSCRIPTION_SYSTEMID=$(/sbin/e-smith/db configuration getprop subscription Syst
 
 SUBSCRIPTION_SECRET=$(/sbin/e-smith/db configuration getprop subscription Secret)
 
-ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"nethvoice_host": "'$NETHVOICE_HOST'", "nethcti_ui_host": "'$NETHCTI_UI_HOST'", "lets_encrypt": true, "http2https": true, "domain": "'$domain'", "subscription_systemid": "'$SUBSCRIPTION_SYSTEMID'", "subscription_secret": "'$SUBSCRIPTION_SECRET'", "reports_international_prefix": "'${INTERNATIONAL_PREFIX:=+39}'"}'
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"nethvoice_host": "'$NETHVOICE_HOST'", "nethcti_ui_host": "'$NETHCTI_UI_HOST'", "lets_encrypt": true, "http2https": true, "user_domain": "'$domain'", "subscription_systemid": "'$SUBSCRIPTION_SYSTEMID'", "subscription_secret": "'$SUBSCRIPTION_SECRET'", "reports_international_prefix": "'${INTERNATIONAL_PREFIX:=+39}'"}'
