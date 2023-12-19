@@ -75,14 +75,19 @@ fi
 # Create mysql asteriskcdrdb structure dump
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/30_asteriskcdrdb_structure.sql
 # Create mysql asteriskcdrdb data dump
-/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --skip-lock-tables --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
+
 
 # Create astdb dump
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 
 # copy dumps
-rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --chmod=F644 -s --delete --exclude=80_asteriskcdrdb_data.sql /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/80_asteriskcdrdb_data.sql "${RSYNC_ENDPOINT}"/data/state/restore_background/
 rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+
+
+# copy cdr data for background restore
 
 # Assert required vars are set
 : "${IMPORT_TASK_ID:?}"
@@ -101,10 +106,34 @@ fi
 
 BRAND_NAME=$(/sbin/e-smith/db configuration getprop nethvoice BrandName)
 
-INTERNATIONAL_PREFIX=$(/sbin/e-smith/db configuration getprop nethvoice-report international_prefix)
+REPORTS_INTERNATIONAL_PREFIX=$(/sbin/e-smith/db configuration getprop nethvoice-report international_prefix)
 
 SUBSCRIPTION_SYSTEMID=$(/sbin/e-smith/db configuration getprop subscription SystemId)
 
 SUBSCRIPTION_SECRET=$(/sbin/e-smith/db configuration getprop subscription Secret)
 
-ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module '{"nethvoice_host": "'$NETHVOICE_HOST'", "nethcti_ui_host": "'$NETHCTI_UI_HOST'", "lets_encrypt": true, "http2https": true, "user_domain": "'$domain'", "subscription_systemid": "'$SUBSCRIPTION_SYSTEMID'", "subscription_secret": "'$SUBSCRIPTION_SECRET'", "reports_international_prefix": "'${INTERNATIONAL_PREFIX:=+39}'"}'
+TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
+
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+        --arg brand_name "${BRAND_NAME}" \
+        --arg reports_international_prefix "${REPORTS_INTERNATIONAL_PREFIX}" \
+        --arg nethcti_ui_host "${NETHCTI_UI_HOST}" \
+        --arg nethvoice_host "${NETHVOICE_HOST}" \
+        --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
+        --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
+        --arg timezone "${TIMEZONE}" \
+        --arg user_domain "${domain}" \
+        '{
+            "brand_name": $brand_name,
+            "http2https": true,
+            "lets_encrypt": false,
+            "nethcti_ui_host": $nethcti_ui_host,
+            "nethvoice_host": $nethvoice_host,
+            "reports_international_prefix": $reports_international_prefix,
+            "subscription_systemid": $subscription_systemid,
+            "subscription_secret": $subscription_secret,
+            "timezone": $timezone,
+            "user_domain": $user_domain
+        }'
+)"
