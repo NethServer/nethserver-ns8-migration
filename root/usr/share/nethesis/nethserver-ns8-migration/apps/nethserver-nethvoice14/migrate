@@ -61,30 +61,39 @@ if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
 fi
 
 # Create mysql asterisk structure dump
+echo "Dump asterisk database structure"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asterisk > /var/lib/asterisk/10_asterisk_structure.sql
 # Create mysql asterisk data dump
+echo "Dump asterisk database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asterisk > /var/lib/asterisk/60_asterisk_data.sql
 # Create mysql nethcti3 structure dump
+echo "Dump nethcti3 database structure"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases nethcti3 > /var/lib/asterisk/20_nethcti3_structure.sql
 # Create mysql nethcti3 data dump
+echo "Dump nethcti3 database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases nethcti3 > /var/lib/asterisk/70_nethcti3_data.sql
 # Create mysql phonebook structure dump
+echo "Dump phonebook database structure"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases phonebook > /var/lib/asterisk/20_phonebook_structure.sql
 # Create mysql phonebook data dump
+echo "Dump phonebook database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases phonebook > /var/lib/asterisk/70_phonebook_data.sql
 # Create mysql asteriskcdrdb structure dump
+echo "Dump asteriskcdrdb database structure"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/30_asteriskcdrdb_structure.sql
 # Create mysql asteriskcdrdb data dump
+echo "Dump asteriskcdrdb database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --skip-lock-tables --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
 
 
 # Create astdb dump
+echo "Dump astdb"
 /usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
 
 # copy dumps
-rsync -tr --chmod=F644 -s --delete --exclude=80_asteriskcdrdb_data.sql /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
-rsync -tr --chmod=F644 -s --delete /var/lib/asterisk/80_asteriskcdrdb_data.sql "${RSYNC_ENDPOINT}"/data/state/restore_background/
-rsync -tr --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -trv --chmod=F644 -s --delete --exclude=80_asteriskcdrdb_data.sql /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -trv --chmod=F644 -s --delete /var/lib/asterisk/80_asteriskcdrdb_data.sql "${RSYNC_ENDPOINT}"/data/state/restore_background/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
 
 
 # copy cdr data for background restore
