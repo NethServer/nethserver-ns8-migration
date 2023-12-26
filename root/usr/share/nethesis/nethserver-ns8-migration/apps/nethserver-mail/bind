@@ -32,6 +32,10 @@ if [[ -f /etc/e-smith/db/configuration/defaults/roundcubemail/type ]]; then
     ns8-bind-app nethserver-roundcubemail "${ROUNDCUBE_NODE_ID}" &
 fi
 
+if [[ -f /etc/e-smith/db/configuration/defaults/sogod/type ]]; then
+    ns8-bind-app nethserver-sogo "${SOGO_NODE_ID}" &
+fi
+
 # Getmail is not a service
 if [[ -f /etc/e-smith/events/actions/nethserver-getmail-conf ]]; then
     ns8-bind-app nethserver-mail-getmail "${GETMAIL_NODE_ID}" &
