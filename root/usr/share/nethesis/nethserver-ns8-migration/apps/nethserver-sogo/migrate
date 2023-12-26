@@ -1,0 +1,121 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2023 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-sogo"
+source bind.env
+
+# Ensure endpoint is defined
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
+
+# Sync mysql sogo DB dump
+rm -vf sogo.sql
+mysqldump --single-transaction --quick --add-drop-table -QB "sogo" -r sogo.sql
+rsync -zi sogo.sql "${RSYNC_ENDPOINT}"/data/state/sogo.sql
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
+fi
+
+# Obtain the Mail module UUID for configure-module:
+mail_instance_uuid=$(ns8-action --attach "module/${MAIL_INSTANCE_ID}" list-service-providers \
+  "$(printf '{"service":"imap", "transport":"tcp", "filter":{"module_id":"%s"}}' "${MAIL_INSTANCE_ID}")" \
+  | jq -r '.[0].module_uuid')
+
+# Assert required vars are set
+: "${SOGO_VHOST:?}" "${IMPORT_TASK_ID:?}" "${mail_instance_uuid:?}"
+
+# Set up web redirects
+mkdir -vp webroot
+cat - >webroot/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Sogo Migration</title>
+  </head>
+  <body>
+    <h1>Sogo Migration</h1>
+    <p>Site has moved to &#9758; <a href="https://${SOGO_VHOST}">${SOGO_VHOST}</a></p>
+  </body>
+</html>
+EOF
+/sbin/e-smith/config setprop sogod migration finished
+/sbin/e-smith/expand-template /etc/httpd/conf.d/00ns8migration.conf
+httpd -k graceful
+
+# Commit Webtop migration
+rsync "${RSYNC_ENDPOINT}"/terminate
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+# Search for Samba or LDAP domain
+domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
+if [ -z "$domain" ]; then
+   domain="directory.nh"
+fi
+
+# we find admin users
+admins=$(/sbin/e-smith/config getprop sogod AdminUsers)
+#We find sogod properties
+Dav=$(/sbin/e-smith/config getprop sogod Dav)
+Activesync=$(/sbin/e-smith/config getprop sogod Activesync)
+WOWorkersCount=$(/sbin/e-smith/config getprop sogod WOWorkersCount)
+MailAuxiliaryUserAccountsEnabled=$([ $(/sbin/e-smith/config getprop sogod MailAuxiliaryUserAccountsEnabled) == "YES" ] && echo "true" || echo "false")
+# Repeat the configure-module if it fails because mail module is not found
+while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+    --arg hostname "${SOGO_VHOST}" \
+    --arg mail_server "${mail_instance_uuid}" \
+    --arg mail_domain "$(hostname -d)" \
+    --arg ldap_domain "${domain}" \
+    --arg admins "${admins}" \
+    --arg Dav "${Dav}" \
+    --arg Activesync "${Activesync}" \
+    --arg WOWorkersCount "${WOWorkersCount}" \
+    --arg MailAuxiliaryUserAccountsEnabled "${MailAuxiliaryUserAccountsEnabled}" \
+    '{
+      "host": $hostname,
+      "lets_encrypt": false,
+      "mail_server": $mail_server,
+      "mail_domain": $mail_domain,
+      "ldap_domain": $ldap_domain,
+      "admin_users" : $admins,
+      "dav" : $Dav,
+      "activesync" : $Activesync,
+      "workers_count" : $WOWorkersCount,
+      "auxiliary_account": $MailAuxiliaryUserAccountsEnabled,
+    }')"
+do
+    exit_code="$?"
+    if [[ "${exit_code}" != 3 ]]; then
+        exit "${exit_code}"
+    fi
+    sleep 5
+    echo "[NOTICE] Module ${MAIL_INSTANCE_ID} seems not ready: trying again to configure sogo..."
+done
