@@ -3,3 +3,4 @@
 #
 "WEBTOP_VHOST=" + .webtopVirtualHost,
 "ROUNDCUBE_VHOST=" + .roundCubeVirtualHost
+"SOGO_VHOST=" + .sogoVirtualHost
