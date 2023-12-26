@@ -38,6 +38,10 @@ migrate_deps ()
         command "${AGENT_INSTALL_DIR}/apps/nethserver-roundcubemail/migrate"
     fi
 
+    if [[ -f "${AGENT_STATE_DIR}/nethserver-sogo/bind.env" ]]; then
+        command "${AGENT_INSTALL_DIR}/apps/nethserver-sogo/migrate"
+    fi
+
     if [[ -f "${AGENT_STATE_DIR}/nethserver-mail-getmail/bind.env" ]]; then
         command "${AGENT_INSTALL_DIR}/apps/nethserver-mail-getmail/migrate"
     fi
