@@ -72,6 +72,11 @@ cat - >webroot/index.html <<EOF
 EOF
 /sbin/e-smith/config setprop sogod migration finished
 /sbin/e-smith/expand-template /etc/httpd/conf.d/00ns8migration.conf
+# Stop and disable sogod
+/sbin/e-smith/config setprop sogod status disabled
+systemctl disable --now sogod
+/sbin/e-smith/expand-template /etc/httpd/conf.d/zzz_SOGo.conf
+# Restart httpd
 httpd -k graceful
 
 # Commit Webtop migration
@@ -80,9 +85,6 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-# Stop and disable sogod
-/sbin/e-smith/config setprop sogod status disabled
-systemctl disable --now sogod
 
 # Search for Samba or LDAP domain
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
