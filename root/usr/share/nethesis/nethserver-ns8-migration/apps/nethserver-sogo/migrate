@@ -28,6 +28,9 @@ source "${AGENT_STATE_DIR}"/environment
 cd "${AGENT_STATE_DIR}/nethserver-sogo"
 source bind.env
 
+# Ensure the mail module is defined
+: "${MAIL_INSTANCE_ID:?}"
+
 # Ensure endpoint is defined
 : "${RSYNC_ENDPOINT:?}"
 export RSYNC_PASSWORD
@@ -74,6 +77,10 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
+# Stop and disable sogod
+/sbin/e-smith/config setprop sogod status disabled
+systemctl disable --now sogod
+
 # Search for Samba or LDAP domain
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
 if [ -z "$domain" ]; then
@@ -87,6 +94,7 @@ Dav=$(/sbin/e-smith/config getprop sogod Dav)
 Activesync=$(/sbin/e-smith/config getprop sogod Activesync)
 WOWorkersCount=$(/sbin/e-smith/config getprop sogod WOWorkersCount)
 MailAuxiliaryUserAccountsEnabled=$([ $(/sbin/e-smith/config getprop sogod MailAuxiliaryUserAccountsEnabled) == "YES" ] && echo "true" || echo "false")
+
 # Repeat the configure-module if it fails because mail module is not found
 while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
