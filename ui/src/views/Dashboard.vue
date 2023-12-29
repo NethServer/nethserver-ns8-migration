@@ -421,8 +421,13 @@
                     ></div>
                     <div
                       class="mg-top-10"
+                      v-html="$t('dashboard.roundcube_webtop_migration')"
+                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp"
+                    ></div>
+                    <div
+                      class="mg-top-10"
                       v-html="$t('dashboard.roundcube_webtop_sogo_migration')"
-                      v-if="currentApp.id === 'nethserver-mail'"
+                      v-if="currentApp.id === 'nethserver-mail' && sogoApp"
                     ></div>
                   </div>
                 </template>
