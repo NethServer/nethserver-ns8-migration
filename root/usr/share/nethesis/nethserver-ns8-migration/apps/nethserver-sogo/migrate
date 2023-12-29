@@ -90,8 +90,8 @@ fi
 # we find admin users
 admins=$(/sbin/e-smith/config getprop sogod AdminUsers)
 #We find sogod properties
-Dav=$(/sbin/e-smith/config getprop sogod Dav)
-Activesync=$(/sbin/e-smith/config getprop sogod Activesync)
+Dav=$([ $(/sbin/e-smith/config getprop sogod Dav) == "enabled" ] && echo "true" || echo "false")
+Activesync=$([ $(/sbin/e-smith/config getprop sogod ActiveSync) == "enabled" ] && echo "true" || echo "false")
 WOWorkersCount=$(/sbin/e-smith/config getprop sogod WOWorkersCount)
 MailAuxiliaryUserAccountsEnabled=$([ $(/sbin/e-smith/config getprop sogod MailAuxiliaryUserAccountsEnabled) == "YES" ] && echo "true" || echo "false")
 
