@@ -38,6 +38,9 @@ export RSYNC_PASSWORD
 # Sync mysql sogo DB dump
 rm -vf sogo.sql
 mysqldump --single-transaction --quick --add-drop-table -QB "sogo" -r sogo.sql
+# SOGo strore the protocol of connection of users in the database : mysql://sogo:password@localhost/
+old_password=$(cat /var/lib/nethserver/secrets/sogo)
+sed -i "s|mysql://sogo:$old_password@localhost/|mysql://sogo:Nethesis,1234@127.0.0.1:3306/|g" sogo.sql
 rsync -zi sogo.sql "${RSYNC_ENDPOINT}"/data/state/sogo.sql
 
 if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
