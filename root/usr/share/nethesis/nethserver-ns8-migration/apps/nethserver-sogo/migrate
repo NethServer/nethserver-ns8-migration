@@ -103,10 +103,10 @@ while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     --arg mail_domain "$(hostname -d)" \
     --arg ldap_domain "${domain}" \
     --arg admins "${admins}" \
-    --arg Dav "${Dav}" \
-    --arg Activesync "${Activesync}" \
+    --argjson Dav "${Dav}" \
+    --argjson Activesync "${Activesync}" \
     --arg WOWorkersCount "${WOWorkersCount}" \
-    --arg MailAuxiliaryUserAccountsEnabled "${MailAuxiliaryUserAccountsEnabled}" \
+    --argjson MailAuxiliaryUserAccountsEnabled "${MailAuxiliaryUserAccountsEnabled}" \
     '{
       "host": $hostname,
       "lets_encrypt": false,
