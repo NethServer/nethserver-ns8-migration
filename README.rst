@@ -299,6 +299,7 @@ It is possible to manually re-enable the services with the following commands.
 
   # SOGo
   config delprop sogod migration
+  config setprop sogod status enabled
 
   # Mattermost
   config setprop mattermost status enabled
