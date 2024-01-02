@@ -1,0 +1,22 @@
+{
+    #
+    # 30sogo
+    #
+    $webroot = "/var/lib/nethserver/nethserver-ns8-migration/nethserver-sogo/webroot";
+    $fragment = qq(
+#
+# App nethserver-sogo -- migration
+#
+<Directory "$webroot/">
+   AllowOverride all
+   Require all granted
+</Directory>
+Alias /SOGo $webroot
+);
+
+    if( $DB->get_prop('sogod', 'migration') eq 'finished') {
+        $OUT = $fragment;
+    } else {
+        $OUT = ''
+    }
+}

@@ -70,7 +70,7 @@ Applications
 
 The migration tool can migrate a pre-defined set of NS7 applications (apps):
 
-- nethserver-mail (with nethserver-webtop5, nethserver-roundcubemail)
+- nethserver-mail (with nethserver-webtop5, nethserver-roundcubemail, nethserver-sogo)
 - nethserver-mail-getmail
 - nethserver-nextcloud
 - nethserver-mattermost
@@ -167,8 +167,8 @@ Finish command example ::
 
   MIGRATE_ACTION=finish MATTERMOST_VHOST=mattermost.example.com ./migrate
 
-Email, Webtop, Roundcube migration, POP3/IMAP Connector
--------------------------------------------------------
+Email, Webtop, Roundcube migration, POP3/IMAP Connector, SOGO
+-------------------------------------------------------------
 
 As POP3/IMAP Connector, Webtop and Roundcube depend on the Email application, the
 migration of the four modules must occur at the same time and is
@@ -176,7 +176,7 @@ controlled by the nethserver-mail app.
 
 Bind command example ::
 
-  MODULE_NODE_ID=1 WEBTOP_NODE_ID=1 ROUNDCUBE_NODE_ID=2 GETMAIL_NODE_ID=1 ./bind
+  MODULE_NODE_ID=1 WEBTOP_NODE_ID=1 ROUNDCUBE_NODE_ID=2 GETMAIL_NODE_ID=1 SOGO_NODE_ID=1 ./bind
 
 Sync command example ::
 
@@ -184,7 +184,11 @@ Sync command example ::
 
 Finish command example ::
 
-  MIGRATE_ACTION=finish WEBTOP_VHOST=webtop.example.com ROUNDCUBE_VHOST=rc.example.com ./migrate
+  MIGRATE_ACTION=finish WEBTOP_VHOST=webtop.example.com ROUNDCUBE_VHOST=rc.example.com SOGO_VHOST=sogo.example.com ./migrate
+
+Just for environment var reference, to finalize nethserver-sogo alone ::
+
+  MIGRATE_ACTION=finish MAIL_INSTANCE_ID=mail1 SOGO_VHOST=sogo.example.com ./migrate
 
 Just for environment var reference, to finalize nethserver-webtop5 alone ::
 
@@ -231,7 +235,7 @@ It accepts the following ``action`` values for each NS7 module: ``start``,
 1. ``start``. Creates one module instance in the NS8 cluster. The local
    NS7 app ``bind`` script is called. Multiple destination modules are
    allowed too: for instance the nethserver-mail app controls the
-   migration of nethserver-webtop5 and nethserver-roundcubemail, if they
+   migration of nethserver-webtop5 and nethserver-roundcubemail, nethserver-sogo if they
    are installed.
 
 2. ``sync``. Synchronizes local app configuration and data with the remote
@@ -292,6 +296,10 @@ It is possible to manually re-enable the services with the following commands.
 
   # Roundcube
   config delprop roundcubemail migration
+
+  # SOGo
+  config delprop sogod migration
+  config setprop sogod status enabled
 
   # Mattermost
   config setprop mattermost status enabled

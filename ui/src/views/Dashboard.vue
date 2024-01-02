@@ -330,7 +330,7 @@
                   <!-- email apps status description -->
                   <span
                     v-if="
-                      [
+                      [ 'nethserver-sogo',
                         'nethserver-roundcubemail',
                         'nethserver-webtop5',
                         'nethserver-mail-getmail'
@@ -422,7 +422,12 @@
                     <div
                       class="mg-top-10"
                       v-html="$t('dashboard.roundcube_webtop_migration')"
-                      v-if="currentApp.id === 'nethserver-mail'"
+                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp"
+                    ></div>
+                    <div
+                      class="mg-top-10"
+                      v-html="$t('dashboard.roundcube_webtop_sogo_migration')"
+                      v-if="currentApp.id === 'nethserver-mail' && sogoApp"
                     ></div>
                   </div>
                 </template>
@@ -472,6 +477,30 @@
                           v-model="roundcubeNode"
                           class="combobox form-control"
                           id="roundcube-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                    <div v-if="sogoApp" class="form-group">
+                      <label
+                        class="col-sm-5 control-label"
+                        for="sogo-node"
+                      >
+                        {{ $t("dashboard.destination_node_for_sogo") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="sogoNode"
+                          class="combobox form-control"
+                          id="sogo-node"
                         >
                           <option
                             v-for="node in clusterNodes"
@@ -728,6 +757,34 @@
                         >
                       </div>
                     </div>
+                    <!-- virtual host for sogo -->
+                    <div
+                      v-if="sogoApp"
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.sogoVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="sogo-virtual-host"
+                      >
+                        {{ $t("dashboard.sogo_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="sogoVirtualHost"
+                          id="sogo-virtual-host"
+                          ref="sogoVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.sogoVirtualHost"
+                          class="help-block"
+                          >{{ error.sogoVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
                     <!-- virtual host for webtop -->
                     <div
                       v-if="webtopApp && !webtopApp.config.props.VirtualHost"
@@ -911,6 +968,7 @@ export default {
       abortApp: null,
       virtualHost: "",
       roundCubeVirtualHost: "",
+      sogoVirtualHost: "",
       webtopVirtualHost: "",
       adIpAddress: "",
       adIpAddresses: [],
@@ -920,6 +978,7 @@ export default {
       emailNode: 1,
       webtopNode: 1,
       roundcubeNode: 1,
+      sogoNode: 1,
       getmailNode: 1,
       validUserDomains: true,
       localDomain: "",
@@ -949,6 +1008,7 @@ export default {
         removePackages: "",
         getClusterStatus: "",
         roundCubeVirtualHost: "",
+        sogoVirtualHost: "",
         webtopVirtualHost: "",
         userDomains: "",
       },
@@ -976,6 +1036,9 @@ export default {
     roundcubeApp() {
       return this.apps.find((app) => app.id === "nethserver-roundcubemail");
     },
+    sogoApp() {
+      return this.apps.find((app) => app.id === "nethserver-sogo");
+    },
     webtopApp() {
       return this.apps.find((app) => app.id === "nethserver-webtop5");
     },
@@ -991,6 +1054,7 @@ export default {
           ![
             "account-provider",
             "nethserver-roundcubemail",
+            "nethserver-sogo",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
             "nethserver-samba",
@@ -1035,8 +1099,10 @@ export default {
       this.virtualHost = "";
       this.adIpAddress = "";
       this.roundCubeVirtualHost = "";
+      this.sogoVirtualHost = "";
       this.webtopVirtualHost = "";
       this.error.roundCubeVirtualHost = "";
+      this.error.sogoVirtualHost = "";
       this.error.webtopVirtualHost = "";
       $("#finish-migration-modal").modal("show");
 
@@ -1089,6 +1155,7 @@ export default {
         // email
 
         this.error.roundCubeVirtualHost = "";
+        this.error.sogoVirtualHost = "";
         this.error.webtopVirtualHost = "";
 
         if (this.roundcubeApp && !this.roundCubeVirtualHost) {
@@ -1098,6 +1165,17 @@ export default {
 
           if (isValidationOk) {
             this.$refs.roundcubeVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.sogoApp && !this.sogoVirtualHost) {
+          this.error.sogoVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.sogoVirtualHost.focus();
             isValidationOk = false;
           }
         }
@@ -1368,6 +1446,11 @@ export default {
           if (this.roundcubeApp) {
             migrationConfig.roundcubeNode = this.roundcubeNode;
           }
+
+          if (this.sogoApp) {
+            migrationConfig.sogoNode = this.sogoNode;
+          }
+
           migrationObj.migrationConfig = migrationConfig;
         } else {
           migrationObj.migrationConfig = {
@@ -1393,6 +1476,11 @@ export default {
           if (this.webtopVirtualHost) {
             migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
           }
+
+          if (this.sogoVirtualHost) {
+            migrationConfig.sogoVirtualHost = this.sogoVirtualHost;
+          }
+
           migrationObj.migrationConfig = migrationConfig;
         } else if (app.id === "account-provider" && app.provider === "ad") {
           migrationObj.migrationConfig = { sambaIpAddress: this.adIpAddress };
@@ -1626,12 +1714,12 @@ export default {
         this.loading.migrationUpdate ||
         app.status == "skipped" ||
         (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
+          ["nethserver-roundcubemail", "nethserver-sogo", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
       );
     },
     isMailChild(app) {
       return (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
+          ["nethserver-roundcubemail", "nethserver-sogo", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
     },
     isAdChild(app) {
       return (app.id == "nethserver-samba")
