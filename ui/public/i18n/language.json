@@ -96,7 +96,7 @@
     "no_skip": "Enable migration",
     "error_on_skip": "There was an error when changing the skip flag.",
     "app_migrated_with_ad": "This app is migrated together with <strong>Local Active Directory</strong> app",
-    "enable_forge": "You must enable the NethForge repository on the NS8 cluster to continue the migration"
+    "enable_forge": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
