@@ -95,7 +95,8 @@
     "status_skipped": "This application will not be migrated",
     "no_skip": "Enable migration",
     "error_on_skip": "There was an error when changing the skip flag.",
-    "app_migrated_with_ad": "This app is migrated together with <strong>Local Active Directory</strong> app"
+    "app_migrated_with_ad": "This app is migrated together with <strong>Local Active Directory</strong> app",
+    "enable_forge_sogo": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
