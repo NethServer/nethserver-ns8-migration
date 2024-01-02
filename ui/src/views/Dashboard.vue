@@ -431,7 +431,7 @@
                     ></div>
                     <div
                       class="mg-top-10"
-                      v-html="$t('dashboard.enable_forge')"
+                      v-html="$t('dashboard.enable_forge_sogo')"
                       v-if="sogoApp"
                     ></div>
                   </div>
