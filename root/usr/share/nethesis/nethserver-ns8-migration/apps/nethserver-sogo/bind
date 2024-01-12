@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2023 Nethesis S.r.l.
 # http://www.nethesis.it - nethserver@nethesis.it
 #
 # This script is part of NethServer.
@@ -22,25 +22,4 @@
 
 set -e
 
-ns8-bind-app nethserver-mail &
-
-if [[ -f /etc/e-smith/db/configuration/defaults/webtop/type ]]; then
-    ns8-bind-app nethserver-webtop5 "${WEBTOP_NODE_ID}" &
-fi
-
-if [[ -f /etc/e-smith/db/configuration/defaults/roundcubemail/type ]]; then
-    ns8-bind-app nethserver-roundcubemail "${ROUNDCUBE_NODE_ID}" &
-fi
-
-if [[ -f /etc/e-smith/db/configuration/defaults/sogod/type ]]; then
-    ns8-bind-app nethserver-sogo "${SOGO_NODE_ID}" &
-fi
-
-# Getmail is not a service
-if [[ -f /etc/e-smith/events/actions/nethserver-getmail-conf ]]; then
-    ns8-bind-app nethserver-mail-getmail "${GETMAIL_NODE_ID}" &
-fi
-
-for pid in $(jobs -p); do
-    wait "${pid}"
-done
+ns8-bind-app nethserver-sogo
