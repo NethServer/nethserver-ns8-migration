@@ -82,6 +82,8 @@
     "roundcube_webtop_sogo_migration": "If <strong>Webmail</strong>, <strong>WebTop</strong> , <strong>SOGo</strong> and/or <strong>POP3/IMAP Connector</strong> are currently installed, they will be migrated too.",
     "roundcube_virtual_host": "Webmail virtual host",
     "webtop_virtual_host": "WebTop virtual host",
+    "nethvoice_virtual_host": "NethVoice virtual host",
+    "cti_virtual_host": "NethVoice CTI virtual host",
     "sogo_virtual_host": "SOGo virtual host",
     "remote_account_provider_no_migration": "Remote account provider doesn't need to be migrated",
     "local_account_provider_migrate_last": "Local account provider must be migrated after all other apps",

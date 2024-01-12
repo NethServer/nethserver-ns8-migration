@@ -494,6 +494,18 @@
                         </select>
                       </div>
                     </div>
+                    <div v-if="nethvoiceApp" class="form-group">
+                      <label
+                        class="col-sm-5 control-label"
+                        for="nethvoice-node"
+                      >
+                        {{ $t("dashboard.destination_node_for_nethvoice") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="nethvoiceNode"
+                          class="combobox form-control"
+                          id="nethvoice-node"
                     <div v-if="sogoApp" class="form-group">
                       <label
                         class="col-sm-5 control-label"
@@ -819,6 +831,61 @@
                       </div>
                     </div>
                   </template>
+                  <template v-if="currentApp.id === 'nethserver-nethvoice14'">
+                    <!-- virtual host for nethvoice and CTI -->
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.nethVoiceVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="nethvoice-virtual-host"
+                      >
+                        {{ $t("dashboard.nethvoice_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="nethVoiceVirtualHost"
+                          id="nethvoice-virtual-host"
+                          ref="nethVoiceVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.nethVoiceVirtualHost"
+                          class="help-block"
+                          >{{ error.nethVoiceVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      :class="[
+                        'form-group',
+                        { 'has-error': error.ctiVirtualHost },
+                      ]"
+                    >
+                      <label
+                        class="col-sm-5 control-label"
+                        for="cti-virtual-host"
+                      >
+                        {{ $t("dashboard.cti_virtual_host") }}
+                      </label>
+                      <div class="col-sm-6">
+                        <input
+                          v-model.trim="ctiVirtualHost"
+                          id="cti-virtual-host"
+                          ref="ctiVirtualHost"
+                          class="form-control"
+                        />
+                        <span
+                          v-if="error.ctiVirtualHost"
+                          class="help-block"
+                          >{{ error.ctiVirtualHost }}</span
+                        >
+                      </div>
+                    </div>
+                  </template>
                 </template>
               </template>
             </div>
@@ -973,6 +1040,8 @@ export default {
       abortApp: null,
       virtualHost: "",
       roundCubeVirtualHost: "",
+      nethVoiceVirtualHost: "",
+      ctiVirtualHost: "",
       sogoVirtualHost: "",
       webtopVirtualHost: "",
       adIpAddress: "",
@@ -1013,6 +1082,8 @@ export default {
         removePackages: "",
         getClusterStatus: "",
         roundCubeVirtualHost: "",
+        nethVoiceVirtualHost: "",
+        ctiVirtualHost: "",
         sogoVirtualHost: "",
         webtopVirtualHost: "",
         userDomains: "",
@@ -1041,6 +1112,8 @@ export default {
     roundcubeApp() {
       return this.apps.find((app) => app.id === "nethserver-roundcubemail");
     },
+    nethvoiceApp() {
+      return this.apps.find((app) => app.id === "nethserver-nethvoice14");
     sogoApp() {
       return this.apps.find((app) => app.id === "nethserver-sogo");
     },
@@ -1059,6 +1132,7 @@ export default {
           ![
             "account-provider",
             "nethserver-roundcubemail",
+            "nethserver-nethvoice14",
             "nethserver-sogo",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
@@ -1104,6 +1178,12 @@ export default {
       this.virtualHost = "";
       this.adIpAddress = "";
       this.roundCubeVirtualHost = "";
+      this.nethVoiceVirtualHost = "",
+      this.ctiVirtualHost = "",
+      this.webtopVirtualHost = "";
+      this.error.roundCubeVirtualHost = "";
+      this.error.nethVoiceVirtualHost = "";
+      this.error.ctiVirtualHost = "";
       this.sogoVirtualHost = "";
       this.webtopVirtualHost = "";
       this.error.roundCubeVirtualHost = "";
@@ -1116,6 +1196,10 @@ export default {
           this.$refs.virtualHost.focus();
         } else if (this.$refs.roundcubeVirtualHost) {
           this.$refs.roundcubeVirtualHost.focus();
+        } else if (this.$refs.nethVoiceVirtualHost) {
+          this.$refs.nethVoiceVirtualHost.focus();
+        } else if (this.$refs.ctiVirtualHost) {
+          this.$refs.ctiVirtualHost.focus();
         }
       });
     },
@@ -1147,6 +1231,8 @@ export default {
           this.$refs.virtualHost.focus();
           isValidationOk = false;
         }
+      } else if (this.currentApp.id === "nethserver-nethvoice14") {
+        // nethvoice
       } else if (this.currentApp.id === "account-provider") {
         // account provider
 
@@ -1160,6 +1246,8 @@ export default {
         // email
 
         this.error.roundCubeVirtualHost = "";
+        this.error.nethVoiceVirtualHost = "";
+        this.error.ctiVirtualHost = "";
         this.error.sogoVirtualHost = "";
         this.error.webtopVirtualHost = "";
 
@@ -1174,12 +1262,26 @@ export default {
           }
         }
 
+        if (this.nethvoiceApp && !this.nethVoiceVirtualHost) {
+          this.error.nethVoiceVirtualHost = this.$t(
         if (this.sogoApp && !this.sogoVirtualHost) {
           this.error.sogoVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
 
           if (isValidationOk) {
+            this.$refs.nethVoiceVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.nethvoiceApp && !this.ctiVirtualHost) {
+          this.error.ctiVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
             this.$refs.sogoVirtualHost.focus();
             isValidationOk = false;
           }
@@ -1452,6 +1554,8 @@ export default {
             migrationConfig.roundcubeNode = this.roundcubeNode;
           }
 
+          if (this.nethvoiceApp) {
+            migrationConfig.nethvoiceNode = this.nethvoiceNode;
           if (this.sogoApp) {
             migrationConfig.sogoNode = this.sogoNode;
           }
@@ -1473,6 +1577,12 @@ export default {
           migrationObj.migrationConfig = {
             virtualHost: this.virtualHost,
           };
+        } else if (app.id === "nethserver-nethvoice14") {
+          let migrationConfig = {
+            nethVoiceVirtualHost: this.nethVoiceVirtualHost,
+            ctiVirtualHost: this.ctiVirtualHost,
+          };
+          migrationObj.migrationConfig = migrationConfig;
         } else if (app.id === "nethserver-mail") {
           let migrationConfig = {
             roundCubeVirtualHost: this.roundCubeVirtualHost,

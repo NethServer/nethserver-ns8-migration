@@ -1,0 +1,148 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2023 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+source /etc/nethserver/agent.env
+source "${AGENT_STATE_DIR}"/agent.env
+source "${AGENT_STATE_DIR}"/environment
+cd "${AGENT_STATE_DIR}/nethserver-nethvoice14"
+source bind.env
+
+# Ensure endpoint is defined
+: "${RSYNC_ENDPOINT:?}"
+export RSYNC_PASSWORD
+
+if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
+    # During the last, "finish" rsync run there must be no changes to
+    # the database: stop the service early.
+    systemctl stop httpd-fpbx
+fi
+
+# Sync custom audio files
+for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -name custom | cut -d/ -f 6); do
+    rsync -trv --owner --group --chown=990:991 -s --delete \
+        /var/lib/asterisk/sounds/${lang}/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/
+done
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
+rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-nethvoice14/etc_exclude \
+    /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-nethvoice14/agi-bin_exclude \
+    /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
+rsync -trv --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
+rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
+rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/spool/asterisk/monitor "${RSYNC_ENDPOINT}"/data/volumes/spool/
+rsync -trvp --owner --group --usermap=48:33 --groupmap=48:33 -s --delete /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/
+
+if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
+    exit 0
+fi
+
+# Create mysql asterisk structure dump
+echo "Dump asterisk database structure"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asterisk > /var/lib/asterisk/10_asterisk_structure.sql
+# Create mysql asterisk data dump
+echo "Dump asterisk database data"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases asterisk > /var/lib/asterisk/60_asterisk_data.sql
+# Create mysql nethcti3 structure dump
+echo "Dump nethcti3 database structure"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases nethcti3 > /var/lib/asterisk/20_nethcti3_structure.sql
+# Create mysql nethcti3 data dump
+echo "Dump nethcti3 database data"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases nethcti3 > /var/lib/asterisk/70_nethcti3_data.sql
+# Create mysql phonebook structure dump
+echo "Dump phonebook database structure"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases phonebook > /var/lib/asterisk/20_phonebook_structure.sql
+# Create mysql phonebook data dump
+echo "Dump phonebook database data"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases phonebook > /var/lib/asterisk/70_phonebook_data.sql
+# Create mysql asteriskcdrdb structure dump
+echo "Dump asteriskcdrdb database structure"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases asteriskcdrdb > /var/lib/asterisk/30_asteriskcdrdb_structure.sql
+# Create mysql asteriskcdrdb data dump
+echo "Dump asteriskcdrdb database data"
+/usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --skip-lock-tables --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
+
+
+# Create astdb dump
+echo "Dump astdb"
+/usr/bin/sqlite3 /var/lib/asterisk/astdb.sqlite3 .dump | grep -v "VALUES('\/SIP\|VALUES('\/RG\|VALUES('\/BLKVM\|VALUES('\/FM\|VALUES('\/dundi\|VALUES('\/\/\|VALUES('\/IAX])\|VALUES('\/CALLTRACE\|ccss\/last_number" > /var/lib/asterisk/astdb.sqlite3.dump
+
+# copy dumps
+rsync -trv --chmod=F644 -s --delete --exclude=80_asteriskcdrdb_data.sql /var/lib/asterisk/*.sql "${RSYNC_ENDPOINT}"/data/state/restore/
+rsync -trv --chmod=F644 -s --delete /var/lib/asterisk/80_asteriskcdrdb_data.sql "${RSYNC_ENDPOINT}"/data/state/restore_background/
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/astdb.sqlite3.dump "${RSYNC_ENDPOINT}"/data/state/restore/
+
+
+# copy cdr data for background restore
+
+# Assert required vars are set
+: "${IMPORT_TASK_ID:?}"
+
+# Terminate the rsync server
+rsync "${RSYNC_ENDPOINT}"/terminate || :
+
+# Wait until the import-module task has completed
+ns8-action --attach wait "${IMPORT_TASK_ID}"
+
+# Search for Samba or LDAP domain
+domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
+if [ -z "$domain" ]; then
+   domain="directory.nh"
+fi
+
+BRAND_NAME=$(/sbin/e-smith/db configuration getprop nethvoice BrandName)
+
+REPORTS_INTERNATIONAL_PREFIX=$(/sbin/e-smith/db configuration getprop nethvoice-report international_prefix)
+
+SUBSCRIPTION_SYSTEMID=$(/sbin/e-smith/db configuration getprop subscription SystemId)
+
+SUBSCRIPTION_SECRET=$(/sbin/e-smith/db configuration getprop subscription Secret)
+
+TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
+
+ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
+    jq -n -c \
+        --arg brand_name "${BRAND_NAME}" \
+        --arg reports_international_prefix "${REPORTS_INTERNATIONAL_PREFIX}" \
+        --arg nethcti_ui_host "${NETHCTI_UI_HOST}" \
+        --arg nethvoice_host "${NETHVOICE_HOST}" \
+        --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
+        --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
+        --arg timezone "${TIMEZONE}" \
+        --arg user_domain "${domain}" \
+        '{
+            "brand_name": $brand_name,
+            "http2https": true,
+            "lets_encrypt": false,
+            "nethcti_ui_host": $nethcti_ui_host,
+            "nethvoice_host": $nethvoice_host,
+            "reports_international_prefix": $reports_international_prefix,
+            "subscription_systemid": $subscription_systemid,
+            "subscription_secret": $subscription_secret,
+            "timezone": $timezone,
+            "user_domain": $user_domain
+        }'
+)"
