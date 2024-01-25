@@ -506,6 +506,18 @@
                           v-model="nethvoiceNode"
                           class="combobox form-control"
                           id="nethvoice-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online"
+                          >
+                            {{ getNodeLabel(node) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
                     <div v-if="sogoApp" class="form-group">
                       <label
                         class="col-sm-5 control-label"
@@ -1114,6 +1126,7 @@ export default {
     },
     nethvoiceApp() {
       return this.apps.find((app) => app.id === "nethserver-nethvoice14");
+    },
     sogoApp() {
       return this.apps.find((app) => app.id === "nethserver-sogo");
     },
@@ -1264,11 +1277,8 @@ export default {
 
         if (this.nethvoiceApp && !this.nethVoiceVirtualHost) {
           this.error.nethVoiceVirtualHost = this.$t(
-        if (this.sogoApp && !this.sogoVirtualHost) {
-          this.error.sogoVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
-
           if (isValidationOk) {
             this.$refs.nethVoiceVirtualHost.focus();
             isValidationOk = false;
@@ -1279,10 +1289,18 @@ export default {
           this.error.ctiVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
-
           if (isValidationOk) {
             this.$refs.ctiVirtualHost.focus();
-            this.$refs.sogoVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.sogoApp && !this.sogoVirtualHost) {
+          this.error.sogoVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
             isValidationOk = false;
           }
         }
@@ -1556,6 +1574,7 @@ export default {
 
           if (this.nethvoiceApp) {
             migrationConfig.nethvoiceNode = this.nethvoiceNode;
+          }
           if (this.sogoApp) {
             migrationConfig.sogoNode = this.sogoNode;
           }
