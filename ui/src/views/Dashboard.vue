@@ -1279,6 +1279,7 @@ export default {
           this.error.nethVoiceVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
+
           if (isValidationOk) {
             this.$refs.nethVoiceVirtualHost.focus();
             isValidationOk = false;
@@ -1289,6 +1290,7 @@ export default {
           this.error.ctiVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
+
           if (isValidationOk) {
             this.$refs.ctiVirtualHost.focus();
             isValidationOk = false;
@@ -1299,8 +1301,9 @@ export default {
           this.error.sogoVirtualHost = this.$t(
             "validation.virtual_host_empty"
           );
+
           if (isValidationOk) {
-            this.$refs.ctiVirtualHost.focus();
+            this.$refs.sogoVirtualHost.focus();
             isValidationOk = false;
           }
         }
