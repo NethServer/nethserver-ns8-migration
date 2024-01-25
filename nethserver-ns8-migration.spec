@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.6
+Version: 1.0.7
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Jan 25 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.7-1
+- Add SOGo to Nethforge 8 - NethServer/dev#6804
+
 * Wed Dec 13 2023 Davide Principi <davide.principi@nethesis.it> - 1.0.6-1
 - Cannot start NS8 migration with external account provider - Bug NethServer/dev#6795
 - Wrong destination node selection in migration tool - Bug NethServer/dev#6792
