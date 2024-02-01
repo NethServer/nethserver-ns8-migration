@@ -123,12 +123,15 @@ SUBSCRIPTION_SECRET=$(/sbin/e-smith/db configuration getprop subscription Secret
 
 TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
 
+PHONEBOOK_DB_PASS=$(cat /var/lib/nethserver/secrets/PhonebookDBPasswd)
+
 ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
         --arg brand_name "${BRAND_NAME}" \
         --arg reports_international_prefix "${REPORTS_INTERNATIONAL_PREFIX}" \
         --arg nethcti_ui_host "${NETHCTI_UI_HOST}" \
         --arg nethvoice_host "${NETHVOICE_HOST}" \
+        --arg phonebook_db_password "${PHONEBOOK_DB_PASS}" \
         --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
         --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
         --arg timezone "${TIMEZONE}" \
@@ -139,6 +142,7 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
             "lets_encrypt": false,
             "nethcti_ui_host": $nethcti_ui_host,
             "nethvoice_host": $nethvoice_host,
+	    "phonebook_db_password": $phonebook_db_password,
             "reports_international_prefix": $reports_international_prefix,
             "subscription_systemid": $subscription_systemid,
             "subscription_secret": $subscription_secret,
