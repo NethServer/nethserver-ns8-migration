@@ -169,7 +169,7 @@ def get_ejabberd_info():
 
 
 def get_webmail_info():
-    if os.path.isfile('/etc/e-smith/db/configuration/defaults/roundcubemail/type'):
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/roundcubemail/type') and os.path.isdir('/var/lib/mysql/roundcubemail'):
         return {
             "id": "nethserver-roundcubemail",
             "name": "Webmail"
