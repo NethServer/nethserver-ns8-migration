@@ -1609,8 +1609,10 @@ export default {
           let migrationConfig = {
             roundCubeVirtualHost: this.roundCubeVirtualHost,
           };
-
-          if (this.webtopVirtualHost) {
+          // if webtop virtualhost is already set, just uset it
+          if (this.webtopApp.config.props.VirtualHost) {
+            migrationConfig.webtopVirtualHost = this.webtopApp.config.props.VirtualHost;
+          } else if (this.webtopVirtualHost) {
             migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
           }
 
