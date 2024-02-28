@@ -353,7 +353,7 @@
                         accountProviderConfig.location === 'remote'
                     "
                   >
-                    {{ $t("dashboard.remote_account_provider_no_migration") }}
+                    {{ $t("dashboard.remote_account_provider") }}
                   </span>
                   <!-- local account provider status description -->
                   <span
