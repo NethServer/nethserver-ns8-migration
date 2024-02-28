@@ -220,11 +220,12 @@
                     accountProviderConfig.location == 'remote' &&
                     app.status == 'not_migrated'
                 "
-                @click="showStartMigrationModal(app)"
-                disabled
+                @click="showLogoutModalRemoteLdap()"
+                :disabled="
+                  loading.migrationUpdate || !canStartAccountProviderMigration"
                 class="btn btn-default"
               >
-                {{ $t("dashboard.start_migration") }}
+                {{ $t("dashboard.finish_migration") }}
               </button>
               <!-- other apps -->
               <template
@@ -1029,6 +1030,54 @@
         </div>
       </div>
     </div>
+    <!-- logout modal remote-account-provider -->
+    <div
+      class="modal"
+      id="logout-modal-remote-account-provider"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.logout_from_ns8_cluster") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <!-- logout allowed -->
+              <div
+                v-html="
+                  $t('dashboard.logout_explanation_remote_account_provider', {
+                    leaderNode: config.leaderNode,
+                  })
+                "
+              ></div>
+            </div>
+            <div class="modal-footer">
+              <template>
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="connectionLogout"
+                >
+                  {{ $t("dashboard.logout") }}
+                </button>
+              </template>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1173,6 +1222,10 @@ export default {
     },
     hideLogoutModal() {
       $("#logout-modal").modal("hide");
+      $("#logout-modal-remote-account-provider").modal("hide");
+    },
+    showLogoutModalRemoteLdap() {
+      $("#logout-modal-remote-account-provider").modal("show");
     },
     showStartMigrationModal(app) {
       this.currentApp = app;
