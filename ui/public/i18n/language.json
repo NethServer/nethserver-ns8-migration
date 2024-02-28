@@ -55,6 +55,7 @@
     "logout": "Logout",
     "logout_from_ns8_cluster": "Logout from NS8 cluster",
     "logout_explanation": "Do you really want to logout from <strong>{leaderNode}</strong>? You will have to start over the migration process",
+    "logout_explanation_remote_account_provider": "You have finished to migrate your applications, the remote account provider cannot be migrated, do you want to logout from <strong>{leaderNode}</strong>?",
     "finish_account_provider_migration_explanation": "The local account provider will be disabled and the cluster connection will be closed",
     "finish_app_migration_explanation": "Migration will be finalized and <strong>{appName} will be stopped and disabled</strong> in NethServer 7.",
     "local_ldap": "Local LDAP",
