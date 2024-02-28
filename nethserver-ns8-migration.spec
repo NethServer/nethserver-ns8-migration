@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.7
+Version: 1.0.8
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Wed Feb 28 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.8-1
+- Roundcubemail and Webtop migration fixes - Bug NethServer/dev#6851
+
 * Mon Feb 19 2024 Stefano Fancello <gentoo.stefano@gmail.com> - 1.0.7-1
 - Add migration for SOGo - NethServer/dev#6804
 - Add migration instructin for NethForge - NethServer/dev#6804
