@@ -1268,6 +1268,18 @@ export default {
             isValidationOk = false;
           }
         }
+
+        if (this.ctiVirtualHost && this.ctiVirtualHost === this.nethVoiceVirtualHost) {
+          this.error.ctiVirtualHost = this.$t(
+            "validation.virtualhost_cannot_be_the_same"
+          );
+
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
       } else if (this.currentApp.id === "account-provider") {
         // account provider
 
