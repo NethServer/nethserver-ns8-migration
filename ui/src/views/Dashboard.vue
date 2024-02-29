@@ -1231,8 +1231,21 @@ export default {
       this.migrationUpdate(this.currentApp, "start");
       this.hideStartMigrationModal();
     },
+    cleanValidationError() {
+      // clean error messages for validation
+      this.error.virtualHost = "";
+      this.error.adIpAddress = "";
+      this.error.roundCubeVirtualHost = "";
+      this.error.nethVoiceVirtualHost = "";
+      this.error.ctiVirtualHost = "";
+      this.error.sogoVirtualHost = "";
+      this.error.webtopVirtualHost = "";
+      this.error.userDomains = "";
+    },
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
+
+      this.cleanValidationError();
 
       if (this.currentApp.id === "nethserver-nextcloud") {
         // nextcloud
