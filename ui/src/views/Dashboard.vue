@@ -1246,6 +1246,28 @@ export default {
         }
       } else if (this.currentApp.id === "nethserver-nethvoice14") {
         // nethvoice
+
+        if (this.nethvoiceApp && !this.nethVoiceVirtualHost) {
+          this.error.nethVoiceVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.nethVoiceVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+
+        if (this.nethvoiceApp && !this.ctiVirtualHost) {
+          this.error.ctiVirtualHost = this.$t(
+            "validation.virtual_host_empty"
+          );
+
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
       } else if (this.currentApp.id === "account-provider") {
         // account provider
 
@@ -1271,28 +1293,6 @@ export default {
 
           if (isValidationOk) {
             this.$refs.roundcubeVirtualHost.focus();
-            isValidationOk = false;
-          }
-        }
-
-        if (this.nethvoiceApp && !this.nethVoiceVirtualHost) {
-          this.error.nethVoiceVirtualHost = this.$t(
-            "validation.virtual_host_empty"
-          );
-
-          if (isValidationOk) {
-            this.$refs.nethVoiceVirtualHost.focus();
-            isValidationOk = false;
-          }
-        }
-
-        if (this.nethvoiceApp && !this.ctiVirtualHost) {
-          this.error.ctiVirtualHost = this.$t(
-            "validation.virtual_host_empty"
-          );
-
-          if (isValidationOk) {
-            this.$refs.ctiVirtualHost.focus();
             isValidationOk = false;
           }
         }
@@ -1575,9 +1575,6 @@ export default {
             migrationConfig.roundcubeNode = this.roundcubeNode;
           }
 
-          if (this.nethvoiceApp) {
-            migrationConfig.nethvoiceNode = this.nethvoiceNode;
-          }
           if (this.sogoApp) {
             migrationConfig.sogoNode = this.sogoNode;
           }
