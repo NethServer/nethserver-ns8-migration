@@ -55,7 +55,7 @@
     "disconnect": "Disconnect",
     "disconnect_from_ns8_cluster": "Disconnect from NS8 cluster",
     "disconnect_explanation": "Do you really want to disconnect from <strong>{leaderNode}</strong>? You will have to start over the migration process",
-    "disconnect_explanation_remote_account_provider": "You have finished to migrate your applications, the remote account provider cannot be migrated, do you want to disconnect from <strong>{leaderNode}</strong>?",
+    "disconnect_explanation_remote_account_provider": "Remote account provider doesn't need to be be migrated. You have completed NethServer 7 migration, now you can disconnect from <strong>{leaderNode}</strong>",
     "finish_account_provider_migration_explanation": "The local account provider will be disabled and the cluster connection will be closed",
     "finish_app_migration_explanation": "Migration will be finalized and <strong>{appName} will be stopped and disabled</strong> in NethServer 7.",
     "local_ldap": "Local LDAP",

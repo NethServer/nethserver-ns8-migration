@@ -1042,7 +1042,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h4 class="modal-title">
-              {{ $t("dashboard.disconnect_from_ns8_cluster") }}
+              {{ $t("dashboard.finish_migration") }}
             </h4>
           </div>
           <form class="form-horizontal">
