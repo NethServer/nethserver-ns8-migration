@@ -105,6 +105,7 @@
     "admin_username_empty": "Admin username is required",
     "admin_password_empty": "Admin password is required",
     "virtual_host_empty": "Virtual host is required",
+    "virtualhost_cannot_be_the_same": "Virtual host cannot be the same",
     "ad_ip_address_empty": "Active Directory IP address is required",
     "admin_password_not_allowed":"The `|` character is not allowed"
   },

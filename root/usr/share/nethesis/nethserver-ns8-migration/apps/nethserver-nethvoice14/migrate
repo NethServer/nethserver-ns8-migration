@@ -142,7 +142,7 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
             "lets_encrypt": false,
             "nethcti_ui_host": $nethcti_ui_host,
             "nethvoice_host": $nethvoice_host,
-	    "phonebook_db_password": $phonebook_db_password,
+            "phonebook_db_password": $phonebook_db_password,
             "reports_international_prefix": $reports_international_prefix,
             "subscription_systemid": $subscription_systemid,
             "subscription_secret": $subscription_secret,
