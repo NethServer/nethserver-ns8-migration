@@ -220,11 +220,12 @@
                     accountProviderConfig.location == 'remote' &&
                     app.status == 'not_migrated'
                 "
-                @click="showStartMigrationModal(app)"
-                disabled
+                @click="showLogoutModalRemoteLdap()"
+                :disabled="
+                  loading.migrationUpdate || !canStartAccountProviderMigration"
                 class="btn btn-default"
               >
-                {{ $t("dashboard.start_migration") }}
+                {{ $t("dashboard.finish_migration") }}
               </button>
               <!-- other apps -->
               <template
@@ -352,7 +353,7 @@
                         accountProviderConfig.location === 'remote'
                     "
                   >
-                    {{ $t("dashboard.remote_account_provider_no_migration") }}
+                    {{ $t("dashboard.remote_account_provider") }}
                   </span>
                   <!-- local account provider status description -->
                   <span
@@ -978,7 +979,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h4 class="modal-title">
-              {{ $t("dashboard.logout_from_ns8_cluster") }}
+              {{ $t("dashboard.disconnect_from_ns8_cluster") }}
             </h4>
           </div>
           <form class="form-horizontal">
@@ -986,13 +987,13 @@
               <!-- logout not allowed -->
               <div
                 v-if="someAppsHaveFinishedMigration"
-                v-html="$t('dashboard.logout_not_allowed_explanation')"
+                v-html="$t('dashboard.disconnect_not_allowed_explanation')"
               ></div>
               <!-- logout allowed -->
               <div
                 v-else
                 v-html="
-                  $t('dashboard.logout_explanation', {
+                  $t('dashboard.disconnect_explanation', {
                     leaderNode: config.leaderNode,
                   })
                 "
@@ -1021,7 +1022,55 @@
                   class="btn btn-primary"
                   @click="connectionLogout"
                 >
-                  {{ $t("dashboard.logout") }}
+                  {{ $t("dashboard.disconnect") }}
+                </button>
+              </template>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- logout modal remote-account-provider -->
+    <div
+      class="modal"
+      id="logout-modal-remote-account-provider"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.finish_migration") }}
+            </h4>
+          </div>
+          <form class="form-horizontal">
+            <div class="modal-body">
+              <!-- logout allowed -->
+              <div
+                v-html="
+                  $t('dashboard.disconnect_explanation_remote_account_provider', {
+                    leaderNode: config.leaderNode,
+                  })
+                "
+              ></div>
+            </div>
+            <div class="modal-footer">
+              <template>
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="hideLogoutModal"
+                >
+                  {{ $t("cancel") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="connectionLogout"
+                >
+                  {{ $t("dashboard.disconnect") }}
                 </button>
               </template>
             </div>
@@ -1173,6 +1222,10 @@ export default {
     },
     hideLogoutModal() {
       $("#logout-modal").modal("hide");
+      $("#logout-modal-remote-account-provider").modal("hide");
+    },
+    showLogoutModalRemoteLdap() {
+      $("#logout-modal-remote-account-provider").modal("show");
     },
     showStartMigrationModal(app) {
       this.currentApp = app;
@@ -1366,9 +1419,9 @@ export default {
       this.error.connectionUpdate = "";
 
       nethserver.notifications.success = this.$i18n.t(
-        "dashboard.logout_successful"
+        "dashboard.disconnect_successful"
       );
-      nethserver.notifications.error = this.$i18n.t("dashboard.logout_failed");
+      nethserver.notifications.error = this.$i18n.t("dashboard.disconnect_failed");
       const context = this;
       nethserver.exec(
         ["nethserver-ns8-migration/connection/update"],
