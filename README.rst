@@ -122,6 +122,14 @@ package or created at runtime by the tool commands: ::
   /var/lib/nethserver/nethserver-ns8-migration/agent.env
   /var/lib/nethserver/nethserver-ns8-migration/environment
 
+Variables defined in the `environment`, that can be sourced as wanted are:
+
+- `NODE_ID`, a number corresponding to the ID of the NS7 node in the NS8
+  cluster; applications should not care about it
+- `ACCOUNT_PROVIDER_EXTERNAL`, empty if the NS7 account provider is local, `1` if it is remote
+- `USER_DOMAIN`, the identifier of the user domain in NS8. It can be empty
+  if NS7 has no account provider at all!
+
 Nextcloud migration
 -------------------
 

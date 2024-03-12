@@ -22,7 +22,9 @@
 
 # clean up remote ns8 state
 source /var/lib/nethserver/nethserver-ns8-migration/environment
-if [[ -n "${USER_DOMAIN}" ]]; then
+if [[ -n "${USER_DOMAIN}" ]] && [[ -z "${ACCOUNT_PROVIDER_EXTERNAL}" ]]; then
+    # Remove the external domain only if the ns8-join procedure created it as a
+    # temporary external domain for the migration
     ns8-action --hidden --detach cluster remove-external-domain $(printf '{"domain":"%s"}' "${USER_DOMAIN}") || :
 fi
 
