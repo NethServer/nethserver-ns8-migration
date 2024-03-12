@@ -32,6 +32,9 @@ source bind.env
 : "${RSYNC_ENDPOINT:?}"
 export RSYNC_PASSWORD
 
+# Ensure a user domain is defined
+: "${USER_DOMAIN:?}"
+
 if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     # During the last, "finish" rsync run there must be no changes to
     # the database: stop the service early.
@@ -107,12 +110,6 @@ rsync "${RSYNC_ENDPOINT}"/terminate || :
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
-# Search for Samba or LDAP domain
-domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
-if [ -z "$domain" ]; then
-   domain="directory.nh"
-fi
-
 BRAND_NAME=$(/sbin/e-smith/db configuration getprop nethvoice BrandName)
 
 REPORTS_INTERNATIONAL_PREFIX=$(/sbin/e-smith/db configuration getprop nethvoice-report international_prefix)
@@ -135,7 +132,7 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
         --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
         --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
         --arg timezone "${TIMEZONE}" \
-        --arg user_domain "${domain}" \
+        --arg user_domain "${USER_DOMAIN}" \
         '{
             "brand_name": $brand_name,
             "http2https": true,

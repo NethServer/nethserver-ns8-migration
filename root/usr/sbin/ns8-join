@@ -184,7 +184,9 @@ if account_provider_config['isAD'] == '1':
         nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
     except:
         pass # Ignore missing nsdc/IpAddress prop
+        account_provider_external = "1"
     else:
+        account_provider_external = ""
         # Push a route to reach NSDC IP address through the cluster VPN
         update_routes_request = {"add": [{"ip_address": nsdc_ip_address, "node_id": ret['node_id']}]}
         update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
@@ -215,6 +217,7 @@ if account_provider_config['isAD'] == '1':
 elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
     # Configure OpenLDAP as account provider of an external user domain:
     account_provider_domain = "directory.nh"
+    account_provider_external = ""
     add_external_domain_request = {
         "domain": account_provider_domain,
         "protocol": "ldap",
@@ -232,6 +235,14 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
     if add_external_domain_response['data']['exit_code'] != 0:
         print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
         sys.exit(1)
+elif account_provider_config['isLdap'] == '1':
+    # Remote LDAP account provider
+    account_provider_domain = account_provider_config["BaseDN"].replace(",dc=", ".").replace("dc=", "")
+    account_provider_external = "1"
+else:
+    account_provider_domain = ""
+    account_provider_external = ""
 
 with open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'a') as fp:
     fp.write(f"USER_DOMAIN={account_provider_domain}\n")
+    fp.write(f"ACCOUNT_PROVIDER_EXTERNAL={account_provider_external}\n")
