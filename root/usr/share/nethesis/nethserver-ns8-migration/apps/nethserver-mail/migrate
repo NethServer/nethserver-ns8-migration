@@ -57,6 +57,7 @@ echo "${USER_DOMAIN:?}" > user_domain.txt
 /sbin/e-smith/config printjson rspamd > rspamd.json
 /sbin/e-smith/config printjson clamd > clamd.json
 /sbin/e-smith/db smarthosts printjson > smarthosts.json
+/sbin/e-smith/db networks printjson > networks.json
 /usr/libexec/nethserver/list-groups | jq keys > groups.json
 /usr/libexec/nethserver/list-users | jq keys > users.json
 
@@ -69,7 +70,7 @@ export RSYNC_PASSWORD
 export MAIL_INSTANCE_ID="${MODULE_INSTANCE_ID}"
 
 # Send configuration files
-rsync -i --remove-source-files user_domain.txt mail_domain.txt {users,groups,domains,accounts,postfix,dovecot,rspamd,clamd,smarthosts}.json "${RSYNC_ENDPOINT}"/data/state/
+rsync -i --remove-source-files user_domain.txt mail_domain.txt {users,groups,domains,accounts,postfix,dovecot,rspamd,clamd,smarthosts,networks}.json "${RSYNC_ENDPOINT}"/data/state/
 
 if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     # During the last, "finish" rsync run there must be no changes to
