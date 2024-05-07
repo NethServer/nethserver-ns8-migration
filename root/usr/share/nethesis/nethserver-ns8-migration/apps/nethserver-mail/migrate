@@ -113,4 +113,18 @@ rsync "${RSYNC_ENDPOINT}"/terminate
 # Wait until the import-module task has completed
 ns8-action --attach wait "${IMPORT_TASK_ID}"
 
+SmartHostStatus=$(/sbin/e-smith/config getprop postfix SmartHostStatus)
+if [[ "${SmartHostStatus}" == "enabled" ]]; then
+    # find the vpn ip address of the mail module
+    host=$(ns8-action --attach cluster get-smarthost | jq -r '.mail_server[] | select(.mail_id == "'$MAIL_INSTANCE_ID'") | .host')
+    ns8-action --attach cluster set-smarthost '{
+    "port": 25,
+    "host": "'${host}'",
+    "username": "",
+    "password": "",
+    "enabled": true,
+    "encrypt_smtp": "none",
+    "tls_verify": false}'
+fi
+
 migrate_deps
