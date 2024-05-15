@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.9
+Version: 1.0.10
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Wed May 15 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.10-1
+- Mail version 1.4 - NethServer/dev#6895 
+
 * Wed Mar 20 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.9-1
 - Mail migration fails with remote ldap account provider - Bug NethServer/dev#6883 
 - Migration of roundcubemail is broken - Bug NethServer/dev#6876
