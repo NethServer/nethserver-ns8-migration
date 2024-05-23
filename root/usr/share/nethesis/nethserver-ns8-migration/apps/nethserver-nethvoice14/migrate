@@ -54,8 +54,9 @@ rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
 # translate local csv path
 TMPPBCONFIG=$(mktemp -d)
-find /etc/phonebook/sources.d/ -type f -exec sh -c 'sed "s#\"url\":\"file:\\\/\\\/\\\/var\\\/lib\\\/nethserver\\\/nethvoice\\\/phonebook\\\/uploads\\\/#\"url\":\"file:\\\/\\\/\\\/var\\\/lib\\\/nethvoice\\\/phonebook\\\/uploads\\\/#" {} > "${TMPPBCONFIG}"/"$(basename {})"' \;
-rsync -trv --owner --group --chown=990:991 -s --delete "${TMPPBCONFIG}"/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources/
+cp -a /etc/phonebook/sources.d/* "${TMPPBCONFIG}"
+sed "s#\"url\":\"file:\\\/\\\/\\\/var\\\/lib\\\/nethserver\\\/nethvoice\\\/phonebook\\\/uploads\\\/#\"url\":\"file:\\\/\\\/\\\/var\\\/lib\\\/nethvoice\\\/phonebook\\\/uploads\\\/#" "${TMPPBCONFIG}"/*
+rsync -trcv --owner --group --chown=990:991 -s --delete "${TMPPBCONFIG}"/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources/
 rm -fr "${TMPPBCONFIG}"
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/nethserver/nethvoice/phonebook/uploads/ "${RSYNC_ENDPOINT}"/data/volumes/phonebookcsv/
 rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
