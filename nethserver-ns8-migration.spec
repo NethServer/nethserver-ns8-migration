@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.10
+Version: 1.0.11
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu May 23 2024 Stefano Fancello <gentoo.stefano@gmail.com> - 1.0.11-1
+- phonebook csv upload broken - nethesis/ns8-nethvoice#203
+
 * Wed May 15 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.10-1
 - Mail version 1.4 - NethServer/dev#6895 
 
