@@ -44,7 +44,7 @@ fi
 # Sync custom audio files
 for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -name custom | cut -d/ -f 6); do
     rsync -trv --owner --group --chown=990:991 -s --delete \
-        /var/lib/asterisk/sounds/${lang}/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/${lang}/
+        /var/lib/asterisk/sounds/"${lang}"/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/"${lang}"/
 done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-nethvoice14/etc_exclude \
@@ -52,7 +52,15 @@ rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis
 rsync -trv --owner --group --chown=990:991 -s --exclude-from=/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-nethvoice14/agi-bin_exclude \
     /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
-rsync -trv --owner --group --chown=990:991 -s --delete /etc/phonebook/sources.d/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources
+# translate local csv path
+TMPPBCONFIG=$(mktemp -d)
+/bin/cp -a /etc/phonebook/sources.d/* "${TMPPBCONFIG}"
+if [[ $(find "${TMPPBCONFIG}" -type f | wc -l) > 0 ]]; then
+    sed -i 's#"url":"file:\\\/\\\/\\\/var\\\/lib\\\/nethserver\\\/nethvoice\\\/phonebook\\\/uploads\\\/#"url":"file:\\\/\\\/\\\/var\\\/lib\\\/nethvoice\\\/phonebook\\\/uploads\\\/#' "${TMPPBCONFIG}"/*
+fi
+rsync -trcv --owner --group --chown=990:991 -s --delete "${TMPPBCONFIG}"/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources/
+rm -fr "${TMPPBCONFIG}"
+rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/nethserver/nethvoice/phonebook/uploads/ "${RSYNC_ENDPOINT}"/data/volumes/phonebookcsv/
 rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
 rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/scripts/ "${RSYNC_ENDPOINT}"/data/volumes/scripts/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/spool/asterisk/voicemail "${RSYNC_ENDPOINT}"/data/volumes/spool/
