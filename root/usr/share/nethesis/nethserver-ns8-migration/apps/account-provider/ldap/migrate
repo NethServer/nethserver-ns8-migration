@@ -40,6 +40,11 @@ EOF
     /usr/sbin/slapcat -o ldif-wrap=no -n 2 -l dump-mdb0.ldif
 )
 
+# we need to add displayName attribute to the users copied from gecos
+# the displayName attribute is not present in the dump-mdb0.ldif
+# we need to add it manually
+sed -i '/^gecos: /{h;s/^gecos: \(.*\)/displayName: \1/;G}' dump-mdb0.ldif
+
 # Send import.env
 rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
 
