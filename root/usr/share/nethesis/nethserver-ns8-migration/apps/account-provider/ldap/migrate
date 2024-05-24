@@ -40,6 +40,10 @@ EOF
     /usr/sbin/slapcat -o ldif-wrap=no -n 2 -l dump-mdb0.ldif
 )
 
+# NS8 apps require a displayName attribute is set. Copy gecos attribute
+# value to displayName, assuming it is not already present.
+sed -i '/^gecos: / { h ; s/^gecos:/displayName:/ ; G }' dump-mdb0.ldif
+
 # Send import.env
 rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
 
