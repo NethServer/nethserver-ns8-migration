@@ -157,7 +157,7 @@ except socket.gaierror:
 
 # Save config inside config db
 subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@ns8", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
-subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", args.host, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", leader_epaddress, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
 
 # Save agent environment
 with open('/var/lib/nethserver/nethserver-ns8-migration/agent.env', 'w') as fp:
