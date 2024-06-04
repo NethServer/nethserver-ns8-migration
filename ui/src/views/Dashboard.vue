@@ -40,10 +40,10 @@
     <div
       v-if="
         loading.listApplications ||
-          loading.connectionRead ||
-          loading.migrationRead ||
-          loading.accountProviderInfo ||
-          loading.abortAction
+        loading.connectionRead ||
+        loading.migrationRead ||
+        loading.accountProviderInfo ||
+        loading.abortAction
       "
       class="spinner spinner-lg"
     ></div>
@@ -119,7 +119,7 @@
               >
                 <span
                   :class="[
-                    !isPasswordVisible ? 'fa fa-eye' : 'fa fa-eye-slash',
+                    !isPasswordVisible ? 'fa fa-eye' : 'fa fa-eye-slash'
                   ]"
                 ></span>
               </button>
@@ -166,7 +166,7 @@
           <span
             v-html="
               $t('dashboard.connected_description', {
-                leaderNode: config.leaderNode,
+                leaderNode: config.leaderNode
               })
             "
           ></span>
@@ -202,8 +202,8 @@
               <button
                 v-if="
                   app.id == 'account-provider' &&
-                    accountProviderConfig.location == 'local' &&
-                    app.status == 'not_migrated'
+                  accountProviderConfig.location == 'local' &&
+                  app.status == 'not_migrated'
                 "
                 @click="showStartMigrationModal(app)"
                 :disabled="
@@ -217,12 +217,13 @@
               <button
                 v-else-if="
                   app.id == 'account-provider' &&
-                    accountProviderConfig.location == 'remote' &&
-                    app.status == 'not_migrated'
+                  accountProviderConfig.location == 'remote' &&
+                  app.status == 'not_migrated'
                 "
                 @click="showLogoutModalRemoteLdap()"
                 :disabled="
-                  loading.migrationUpdate || !canStartAccountProviderMigration"
+                  loading.migrationUpdate || !canStartAccountProviderMigration
+                "
                 class="btn btn-default"
               >
                 {{ $t("dashboard.finish_migration") }}
@@ -278,14 +279,18 @@
                 <button
                   @click="showAbortModal(app)"
                   :disabled="loading.migrationUpdate || app.status == 'syncing'"
-                  v-if="!isMailChild(app) && !isAdChild(app) "
+                  v-if="!isMailChild(app) && !isAdChild(app)"
                   class="btn btn-default"
                 >
                   {{ $t("dashboard.abort") }}
                 </button>
               </template>
               <button
-                v-else-if="app.status == 'migrated' && !isMailChild(app) && !isAdChild(app)"
+                v-else-if="
+                  app.status == 'migrated' &&
+                  !isMailChild(app) &&
+                  !isAdChild(app)
+                "
                 disabled
                 class="btn btn-default"
               >
@@ -331,7 +336,8 @@
                   <!-- email apps status description -->
                   <span
                     v-if="
-                      [ 'nethserver-sogo',
+                      [
+                        'nethserver-sogo',
                         'nethserver-roundcubemail',
                         'nethserver-webtop5',
                         'nethserver-mail-getmail'
@@ -342,7 +348,11 @@
                   </span>
                   <!-- samba app status description -->
                   <span
-                    v-else-if="app.id === 'nethserver-samba' && app.status != 'skipped' && app.status != 'not_migratable'"
+                    v-else-if="
+                      app.id === 'nethserver-samba' &&
+                      app.status != 'skipped' &&
+                      app.status != 'not_migratable'
+                    "
                     v-html="$t('dashboard.app_migrated_with_ad')"
                   >
                   </span>
@@ -350,7 +360,7 @@
                   <span
                     v-else-if="
                       app.id === 'account-provider' &&
-                        accountProviderConfig.location === 'remote'
+                      accountProviderConfig.location === 'remote'
                     "
                   >
                     {{ $t("dashboard.remote_account_provider") }}
@@ -359,8 +369,8 @@
                   <span
                     v-else-if="
                       app.id === 'account-provider' &&
-                        accountProviderConfig.location === 'local' &&
-                        !canStartAccountProviderMigration
+                      accountProviderConfig.location === 'local' &&
+                      !canStartAccountProviderMigration
                     "
                   >
                     {{ $t("dashboard.local_account_provider_migrate_last") }}
@@ -416,7 +426,7 @@
                       v-html="
                         $t('dashboard.app_will_be_migrated', {
                           appName: currentApp.name,
-                          leaderNode: config.leaderNode,
+                          leaderNode: config.leaderNode
                         })
                       "
                     ></div>
@@ -520,10 +530,7 @@
                       </div>
                     </div>
                     <div v-if="sogoApp" class="form-group">
-                      <label
-                        class="col-sm-5 control-label"
-                        for="sogo-node"
-                      >
+                      <label class="col-sm-5 control-label" for="sogo-node">
                         {{ $t("dashboard.destination_node_for_sogo") }}
                       </label>
                       <div class="col-sm-6">
@@ -592,7 +599,7 @@
                       <label class="col-sm-5 control-label" for="app-node">
                         {{
                           $t("dashboard.destination_node", {
-                            app: currentApp.name,
+                            app: currentApp.name
                           })
                         }}
                       </label>
@@ -668,8 +675,9 @@
                     </div>
                     <div
                       :class="[
-                        'form-group', 'mg-bottom-20',
-                        { 'has-error': error.adIpAddress },
+                        'form-group',
+                        'mg-bottom-20',
+                        { 'has-error': error.adIpAddress }
                       ]"
                     >
                       <label class="col-sm-5 control-label" for="ad-ip-address">
@@ -720,14 +728,14 @@
                     class="mg-bottom-20"
                     v-html="
                       $t('dashboard.finish_app_migration_explanation', {
-                        appName: currentApp.name,
+                        appName: currentApp.name
                       })
                     "
                   ></div>
                   <template
                     v-if="
                       currentApp.id === 'nethserver-nextcloud' &&
-                        !nextcloudApp.config.props.VirtualHost
+                      !nextcloudApp.config.props.VirtualHost
                     "
                   >
                     <!-- choose a virtual host for Nextcloud -->
@@ -739,7 +747,7 @@
                     <div
                       :class="[
                         'form-group',
-                        { 'has-error': error.virtualHost },
+                        { 'has-error': error.virtualHost }
                       ]"
                     >
                       <label class="col-sm-5 control-label" for="virtual-host">
@@ -764,7 +772,7 @@
                       v-if="roundcubeApp"
                       :class="[
                         'form-group',
-                        { 'has-error': error.roundCubeVirtualHost },
+                        { 'has-error': error.roundCubeVirtualHost }
                       ]"
                     >
                       <label
@@ -792,7 +800,7 @@
                       v-if="sogoApp"
                       :class="[
                         'form-group',
-                        { 'has-error': error.sogoVirtualHost },
+                        { 'has-error': error.sogoVirtualHost }
                       ]"
                     >
                       <label
@@ -808,11 +816,9 @@
                           ref="sogoVirtualHost"
                           class="form-control"
                         />
-                        <span
-                          v-if="error.sogoVirtualHost"
-                          class="help-block"
-                          >{{ error.sogoVirtualHost }}</span
-                        >
+                        <span v-if="error.sogoVirtualHost" class="help-block">{{
+                          error.sogoVirtualHost
+                        }}</span>
                       </div>
                     </div>
                     <!-- virtual host for webtop -->
@@ -820,7 +826,7 @@
                       v-if="webtopApp && !webtopApp.config.props.VirtualHost"
                       :class="[
                         'form-group',
-                        { 'has-error': error.webtopVirtualHost },
+                        { 'has-error': error.webtopVirtualHost }
                       ]"
                     >
                       <label
@@ -849,7 +855,7 @@
                     <div
                       :class="[
                         'form-group',
-                        { 'has-error': error.nethVoiceVirtualHost },
+                        { 'has-error': error.nethVoiceVirtualHost }
                       ]"
                     >
                       <label
@@ -875,7 +881,7 @@
                     <div
                       :class="[
                         'form-group',
-                        { 'has-error': error.ctiVirtualHost },
+                        { 'has-error': error.ctiVirtualHost }
                       ]"
                     >
                       <label
@@ -891,11 +897,9 @@
                           ref="ctiVirtualHost"
                           class="form-control"
                         />
-                        <span
-                          v-if="error.ctiVirtualHost"
-                          class="help-block"
-                          >{{ error.ctiVirtualHost }}</span
-                        >
+                        <span v-if="error.ctiVirtualHost" class="help-block">{{
+                          error.ctiVirtualHost
+                        }}</span>
                       </div>
                     </div>
                   </template>
@@ -942,7 +946,7 @@
               <div
                 v-html="
                   $t('dashboard.abort_current_app', {
-                    app: abortApp ? abortApp.name : '',
+                    app: abortApp ? abortApp.name : ''
                   })
                 "
               ></div>
@@ -994,7 +998,7 @@
                 v-else
                 v-html="
                   $t('dashboard.disconnect_explanation', {
-                    leaderNode: config.leaderNode,
+                    leaderNode: config.leaderNode
                   })
                 "
               ></div>
@@ -1050,9 +1054,12 @@
               <!-- logout allowed -->
               <div
                 v-html="
-                  $t('dashboard.disconnect_explanation_remote_account_provider', {
-                    leaderNode: config.leaderNode,
-                  })
+                  $t(
+                    'dashboard.disconnect_explanation_remote_account_provider',
+                    {
+                      leaderNode: config.leaderNode
+                    }
+                  )
                 "
               ></div>
             </div>
@@ -1093,7 +1100,7 @@ export default {
         tlsVerify: false,
         leaderNode: "",
         adminUsername: "",
-        adminPassword: "",
+        adminPassword: ""
       },
       installedApps: [],
       apps: [],
@@ -1147,8 +1154,8 @@ export default {
         ctiVirtualHost: "",
         sogoVirtualHost: "",
         webtopVirtualHost: "",
-        userDomains: "",
-      },
+        userDomains: ""
+      }
     };
   },
   computed: {
@@ -1198,10 +1205,10 @@ export default {
             "nethserver-sogo",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
-            "nethserver-samba",
+            "nethserver-samba"
           ].includes(app.id)
       );
-    },
+    }
   },
   mounted() {
     this.connectionRead();
@@ -1244,9 +1251,9 @@ export default {
       this.virtualHost = "";
       this.adIpAddress = "";
       this.roundCubeVirtualHost = "";
-      this.nethVoiceVirtualHost = "",
-      this.ctiVirtualHost = "",
-      this.webtopVirtualHost = "";
+      (this.nethVoiceVirtualHost = ""),
+        (this.ctiVirtualHost = ""),
+        (this.webtopVirtualHost = "");
       this.error.roundCubeVirtualHost = "";
       this.error.nethVoiceVirtualHost = "";
       this.error.ctiVirtualHost = "";
@@ -1325,9 +1332,7 @@ export default {
         }
 
         if (this.nethvoiceApp && !this.ctiVirtualHost) {
-          this.error.ctiVirtualHost = this.$t(
-            "validation.virtual_host_empty"
-          );
+          this.error.ctiVirtualHost = this.$t("validation.virtual_host_empty");
 
           if (isValidationOk) {
             this.$refs.ctiVirtualHost.focus();
@@ -1335,7 +1340,10 @@ export default {
           }
         }
 
-        if (this.ctiVirtualHost && this.ctiVirtualHost === this.nethVoiceVirtualHost) {
+        if (
+          this.ctiVirtualHost &&
+          this.ctiVirtualHost === this.nethVoiceVirtualHost
+        ) {
           this.error.ctiVirtualHost = this.$t(
             "validation.virtualhost_cannot_be_the_same"
           );
@@ -1345,7 +1353,6 @@ export default {
             isValidationOk = false;
           }
         }
-
       } else if (this.currentApp.id === "account-provider") {
         // account provider
 
@@ -1376,9 +1383,7 @@ export default {
         }
 
         if (this.sogoApp && !this.sogoVirtualHost) {
-          this.error.sogoVirtualHost = this.$t(
-            "validation.virtual_host_empty"
-          );
+          this.error.sogoVirtualHost = this.$t("validation.virtual_host_empty");
 
           if (isValidationOk) {
             this.$refs.sogoVirtualHost.focus();
@@ -1421,19 +1426,21 @@ export default {
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.disconnect_successful"
       );
-      nethserver.notifications.error = this.$i18n.t("dashboard.disconnect_failed");
+      nethserver.notifications.error = this.$i18n.t(
+        "dashboard.disconnect_failed"
+      );
       const context = this;
       nethserver.exec(
         ["nethserver-ns8-migration/connection/update"],
         { action: "logout" },
-        function(stream) {
+        function (stream) {
           console.info("ns8-migration-update", stream);
         },
-        function(success) {
+        function (success) {
           context.loading.connectionUpdate = false;
           context.connectionRead();
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t("dashboard.error_logging_out");
           console.error(errorMessage, error);
           context.error.connectionUpdate = errorMessage;
@@ -1449,11 +1456,11 @@ export default {
         ["nethserver-ns8-migration/connection/read"],
         {},
         null,
-        function(success) {
+        function (success) {
           const output = JSON.parse(success);
           context.connectionReadSuccess(output);
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_connection_data"
           );
@@ -1493,7 +1500,7 @@ export default {
         Host: this.config.leaderNode,
         User: this.config.adminUsername,
         Password: this.config.adminPassword,
-        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled",
+        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled"
       };
 
       const context = this;
@@ -1501,7 +1508,7 @@ export default {
         ["nethserver-ns8-migration/connection/validate"],
         validateObj,
         null,
-        function(success) {
+        function (success) {
           try {
             success = JSON.parse(success);
           } catch (e) {
@@ -1509,7 +1516,7 @@ export default {
           }
           context.connectionValidateSuccess(validateObj);
         },
-        function(error, data) {
+        function (error, data) {
           context.connectionValidateError(error, data);
         }
       );
@@ -1545,14 +1552,14 @@ export default {
       nethserver.exec(
         ["nethserver-ns8-migration/connection/update"],
         validateObj,
-        function(stream) {
+        function (stream) {
           console.info("ns8-migration-update", stream);
         },
-        function(success) {
+        function (success) {
           context.loading.connectionUpdate = false;
           context.connectionRead();
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_connecting_to_ns8"
           );
@@ -1569,11 +1576,11 @@ export default {
         ["nethserver-ns8-migration/migration/read"],
         { action: "listApps" },
         null,
-        function(success) {
+        function (success) {
           const output = JSON.parse(success);
           context.migrationReadAppsSuccess(output);
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_apps_to_migrate"
           );
@@ -1632,13 +1639,13 @@ export default {
 
       const migrationObj = {
         app: app.id,
-        action: action,
+        action: action
       };
 
       if (action === "start") {
         if (app.id === "nethserver-mail") {
           let migrationConfig = {
-            emailNode: this.emailNode,
+            emailNode: this.emailNode
           };
 
           if (this.webtopApp) {
@@ -1660,7 +1667,7 @@ export default {
           migrationObj.migrationConfig = migrationConfig;
         } else {
           migrationObj.migrationConfig = {
-            appNode: this.appNode,
+            appNode: this.appNode
           };
         }
       } else if (action === "finish") {
@@ -1672,21 +1679,22 @@ export default {
             this.virtualHost = this.nextcloudApp.config.props.VirtualHost;
           }
           migrationObj.migrationConfig = {
-            virtualHost: this.virtualHost,
+            virtualHost: this.virtualHost
           };
         } else if (app.id === "nethserver-nethvoice14") {
           let migrationConfig = {
             nethVoiceVirtualHost: this.nethVoiceVirtualHost,
-            ctiVirtualHost: this.ctiVirtualHost,
+            ctiVirtualHost: this.ctiVirtualHost
           };
           migrationObj.migrationConfig = migrationConfig;
         } else if (app.id === "nethserver-mail") {
           let migrationConfig = {
-            roundCubeVirtualHost: this.roundCubeVirtualHost,
+            roundCubeVirtualHost: this.roundCubeVirtualHost
           };
           // if webtop virtualhost is already set, just uset it
           if (this.webtopApp && this.webtopApp.config.props.VirtualHost) {
-            migrationConfig.webtopVirtualHost = this.webtopApp.config.props.VirtualHost;
+            migrationConfig.webtopVirtualHost =
+              this.webtopApp.config.props.VirtualHost;
           } else if (this.webtopVirtualHost) {
             migrationConfig.webtopVirtualHost = this.webtopVirtualHost;
           }
@@ -1711,10 +1719,10 @@ export default {
       nethserver.exec(
         ["nethserver-ns8-migration/migration/update"],
         migrationObj,
-        function(stream) {
+        function (stream) {
           console.info("ns8-migration-update", stream);
         },
-        function(success) {
+        function (success) {
           context.loading.migrationUpdate = false;
 
           if (app.id === "account-provider") {
@@ -1725,7 +1733,7 @@ export default {
             context.migrationReadApps();
           }
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_migrating_data"
           );
@@ -1742,14 +1750,14 @@ export default {
       nethserver.exec(
         ["system-apps/read"],
         {
-          action: "list",
+          action: "list"
         },
         null,
-        function(success) {
+        function (success) {
           const output = JSON.parse(success);
           context.listApplicationsSuccess(output);
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_apps"
           );
@@ -1780,15 +1788,15 @@ export default {
         ["nethserver-ns8-migration/migration/update"],
         {
           action: "abort",
-          app: app.id,
+          app: app.id
         },
         null,
-        function(success) {
+        function (success) {
           context.migrationReadApps();
           context.loading.migrationUpdate = false;
           context.loading.abortAction = false;
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t("dashboard.error_on_abort");
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
@@ -1806,14 +1814,14 @@ export default {
         ["nethserver-ns8-migration/migration/update"],
         {
           action: "toggle-skip",
-          app: app.id,
+          app: app.id
         },
         null,
-        function(success) {
+        function (success) {
           context.migrationReadApps();
           context.loading.migrationUpdate = false;
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t("dashboard.error_on_skip");
           console.error(errorMessage, error);
           context.error.migrationUpdate = errorMessage;
@@ -1828,10 +1836,10 @@ export default {
       nethserver.exec(
         ["system-accounts-provider/read"],
         {
-          action: "dump",
+          action: "dump"
         },
         null,
-        function(success) {
+        function (success) {
           success = JSON.parse(success);
           const accountProviderConfig = success;
 
@@ -1856,7 +1864,7 @@ export default {
           context.loading.accountProviderInfo = false;
           context.listApplications();
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_account_provider_info"
           );
@@ -1876,11 +1884,11 @@ export default {
         ["nethserver-ns8-migration/migration/read"],
         { action: "getClusterStatus" },
         null,
-        function(success) {
+        function (success) {
           const output = JSON.parse(success);
           context.migrationReadClusterStatusSuccess(output);
         },
-        function(error) {
+        function (error) {
           const errorMessage = context.$i18n.t(
             "dashboard.error_retrieving_cluster_status"
           );
@@ -1928,17 +1936,29 @@ export default {
         this.loading.migrationUpdate ||
         app.status == "skipped" ||
         (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-sogo", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
+          [
+            "nethserver-roundcubemail",
+            "nethserver-sogo",
+            "nethserver-webtop5",
+            "nethserver-mail-getmail"
+          ].includes(app.id))
       );
     },
     isMailChild(app) {
-      return (this.emailApp &&
-          ["nethserver-roundcubemail", "nethserver-sogo", "nethserver-webtop5", "nethserver-mail-getmail"].includes(app.id))
+      return (
+        this.emailApp &&
+        [
+          "nethserver-roundcubemail",
+          "nethserver-sogo",
+          "nethserver-webtop5",
+          "nethserver-mail-getmail"
+        ].includes(app.id)
+      );
     },
     isAdChild(app) {
-      return (app.id == "nethserver-samba")
+      return app.id == "nethserver-samba";
     }
-  },
+  }
 };
 </script>
 
