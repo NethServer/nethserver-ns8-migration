@@ -163,13 +163,11 @@
       <template v-else>
         <!-- connected to ns8 cluster -->
         <div class="page-description">
-          <span
-            v-html="
-              $t('dashboard.connected_description', {
-                leaderNode: config.leaderNode
-              })
-            "
-          ></span>
+          <span>{{
+            $t("dashboard.connected_description", {
+              leaderNode: config.leaderNode
+            })
+          }}</span>
           <span>
             <a class="disconnect-link" @click="showLogoutModal"
               >{{ $t("dashboard.connect_to_different_cluster") }}
@@ -343,8 +341,7 @@
                         'nethserver-mail-getmail'
                       ].includes(app.id) && app.status != 'skipped'
                     "
-                    v-html="$t('dashboard.app_migrated_with_email')"
-                  >
+                    >{{ $t("dashboard.app_migrated_with_email") }}
                   </span>
                   <!-- samba app status description -->
                   <span
@@ -353,8 +350,7 @@
                       app.status != 'skipped' &&
                       app.status != 'not_migratable'
                     "
-                    v-html="$t('dashboard.app_migrated_with_ad')"
-                  >
+                    >{{ $t("dashboard.app_migrated_with_ad") }}
                   </span>
                   <!-- remote account provider status description -->
                   <span
@@ -376,10 +372,7 @@
                     {{ $t("dashboard.local_account_provider_migrate_last") }}
                   </span>
                   <!-- standard status description -->
-                  <span
-                    v-else
-                    v-html="$t('dashboard.status_' + app.status)"
-                  ></span>
+                  <span v-else>{{ $t("dashboard.status_" + app.status) }}</span>
                 </div>
               </div>
             </div>
@@ -410,41 +403,40 @@
                   {{ error.getClusterStatus }}
                 </div>
                 <template v-if="currentApp.id === 'account-provider'">
-                  <div
-                    class="mg-bottom-20"
-                    v-html="
+                  <div class="mg-bottom-20">
+                    {{
                       $t(
-                        'dashboard.start_account_provider_migration_explanation',
+                        "dashboard.start_account_provider_migration_explanation",
                         { leaderNode: config.leaderNode }
                       )
-                    "
-                  ></div>
+                    }}
+                  </div>
                 </template>
                 <template v-else>
                   <div class="mg-bottom-20">
-                    <div
-                      v-html="
-                        $t('dashboard.app_will_be_migrated', {
+                    <div>
+                      {{
+                        $t("dashboard.app_will_be_migrated", {
                           appName: currentApp.name,
                           leaderNode: config.leaderNode
                         })
-                      "
-                    ></div>
+                      }}
+                    </div>
                     <div
                       class="mg-top-10"
-                      v-html="$t('dashboard.roundcube_webtop_migration')"
                       v-if="currentApp.id === 'nethserver-mail' && !sogoApp"
-                    ></div>
+                    >
+                      {{ $t("dashboard.roundcube_webtop_migration") }}
+                    </div>
                     <div
                       class="mg-top-10"
-                      v-html="$t('dashboard.roundcube_webtop_sogo_migration')"
                       v-if="currentApp.id === 'nethserver-mail' && sogoApp"
-                    ></div>
-                    <div
-                      class="mg-top-10"
-                      v-html="$t('dashboard.enable_forge_sogo')"
-                      v-if="sogoApp"
-                    ></div>
+                    >
+                      {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                    </div>
+                    <div class="mg-top-10" v-if="sogoApp">
+                      {{ $t("dashboard.enable_forge_sogo") }}
+                    </div>
                   </div>
                 </template>
                 <!-- loading nodes -->
@@ -702,36 +694,33 @@
                         }}</span>
                       </div>
                     </div>
-                    <div
-                      class="mg-bottom-20"
-                      v-html="
+                    <div class="mg-bottom-20">
+                      {{
                         $t(
-                          'dashboard.finish_account_provider_migration_explanation'
+                          "dashboard.finish_account_provider_migration_explanation"
                         )
-                      "
-                    ></div>
+                      }}
+                    </div>
                   </template>
                   <template v-else>
                     <!-- LDAP -->
-                    <div
-                      class="mg-bottom-20"
-                      v-html="
+                    <div class="mg-bottom-20">
+                      {{
                         $t(
-                          'dashboard.finish_account_provider_migration_explanation'
+                          "dashboard.finish_account_provider_migration_explanation"
                         )
-                      "
-                    ></div>
+                      }}
+                    </div>
                   </template>
                 </template>
                 <template v-else>
-                  <div
-                    class="mg-bottom-20"
-                    v-html="
-                      $t('dashboard.finish_app_migration_explanation', {
+                  <div class="mg-bottom-20">
+                    {{
+                      $t("dashboard.finish_app_migration_explanation", {
                         appName: currentApp.name
                       })
-                    "
-                  ></div>
+                    }}
+                  </div>
                   <template
                     v-if="
                       currentApp.id === 'nethserver-nextcloud' &&
@@ -943,13 +932,13 @@
           </div>
           <form class="form-horizontal">
             <div class="modal-body">
-              <div
-                v-html="
-                  $t('dashboard.abort_current_app', {
-                    app: abortApp ? abortApp.name : ''
+              <div>
+                {{
+                  $t("dashboard.abort_current_app", {
+                    app: abortApp ? abortApp.name : ""
                   })
-                "
-              ></div>
+                }}
+              </div>
             </div>
             <div class="modal-footer">
               <button
@@ -989,19 +978,17 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <!-- logout not allowed -->
-              <div
-                v-if="someAppsHaveFinishedMigration"
-                v-html="$t('dashboard.disconnect_not_allowed_explanation')"
-              ></div>
+              <div v-if="someAppsHaveFinishedMigration">
+                {{ $t("dashboard.disconnect_not_allowed_explanation") }}
+              </div>
               <!-- logout allowed -->
-              <div
-                v-else
-                v-html="
-                  $t('dashboard.disconnect_explanation', {
+              <div v-else>
+                {{
+                  $t("dashboard.disconnect_explanation", {
                     leaderNode: config.leaderNode
                   })
-                "
-              ></div>
+                }}
+              </div>
             </div>
             <div class="modal-footer">
               <template v-if="someAppsHaveFinishedMigration">
@@ -1052,16 +1039,16 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <!-- logout allowed -->
-              <div
-                v-html="
+              <div>
+                {{
                   $t(
-                    'dashboard.disconnect_explanation_remote_account_provider',
+                    "dashboard.disconnect_explanation_remote_account_provider",
                     {
                       leaderNode: config.leaderNode
                     }
                   )
-                "
-              ></div>
+                }}
+              </div>
             </div>
             <div class="modal-footer">
               <template>
