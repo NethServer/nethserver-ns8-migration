@@ -29,7 +29,8 @@ import json
 import hashlib
 import uuid
 import os
-from urllib import request, parse
+import socket
+from urllib import request, parse, error
 
 def call(api_endpoint, action, token, data, tlsverify):
     # Prepare SSL context
@@ -101,7 +102,12 @@ api_endpoint = f'https://{args.host}/cluster-admin'
 # POST login request
 req = request.Request(f'{api_endpoint}/api/login', data=data)
 req.add_header('Content-Type', 'application/json')
-resp = request.urlopen(req, context=ctx)
+
+try:
+    resp = request.urlopen(req, context=ctx)
+except error.URLError as ex:
+    print("ns8-join:", str(ex), file=sys.stderr)
+    sys.exit(1)
 
 payload = json.loads(resp.read())
 
@@ -139,6 +145,15 @@ if not ret['data']['exit_code'] == 0:
     sys.exit(1)
 
 ret = ret['data']['output']
+
+# Check the leader endpoint can be resolved with DNS:
+leader_epaddress, leader_epport = ret["leader_endpoint"].rsplit(':')
+try:
+    taddr = socket.getaddrinfo(leader_epaddress, leader_epport, socket.AF_INET, socket.SOCK_DGRAM)
+except socket.gaierror:
+    call(api_endpoint, "remove-node", payload['token'], {"node_id": ret['node_id']}, args.tlsverify)
+    print("ns8-join: The cluster VPN endpoint name cannot be resolved. Please check DNS record and resolution of: %s" % (leader_epaddress), file=sys.stderr)
+    sys.exit(2)
 
 # Save config inside config db
 subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@ns8", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
