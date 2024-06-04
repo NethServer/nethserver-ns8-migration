@@ -12,6 +12,7 @@
     <div v-if="error.connectionUpdate" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.connectionUpdate }}
+      <pre v-if="error.rawConnectionUpdateMessage">{{ error.rawConnectionUpdateMessage }}</pre>
     </div>
     <div v-if="error.migrationRead" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
@@ -1124,6 +1125,7 @@ export default {
       error: {
         connectionRead: "",
         connectionUpdate: "",
+        rawConnectionUpdateMessage: "",
         migrationRead: "",
         migrationUpdate: "",
         leaderNode: "",
@@ -1409,6 +1411,7 @@ export default {
     connectionLogout() {
       this.loading.connectionUpdate = true;
       this.error.connectionUpdate = "";
+      this.error.rawConnectionUpdateMessage = "";
 
       nethserver.notifications.success = this.$i18n.t(
         "dashboard.disconnect_successful"
@@ -1481,6 +1484,7 @@ export default {
       this.error.leaderNode = "";
       this.loading.connectionUpdate = true;
       this.error.connectionUpdate = "";
+      this.error.rawConnectionUpdateMessage = "";
 
       var validateObj = {
         action: "login",
@@ -1536,11 +1540,12 @@ export default {
         "dashboard.connection_failed"
       );
       const context = this;
+      var streamMessage = "";
       nethserver.exec(
         ["nethserver-ns8-migration/connection/update"],
         validateObj,
-        function (stream) {
-          console.info("ns8-migration-update", stream);
+        function (message) {
+          streamMessage = message;
         },
         function (success) {
           context.loading.connectionUpdate = false;
@@ -1552,6 +1557,7 @@ export default {
           );
           console.error(errorMessage, error);
           context.error.connectionUpdate = errorMessage;
+          context.error.rawConnectionUpdateMessage = streamMessage;
           context.loading.connectionUpdate = false;
         }
       );
