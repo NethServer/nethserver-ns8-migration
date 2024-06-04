@@ -28,6 +28,7 @@ import argparse
 import json
 import hashlib
 import uuid
+import os
 from urllib import request, parse
 
 def call(api_endpoint, action, token, data, tlsverify):
@@ -108,30 +109,18 @@ payload = json.loads(resp.read())
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
 
-# Prepare arguments for add-node
-priv_key = subprocess.check_output(['cat', '/var/lib/nethserver/secrets/ns8wg']).decode('ASCII').rstrip()
-pub_key = subprocess.check_output(['wg', 'pubkey'], input=priv_key.encode('ASCII')).decode('ASCII').rstrip()
+# Generate a new Wireguard key. If add-node succeedes, but VPN connection
+# fails, we must not reuse the same key to avoid conflicts.
+tmpmask = os.umask(0o077)
+with open('/var/lib/nethserver/secrets/ns8wg', 'w') as wgfp:
+    subprocess.run(['wg', 'genkey'], stdout=wgfp, check=True)
+with open('/var/lib/nethserver/secrets/ns8wg', 'r') as wgfp:
+    pub_key = subprocess.check_output(['wg', 'pubkey'], stdin=wgfp, encoding='UTF-8').rstrip("\n")
+os.umask(tmpmask) ; del tmpmask
 node_pw = str(uuid.uuid4())
 node_pwh = hashlib.sha256(node_pw.encode('ASCII')).hexdigest()
 
-#
-# Ensure we never joined this cluster. If a node with the same public key
-# exists, remove it:
-#
-ret_cstatus = call(api_endpoint, "get-cluster-status", payload['token'], {}, args.tlsverify)
-if not ret_cstatus['code'] == 200:
-    print("Request get-cluster-status has failed: {}".format(ret_cstatus), file=sys.stderr)
-    sys.exit(3)
-
-if not ret_cstatus['data']['exit_code'] == 0:
-    print("Task get-cluster-status has failed: {}".format(ret_cstatus['data']), file=sys.stderr)
-    sys.exit(3)
-
-for onode in ret_cstatus['data']['output']['nodes']:
-    if onode['vpn']['public_key'] == pub_key:
-        # Remove the old node with our public key
-        call(api_endpoint, "remove-node", payload['token'], {"node_id", onode['id']}, args.tlsverify)
-
+# Prepare arguments for add-node
 data = {
     "node_pwh": node_pwh,
     "public_key": pub_key,
