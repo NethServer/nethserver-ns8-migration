@@ -28,7 +28,6 @@ my $event = 'nethserver-ns8-migration-update';
 
 event_actions($event, qw(
     initialize-default-databases 00
-    nethserver-ns8-migration-conf 20
 ));
 
 event_templates($event, qw(

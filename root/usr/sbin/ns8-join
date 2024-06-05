@@ -28,7 +28,9 @@ import argparse
 import json
 import hashlib
 import uuid
-from urllib import request, parse
+import os
+import socket
+from urllib import request, parse, error
 
 def call(api_endpoint, action, token, data, tlsverify):
     # Prepare SSL context
@@ -100,7 +102,12 @@ api_endpoint = f'https://{args.host}/cluster-admin'
 # POST login request
 req = request.Request(f'{api_endpoint}/api/login', data=data)
 req.add_header('Content-Type', 'application/json')
-resp = request.urlopen(req, context=ctx)
+
+try:
+    resp = request.urlopen(req, context=ctx)
+except error.URLError as ex:
+    print("ns8-join:", str(ex), file=sys.stderr)
+    sys.exit(1)
 
 payload = json.loads(resp.read())
 
@@ -108,30 +115,18 @@ payload = json.loads(resp.read())
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
 
-# Prepare arguments for add-node
-priv_key = subprocess.check_output(['cat', '/var/lib/nethserver/secrets/ns8wg']).decode('ASCII').rstrip()
-pub_key = subprocess.check_output(['wg', 'pubkey'], input=priv_key.encode('ASCII')).decode('ASCII').rstrip()
+# Generate a new Wireguard key. If add-node succeedes, but VPN connection
+# fails, we must not reuse the same key to avoid conflicts.
+tmpmask = os.umask(0o077)
+with open('/var/lib/nethserver/secrets/ns8wg', 'w') as wgfp:
+    subprocess.run(['wg', 'genkey'], stdout=wgfp, check=True)
+with open('/var/lib/nethserver/secrets/ns8wg', 'r') as wgfp:
+    pub_key = subprocess.check_output(['wg', 'pubkey'], stdin=wgfp, encoding='UTF-8').rstrip("\n")
+os.umask(tmpmask) ; del tmpmask
 node_pw = str(uuid.uuid4())
 node_pwh = hashlib.sha256(node_pw.encode('ASCII')).hexdigest()
 
-#
-# Ensure we never joined this cluster. If a node with the same public key
-# exists, remove it:
-#
-ret_cstatus = call(api_endpoint, "get-cluster-status", payload['token'], {}, args.tlsverify)
-if not ret_cstatus['code'] == 200:
-    print("Request get-cluster-status has failed: {}".format(ret_cstatus), file=sys.stderr)
-    sys.exit(3)
-
-if not ret_cstatus['data']['exit_code'] == 0:
-    print("Task get-cluster-status has failed: {}".format(ret_cstatus['data']), file=sys.stderr)
-    sys.exit(3)
-
-for onode in ret_cstatus['data']['output']['nodes']:
-    if onode['vpn']['public_key'] == pub_key:
-        # Remove the old node with our public key
-        call(api_endpoint, "remove-node", payload['token'], {"node_id", onode['id']}, args.tlsverify)
-
+# Prepare arguments for add-node
 data = {
     "node_pwh": node_pwh,
     "public_key": pub_key,
@@ -151,9 +146,18 @@ if not ret['data']['exit_code'] == 0:
 
 ret = ret['data']['output']
 
+# Check the leader endpoint can be resolved with DNS:
+leader_epaddress, leader_epport = ret["leader_endpoint"].rsplit(':')
+try:
+    taddr = socket.getaddrinfo(leader_epaddress, leader_epport, socket.AF_INET, socket.SOCK_DGRAM)
+except socket.gaierror:
+    call(api_endpoint, "remove-node", payload['token'], {"node_id": ret['node_id']}, args.tlsverify)
+    print("ns8-join: The cluster VPN endpoint name cannot be resolved. Please check DNS record and resolution of: %s" % (leader_epaddress), file=sys.stderr)
+    sys.exit(2)
+
 # Save config inside config db
 subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@ns8", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
-subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", args.host, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", leader_epaddress, "User", args.username, "Password", args.password, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
 
 # Save agent environment
 with open('/var/lib/nethserver/nethserver-ns8-migration/agent.env', 'w') as fp:
