@@ -30,7 +30,7 @@ source /etc/nethserver/agent.env
 source "${AGENT_STATE_DIR}"/agent.env
 source "${AGENT_STATE_DIR}"/environment
 
-module=$1
+module=${1:?missing module argument}
 cd "${AGENT_STATE_DIR}/${module}"
 source bind.env
 export RSYNC_PASSWORD
