@@ -41,6 +41,21 @@ exit_apierror ()
     error "ApiFailed" "${action} ${app_id} failed"
 }
 
+run_check_import ()
+{
+    local app_id
+    app_id=${1:?}
+    if [[ -x "${app_idir}"/check-import ]]; then
+        # If the app overrides the check-import script, run it. Some
+        # modules like Mail requires it.
+        "${app_idir}"/check-import "${app_id}"
+    else
+        # If the app installation dir has no check-import script,
+        # run the automatic check:
+        /usr/sbin/ns8-check-import "${app_id}"
+    fi
+}
+
 trap exit_apierror ERR
 
 source /etc/nethserver/agent.env
@@ -60,10 +75,10 @@ echo "----------- ${action} ${app_id}" $(date -R) >>/var/log/ns8-migration.log
 if [ "$action" == "start" ]; then
     "${app_idir}/bind" &>>/var/log/ns8-migration.log
 elif [[ "$action" == "sync" ]]; then
-    /usr/sbin/ns8-check-import "${app_id}"
+    run_check_import "${app_id}"
     MIGRATE_ACTION="${action}" flock ${app_sdir}/syncing.lock "${app_idir}/migrate" &>>/var/log/ns8-migration.log
 elif [[ "$action" == "finish" ]]; then
-    /usr/sbin/ns8-check-import "${app_id}"
+    run_check_import "${app_id}"
     MIGRATE_ACTION="${action}" flock ${app_sdir}/syncing.lock "${app_idir}/migrate" &>>/var/log/ns8-migration.log
     touch ${app_sdir}/migrated
     if [[ "${app_id}" == "account-provider" ]]; then
