@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.12
+Version: 1.0.13
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Jun 06 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.13-1
+- Account provider migration fails after NS8 reboot - Bug NethServer/dev#6942
+- Migration tool duplicates Redis keys of node - Bug NethServer/dev#6940
+
 * Thu May 30 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.12-1
 - Nextcloud login fails without displayName LDAP attribute - Bug NethServer/dev#6930
 
