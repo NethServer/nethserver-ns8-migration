@@ -61,7 +61,7 @@ if [[ $(find /etc/phonebook/sources.d -type f | wc -l) > 0 ]]; then
 fi
 rsync -trcv --owner --group --chown=990:991 -s --delete "${TMPPBCONFIG}"/ "${RSYNC_ENDPOINT}"/data/volumes/pbooksources/
 rm -fr "${TMPPBCONFIG}"
-rsync -trv --owner --group --chown=990:991 -s --delete --exclude-from=/usr/share/nethesis/nethserver-ns8-migration/apps/nethserver-nethvoice14/customer_card_exclude \
+rsync -trv --owner --group --chown=990:991 -s --delete --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/customer_card_exclude \
     /var/lib/nethserver/nethcti/templates/customer_card/ "${RSYNC_ENDPOINT}"/data/volumes/customer_card/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/nethserver/nethvoice/phonebook/uploads/ "${RSYNC_ENDPOINT}"/data/volumes/phonebookcsv/
 rsync -trv --owner --group --chown=990:991 -s --delete /usr/share/phonebooks/post_scripts/ "${RSYNC_ENDPOINT}"/data/volumes/post_scripts/
