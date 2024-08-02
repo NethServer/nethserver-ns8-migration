@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.14
+Version: 1.0.15
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Aug 02 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.15-1
+- Migration of Nextcloud 27.1.11 - NethServer/dev#6964
+- A failed connection to OpenLDAP breaks the migration - Bug NethServer/dev#6985
+
 * Mon Jul 15 2024 Stefano Fancello <gentoo.stefano@gmail.com> - 1.0.14-1
 - NethVoice: add nethcti customer card volume - nethesis/ns8-nethvoice#263
 
