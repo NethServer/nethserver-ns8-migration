@@ -46,7 +46,8 @@ if [[ "$action" == "login" ]]; then
     if [ "$?" -gt 0 ]; then
         cat "${tmp_output}" >> /var/log/ns8-migration.log
         # the attribute "steps":-1 triggers the stream interceptor in nethserver.js:exec() function
-        jq -cn --arg msg "$(cat ${tmp_output})" '{"steps":-1,"id":"1717508984","type":"CommandFailed","message": $msg}'
+        # translate some special chars to avoid parse errors:
+        jq -cn --arg msg "$(tr '{}' '()' <${tmp_output})" '{"steps":-1,"id":"1717508984","type":"CommandFailed","message": $msg}'
         echo
         exit 1
     else

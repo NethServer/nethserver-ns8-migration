@@ -170,7 +170,7 @@ with open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'w') as fp
     fp.write(f"NODE_ID={ret['node_id']}\n")
 
 # Start the VPN on device ns8
-subprocess.run(['/sbin/e-smith/signal-event', '-j', 'nethserver-ns8-migration-save'], check=True)
+subprocess.run(['/sbin/e-smith/signal-event', 'nethserver-ns8-migration-save'], check=True)
 
 # Endpoint switch: pass through the VPN
 api_endpoint = f"http://{ret['leader_ip_address']}:9311"
