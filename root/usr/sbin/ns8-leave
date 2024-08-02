@@ -47,3 +47,5 @@ find /var/lib/nethserver/nethserver-ns8-migration -type f -not -name index.html 
 
 # signal event
 /sbin/e-smith/signal-event -j nethserver-ns8-migration-save
+# write log
+echo "=========== Leave cluster" $(date -R) >>/var/log/ns8-migration.log

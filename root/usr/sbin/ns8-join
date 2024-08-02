@@ -216,7 +216,9 @@ if account_provider_config['isAD'] == '1':
         call(api_endpoint, "remove-external-domain", payload['token'], {"domain": account_provider_domain}, False)
         add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
         if add_external_domain_response['data']['exit_code'] != 0:
+            # we need to leave the cluster if the external domain cannot be added
             print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
+            subprocess.run(['/usr/sbin/ns8-leave'])
             sys.exit(1)
 elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
     # Configure OpenLDAP as account provider of an external user domain:
@@ -237,7 +239,9 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
     call(api_endpoint, "remove-external-domain", payload['token'], {"domain": account_provider_domain}, False)
     add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
     if add_external_domain_response['data']['exit_code'] != 0:
+        # we need to leave the cluster if the external domain cannot be added
         print("Task add_external_domain has failed:", add_external_domain_response, file=sys.stderr)
+        subprocess.run(['/usr/sbin/ns8-leave'])
         sys.exit(1)
 elif account_provider_config['isLdap'] == '1':
     # Remote LDAP account provider

@@ -56,7 +56,6 @@ if [[ "$action" == "login" ]]; then
 elif [[ "$action" == "logout" ]]; then
     # disconnect from ns8 cluster
 
-    echo "=========== Leave cluster" $(date -R) >>/var/log/ns8-migration.log
     /usr/sbin/ns8-leave
     if [ $? -gt 0 ]; then
         error "EventFailed" "See /var/log/messages"
