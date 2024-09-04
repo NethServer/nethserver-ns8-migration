@@ -30,6 +30,7 @@ fi
 
 if [[ -n "${NODE_ID}" ]]; then
     ns8-action --detach cluster remove-node $(printf '{"node_id":%d}' "${NODE_ID}") || :
+    ns8-action --detach cluster remove-user '{"user": "ns7admin"}' || :
 fi
 
 # reset DB props
