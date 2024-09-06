@@ -158,6 +158,7 @@ except socket.gaierror:
 # create the ns7admin user password
 ns7admin_pw = str(uuid.uuid4())
 ns7admin_pwh = hashlib.sha256(ns7admin_pw.encode('ASCII')).hexdigest()
+ns7admin_user = "ns7admin"+str(ret['node_id'])
 
 # Create the ns7admin user
 data_ns7admin = {
@@ -169,21 +170,21 @@ data_ns7admin = {
         ],
         "password_hash": ns7admin_pwh,
         "set": {
-            "display_name": "ns7admin"
+            "display_name": ns7admin_user,
         },
-        "user": "ns7admin"
+        "user": ns7admin_user
     }
 
 add_user_response = call(api_endpoint, "add-user", payload['token'], data_ns7admin, False)
 if add_user_response['data']['exit_code'] != 0:
     # we need to leave the cluster if the user ns7admin cannot be added
-    print("Task add_user ns7admin has failed:", add_user_response, file=sys.stderr)
+    print(f"Task add_user {ns7admin_user} has failed:", add_user_response, file=sys.stderr)
     subprocess.run(['/usr/sbin/ns8-leave'])
     sys.exit(1)
 
 # Save config inside config db
 subprocess.run(["/sbin/e-smith/config", "setprop", "wg-quick@ns8", "Address", ret["ip_address"], "RemoteEndpoint", ret["leader_endpoint"], "RemoteKey", ret["leader_public_key"], "RemoteNetwork", ret['network'], "status", "enabled"], check=True)
-subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", leader_epaddress, "User", "ns7admin", "Password", ns7admin_pw, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
+subprocess.run(["/sbin/e-smith/config", "setprop", "ns8", "Host", leader_epaddress, "User", ns7admin_user, "Password", ns7admin_pw, "TLSVerify", "enabled" if args.tlsverify else "disabled", "LeaderIpAddress", ret['leader_ip_address']], check=True)
 
 # Save agent environment
 with open('/var/lib/nethserver/nethserver-ns8-migration/agent.env', 'w') as fp:
