@@ -1722,7 +1722,7 @@ export default {
           if (app.id === "account-provider" && app.installed === true) {
             // account provider is migrated last, api has already performed logout from ns8
             context.connectionRead();
-          } else if ( this.allAppsMigrated ) {
+          } else if ( context.allAppsMigrated ) {
             // log out everything is migrated <e have no account-provider app installed
             context.connectionLogout();
           } else {
