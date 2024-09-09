@@ -1112,6 +1112,7 @@ export default {
       getmailNode: 1,
       validUserDomains: true,
       localDomain: "",
+      allAppsMigrated: false,
       loading: {
         connectionRead: false,
         connectionUpdate: false,
@@ -1718,9 +1719,12 @@ export default {
         function (success) {
           context.loading.migrationUpdate = false;
 
-          if (app.id === "account-provider") {
+          if (app.id === "account-provider" && app.installed === true) {
             // account provider is migrated last, api has already performed logout from ns8
             context.connectionRead();
+          } else if ( this.allAppsMigrated ) {
+            // log out everything is migrated <e have no account-provider app installed
+            context.connectionLogout();
           } else {
             // reload migration status
             context.migrationReadApps();
@@ -1736,6 +1740,16 @@ export default {
           app.status = oldAppStatus;
         }
       );
+    },
+    checkMigrationStatus() {
+      // Call the migrationReadApps method and assign its return value to migrationData
+      const migrationData = this.migrationReadApps();
+      // Check if every app is migrated
+      const allMigrated = migrationData.migration.every(app => app.status === "migrated");
+      // Check if the account-provider app is not installed
+      const accountProviderNotInstalled = migrationData.migration.some(app => app.id === "account-provider" && !app.installed);
+      // Set the variable accordingly
+      this.allAppsMigrated = allMigrated && accountProviderNotInstalled;
     },
     listApplications() {
       const context = this;
