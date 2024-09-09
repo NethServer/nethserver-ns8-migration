@@ -120,7 +120,8 @@ def get_account_provider_info():
     return {
         "id": "account-provider",
         "provider": provider,
-        "ip_addresses": ip_addresses
+        "ip_addresses": ip_addresses,
+        "installed": True if os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type') or os.path.isfile("/etc/e-smith/db/configuration/defaults/slapd/type") else False
     }
 
 
