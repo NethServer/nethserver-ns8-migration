@@ -1744,11 +1744,11 @@ export default {
   checkMigrationStatus() {
     const context = this;
     // Call the migrationReadApps method and assign its return value to migrationData
-    const migrationData = context.migrationReadApps();
+   context.migrationReadApps();
     // Check if every app except account-provider is migrated
-    const allMigratedExceptAccountProvider = migrationData.migration.every(app => app.id === "account-provider" || app.status === "migrated");
+    const allMigratedExceptAccountProvider = this.apps.every(app => app.id === "account-provider" || app.status === "migrated");
     // Check if the account-provider app is not installed
-    const accountProviderNotInstalled = migrationData.migration.some(app => app.id === "account-provider" && !app.installed);
+    const accountProviderNotInstalled = this.apps.some(app => app.id === "account-provider" && !app.installed);
     // Return true if all apps except account-provider are migrated and the account-provider app is not installed
     return allMigratedExceptAccountProvider && accountProviderNotInstalled;
   },
