@@ -1747,6 +1747,7 @@ export default {
    context.migrationReadApps();
    console.log("migrationData", context.migrationReadApps());
     // Check if every app except account-provider is migrated
+    console.log("apps", this.apps);
     const allMigratedExceptAccountProvider = this.apps.every(app => app.id === "account-provider" || app.status === "migrated");
     // Check if the account-provider app is not installed
     const accountProviderNotInstalled = this.apps.some(app => app.id === "account-provider" && !app.installed);
