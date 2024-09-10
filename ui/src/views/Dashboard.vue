@@ -1742,14 +1742,15 @@ export default {
       );
     },
     checkMigrationStatus() {
+      const context = this;
       // Call the migrationReadApps method and assign its return value to migrationData
-      const migrationData = this.migrationReadApps();
+      const migrationData = context.migrationReadApps();
       // Check if every app is migrated
       const allMigrated = migrationData.migration.every(app => app.status === "migrated");
       // Check if the account-provider app is not installed
       const accountProviderNotInstalled = migrationData.migration.some(app => app.id === "account-provider" && !app.installed);
-      // Set the variable accordingly
-      this.allAppsMigrated = allMigrated && accountProviderNotInstalled;
+      // Return true if all apps are migrated and the account-provider app is not installed
+      return allMigrated && accountProviderNotInstalled;
     },
     listApplications() {
       const context = this;
