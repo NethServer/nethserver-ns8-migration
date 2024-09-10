@@ -1162,7 +1162,7 @@ export default {
       return false;
     },
     someAppsHaveFinishedMigration() {
-      return this.apps.some((app) => app.status === "migrated");
+      return this.apps.some((app) => app.status === "migrated") && !this.apps.find((app) => app.id === "account-provider");
     },
     emailApp() {
       return this.apps.find((app) => app.id === "nethserver-mail");
