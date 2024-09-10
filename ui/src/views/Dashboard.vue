@@ -1167,7 +1167,7 @@ export default {
       console.log("account-provide",this.apps.some((app) => app.id === "account-provider"));
       console.log(this.apps.some((app) => app.status === "migrated") && !this.apps.some((app) => app.id === "account-provider"));
 
-      if (this.apps.some((app) => app.id === "account-provider")) {
+      if (this.apps.some((app) => app.id === "account-provider") && this.apps.some((app) => app.status === "migrated")) {
         return true;
       }
       return false;
