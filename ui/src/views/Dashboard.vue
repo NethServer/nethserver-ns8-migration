@@ -1718,7 +1718,7 @@ export default {
         },
         function (success) {
           context.loading.migrationUpdate = false;
-
+          console.log("test allAppsMigrated", context.allAppsMigrated);
           if (app.id === "account-provider" && app.installed === true) {
             // account provider is migrated last, api has already performed logout from ns8
             context.connectionRead();
