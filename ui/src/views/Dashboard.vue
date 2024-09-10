@@ -1162,6 +1162,10 @@ export default {
       return false;
     },
     someAppsHaveFinishedMigration() {
+      console.log(this.apps);
+      console.log("this apps migrated ", this.apps.some((app) => app.status === "migrated"));
+      console.log("account-provide",this.apps.find((app) => app.id === "account-provider"));
+      console.log(this.apps.some((app) => app.status === "migrated") && !this.apps.find((app) => app.id === "account-provider"));
       return this.apps.some((app) => app.status === "migrated") && !this.apps.find((app) => app.id === "account-provider");
     },
     emailApp() {
