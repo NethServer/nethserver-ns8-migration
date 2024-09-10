@@ -1718,11 +1718,11 @@ export default {
         },
         function (success) {
           context.loading.migrationUpdate = false;
-          console.log("test allAppsMigrated", context.allAppsMigrated);
+          console.log("test allAppsMigrated", context.checkMigrationStatus());
           if (app.id === "account-provider" && app.installed === true) {
             // account provider is migrated last, api has already performed logout from ns8
             context.connectionRead();
-          } else if ( context.allAppsMigrated ) {
+          } else if ( context.checkMigrationStatus() ) {
             // log out everything is migrated <e have no account-provider app installed
             context.connectionLogout();
           } else {
