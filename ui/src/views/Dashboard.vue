@@ -1164,9 +1164,9 @@ export default {
     someAppsHaveFinishedMigration() {
       console.log(this.apps);
       console.log("this apps migrated ", this.apps.some((app) => app.status === "migrated"));
-      console.log("account-provide",this.apps.find((app) => app.id === "account-provider"));
-      console.log(this.apps.some((app) => app.status === "migrated") && !this.apps.find((app) => app.id === "account-provider"));
-      return this.apps.some((app) => app.status === "migrated") && !this.apps.find((app) => app.id === "account-provider");
+      console.log("account-provide",this.apps.some((app) => app.id === "account-provider"));
+      console.log(this.apps.some((app) => app.status === "migrated") && !this.apps.some((app) => app.id === "account-provider"));
+      return this.apps.some((app) => app.status === "migrated") && !this.apps.some((app) => app.id === "account-provider");
     },
     emailApp() {
       return this.apps.find((app) => app.id === "nethserver-mail");
