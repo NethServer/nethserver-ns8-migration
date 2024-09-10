@@ -979,7 +979,7 @@
           <form class="form-horizontal">
             <div class="modal-body">
               <!-- logout not allowed -->
-              <div v-if="someAppsHaveFinishedMigration">
+              <div v-if="migrationCannotBeStopped">
                 {{ $t("dashboard.disconnect_not_allowed_explanation") }}
               </div>
               <!-- logout allowed -->
@@ -992,7 +992,7 @@
               </div>
             </div>
             <div class="modal-footer">
-              <template v-if="someAppsHaveFinishedMigration">
+              <template v-if="migrationCannotBeStopped">
                 <button
                   type="button"
                   class="btn btn-primary"
@@ -1160,8 +1160,9 @@ export default {
       }
       return false;
     },
-    someAppsHaveFinishedMigration() {
-      return this.apps.some((app) => app.status === "migrated");
+    migrationCannotBeStopped() {
+      // migration cannot be stopped if account provider is not migrated itself (it is the last apps)
+      return this.apps.some((app) => app.id === "account-provider") && this.apps.some((app) => app.status === "migrated");
     },
     emailApp() {
       return this.apps.find((app) => app.id === "nethserver-mail");
