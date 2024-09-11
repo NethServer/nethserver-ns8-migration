@@ -314,6 +314,10 @@ It is possible to manually re-enable the services with the following commands.
   rm -rf /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_mattermost.conf
   signal-event nethserver-mattermost-update
 
+  # SOGo
+  config setprop sogod status enabled
+  signal-event nethserver-sogo-update
+
   # Nextcloud
   rm -rf /etc/e-smith/templates-custom/etc/httpd/conf.d/zz_nextcloud.conf
   rm -f /etc/e-smith/templates-custom/etc/httpd/conf.d/default-virtualhost.inc/40nextcloud
