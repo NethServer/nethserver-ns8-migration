@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.15
+Version: 1.0.16
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Sep 12 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.16-1
+- mattermost: migration cannot be finished - Bug NethServer/dev#7005
+- Create admin account for NS7 migration - NethServer/dev#6994
+
 * Fri Aug 02 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.15-1
 - Migration of Nextcloud 27.1.11 - NethServer/dev#6964
 - A failed connection to OpenLDAP breaks the migration - Bug NethServer/dev#6985
