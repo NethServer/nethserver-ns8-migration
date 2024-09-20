@@ -103,12 +103,14 @@ while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     --arg hostname "${WEBTOP_VHOST}" \
     --arg mail_domain "$(hostname -d)" \
     --arg mail_module "${MAIL_INSTANCE_ID}" \
+    --arg AdminMail "$(/sbin/e-smith/config getprop webtop-pecbridge AdminMail)" \
     '.props | {
         "hostname": $hostname,
         "mail_module": $mail_module,
         "mail_domain": $mail_domain,
         "timezone": .DefaultTimezone,
         "locale": .DefaultLocale,
+        "pecbridge_admin_mail": $AdminMail,
         "webapp": {
             "debug": (.Debug == "true"),
             "min_memory": (.MinMemory | tonumber),
