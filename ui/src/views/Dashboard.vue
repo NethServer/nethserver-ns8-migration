@@ -1188,10 +1188,10 @@ export default {
         (app) =>
           app.status !== "migrated" &&
           app.status !== "skipped" &&
+          app.status !== "not_available" &&
           ![
             "account-provider",
             "nethserver-roundcubemail",
-            "nethserver-nethvoice14",
             "nethserver-sogo",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
