@@ -1192,7 +1192,6 @@ export default {
           ![
             "account-provider",
             "nethserver-roundcubemail",
-            "nethserver-nethvoice14",
             "nethserver-sogo",
             "nethserver-webtop5",
             "nethserver-mail-getmail",
