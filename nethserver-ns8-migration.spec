@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.16
+Version: 1.0.17
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Tue Oct 08 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.17-1
+- Migration: Unable to complete with disabled applications - Bug NethServer/dev#7037
+- Webtop Pecbridge component - NethServer/dev#6984
+
 * Thu Sep 12 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.0.16-1
 - mattermost: migration cannot be finished - Bug NethServer/dev#7005
 - Create admin account for NS7 migration - NethServer/dev#6994
