@@ -77,6 +77,7 @@
     "destination_node_for_webtop": "Destination node for WebTop",
     "destination_node_for_roundcube": "Destination node for Webmail",
     "destination_node_for_sogo": "Destination node for SOGo",
+    "destination_node_for_getmail": "Destination node for POP3/IMAP Connector",
     "loading_nodes": "Loading nodes",
     "app_migrated_with_email": "This app is migrated together with Email app",
     "roundcube_webtop_migration": "If Webmail, WebTop and/or POP3/IMAP Connector are currently installed, they will be migrated too.",
