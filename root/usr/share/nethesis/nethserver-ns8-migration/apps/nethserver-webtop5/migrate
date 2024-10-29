@@ -99,6 +99,8 @@ ns8-action --attach wait "${IMPORT_TASK_ID}"
 # Repeat the configure-module if it fails because mail module is not found
 while ! ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     /sbin/e-smith/config printjson webtop |
+    jq '.props.ActiveSyncLog |= if . == "EMERGENCY" or . == "ALERT" or . == "CRITICAL" or . == "ERROR" or . == "WARNING" or . == "NOTICE" or . == "INFO" or . == "DEBUG" then . else "ERROR" end' |
+    jq '.props.DavServerLog |= if . == "EMERGENCY" or . == "ALERT" or . == "CRITICAL" or . == "ERROR" or . == "WARNING" or . == "NOTICE" or . == "INFO" or . == "DEBUG" then . else "ERROR" end' |
     jq -c \
     --arg hostname "${WEBTOP_VHOST}" \
     --arg mail_domain "$(hostname -d)" \
