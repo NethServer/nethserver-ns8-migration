@@ -140,6 +140,35 @@
               />
             </div>
           </div>
+          <!-- ldap_userdomain -->
+          <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
+            <div
+              class="page-description"
+            >
+              {{
+                $t("dashboard.ldap_user_domain_description")
+              }}
+            </div>
+          </div>
+          <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
+            <div :class="['form-group', { 'has-error': error.ldapUserDomain }]">
+              <label class="col-sm-2 control-label" for="ldap-userdomain">{{
+                $t("dashboard.ldap_user_domain")
+              }}</label>
+              <div class="col-sm-5">
+                <input
+                  type="text"
+                  v-model="config.ldapUserDomain"
+                  id="ldap-userdomain"
+                  ref="ldapUserDomain"
+                  class="form-control"
+                />
+                <span v-if="error.ldapUserDomain" class="help-block">{{
+                  $t("validation.ldap_user_domain_" + error.ldapUserDomain)
+                }}</span>
+              </div>
+          </div>
+            </div>
           <!-- connect button -->
           <div class="form-group">
             <label class="col-sm-2 control-label">
@@ -1088,8 +1117,10 @@ export default {
         tlsVerify: false,
         leaderNode: "",
         adminUsername: "",
-        adminPassword: ""
+        adminPassword: "",
+        ldapUserDomain: "",
       },
+      isLdapEnabled: false,
       installedApps: [],
       apps: [],
       currentApp: null,
@@ -1143,7 +1174,8 @@ export default {
         ctiVirtualHost: "",
         sogoVirtualHost: "",
         webtopVirtualHost: "",
-        userDomains: ""
+        userDomains: "",
+        ldapUserDomain: "",
       }
     };
   },
@@ -1201,7 +1233,9 @@ export default {
     }
   },
   mounted() {
-    this.connectionRead();
+    // get connection info we need to retrieve the account provider info first
+    // to check if it's local or remote and ldap or ad
+    this.getAccountProviderInfo();
   },
   methods: {
     togglePassword() {
@@ -1442,6 +1476,7 @@ export default {
     },
     connectionRead() {
       const context = this;
+      context.config.ldapUserDomain = "";
       context.loading.connectionRead = true;
       nethserver.exec(
         ["nethserver-ns8-migration/connection/read"],
@@ -1463,15 +1498,16 @@ export default {
     },
     connectionReadSuccess(output) {
       const ns8Config = output.configuration.ns8.props;
+      const slapd = output.configuration.slapd.props;
       this.config.isConnected = ns8Config.Host != "";
       this.config.leaderNode = ns8Config.Host;
       this.config.adminUsername = ns8Config.User;
       this.config.adminPassword = ns8Config.Password;
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
-
+      this.isLdapEnabled = slapd.status === "enabled";
       if (this.config.isConnected) {
-        this.getAccountProviderInfo();
+        this.listApplications();
       } else {
         this.$nextTick(() => {
           this.$refs.leaderNode.focus();
@@ -1482,6 +1518,7 @@ export default {
       this.error.leaderNode = "";
       this.error.adminUsername = "";
       this.error.adminPassword = "";
+      this.error.ldapUserDomain = "";
       this.error.leaderNode = "";
       this.loading.connectionUpdate = true;
       this.error.connectionUpdate = "";
@@ -1492,7 +1529,8 @@ export default {
         Host: this.config.leaderNode,
         User: this.config.adminUsername,
         Password: this.config.adminPassword,
-        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled"
+        TLSVerify: this.config.tlsVerify ? "enabled" : "disabled",
+        LdapUserDomain: this.config.ldapUserDomain
       };
 
       const context = this;
@@ -1530,6 +1568,9 @@ export default {
         } else if (param === "Password") {
           this.error.adminPassword = attr.error;
           this.$refs.adminPassword.focus();
+        } else if (param === "LdapUserDomain") {
+          this.error.ldapUserDomain = attr.error;
+          this.$refs.ldapUserDomain.focus();
         }
       }
     },
@@ -1856,7 +1897,7 @@ export default {
           accountProviderConfig.location = location;
           context.accountProviderConfig = accountProviderConfig;
           context.loading.accountProviderInfo = false;
-          context.listApplications();
+          context.connectionRead();
         },
         function (error) {
           const errorMessage = context.$i18n.t(
