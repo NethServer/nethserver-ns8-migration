@@ -23,16 +23,30 @@
 import sys
 import subprocess
 import simplejson
-
+import os
 
 def get_config():
+    props = {}
+
     # ns8 config
     bash_command = "/sbin/e-smith/config getjson ns8"
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
     ns8_config = simplejson.loads(output)
+    props.update({"ns8": ns8_config})
 
-    return {"ns8": ns8_config}
+    # slapd config
+    if os.path.isfile('/etc/e-smith/db/configuration/defaults/slapd/type'):
+        bash_command = "/sbin/e-smith/config getjson slapd"
+        process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        slapd_config = simplejson.loads(output)
+        props.update({"slapd": slapd_config})
+    else :
+        props.update({"slapd": {}})
+
+    return props
+
 
 
 try:
