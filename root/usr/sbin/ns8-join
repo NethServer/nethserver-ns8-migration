@@ -75,15 +75,13 @@ def call(api_endpoint, action, token, data, tlsverify):
 
     return None
 
-# default value, must be unique per cluster
-ldap_user_domain = 'defaultLdap-' + subprocess.check_output(['/usr/bin/hostname', '-f'], encoding='utf-8').strip()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('host')
 parser.add_argument('username', default="admin")
 parser.add_argument('password', default="Nethesis,1234")
 # user domain used to rename the directory.nh to another baseDN
-parser.add_argument('user_domain', default=ldap_user_domain)
+parser.add_argument('user_domain', default="")
 parser.add_argument('--no-tlsverify', dest='tlsverify', action='store_false', default=True)
 
 args = parser.parse_args()
@@ -253,6 +251,9 @@ if account_provider_config['isAD'] == '1':
             sys.exit(1)
 elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
     # Configure OpenLDAP as account provider of an external user domain: (retrieve the baseDN from the UI, directory.nh is obsoleted)
+    if not args.user_domain:
+        print("ns8-join: user_domain is required for OpenLDAP account provider", file=sys.stderr)
+        sys.exit(1)
     account_provider_domain = args.user_domain.lower()
     account_provider_external = ""
     add_external_domain_request = {
