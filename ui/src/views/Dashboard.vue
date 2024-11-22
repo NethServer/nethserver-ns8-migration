@@ -1530,7 +1530,7 @@ export default {
         User: this.config.adminUsername,
         Password: this.config.adminPassword,
         TLSVerify: this.config.tlsVerify ? "enabled" : "disabled",
-        LdapUserDomain: this.config.ldapUserDomain
+        LdapUserDomain: this.isLdapEnabled ? this.config.ldapUserDomain : "ad.provider.is.used" // dummy value to validate, not used with ad
       };
 
       const context = this;
