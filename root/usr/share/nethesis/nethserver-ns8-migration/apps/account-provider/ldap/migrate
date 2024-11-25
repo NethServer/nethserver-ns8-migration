@@ -53,7 +53,7 @@ sed -i '/^gecos: / { h ; s/^gecos:/displayName:/ ; G }' dump-mdb0.ldif
 # replace dc=directory,dc=nh by ldap_suffix
 sed -i "s/dc=directory,dc=nh/${ldap_suffix}/g" dump-mdb0.ldif
 # replace dc: directory by dc: host
-sed -i "s/dc: directory/dc: $host/" dump-mdb0.ldif 
+sed -i "s/^dc: directory/dc: $host/" dump-mdb0.ldif 
 
 # Send import.env
 rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
