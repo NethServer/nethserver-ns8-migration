@@ -100,7 +100,9 @@
     "no_skip": "Enable migration",
     "error_on_skip": "There was an error when changing the skip flag.",
     "app_migrated_with_ad": "This app is migrated together with Local Active Directory app",
-    "enable_forge_sogo": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings"
+    "enable_forge_sogo": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings",
+    "ldap_user_domain_description": "This machine uses a local OpenLDAP account provider. You must choose a new name for the domain, something like ldap.domain.tld. The name must be unique inside the NethServer 8 cluster",
+    "ldap_user_domain": "LDAP user domain"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
@@ -109,7 +111,9 @@
     "virtual_host_empty": "Virtual host is required",
     "virtualhost_cannot_be_the_same": "Virtual host cannot be the same",
     "ad_ip_address_empty": "Active Directory IP address is required",
-    "admin_password_not_allowed":"The `|` character is not allowed"
+    "admin_password_not_allowed":"The `|` character is not allowed",
+    "ldap_user_domain_empty": "LDAP user domain is required",
+    "ldap_user_domain_invalid": "Invalid LDAP user domain"
   },
   "docs": {},
   "are_you_sure": "Are you sure",

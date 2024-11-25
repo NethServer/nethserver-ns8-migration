@@ -71,7 +71,7 @@ Host=$(/sbin/e-smith/config get DomainName)
 # Search for Samba or LDAP domain
 domain=$(/sbin/e-smith/config getprop sssd Realm | tr '[:upper:]' '[:lower:]')
 if [ -z "$domain" ]; then
-   domain="directory.nh"
+   domain=${USER_DOMAIN:?}
 fi
 
 # we find admin users from jabberadmins group

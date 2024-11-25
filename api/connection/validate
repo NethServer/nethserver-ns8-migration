@@ -22,10 +22,24 @@
 
 import sys
 import simplejson
+import re
 
 
 def invalid_attribute(parameter, error):
     return {"parameter": parameter, "error": error, "value": ""}
+
+def is_valid_fqdn(domain):
+    # Regex breakdown:
+    # - ^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+  # Domain labels
+    # - [a-zA-Z0-9]{2,63}$  # TLD with 2-63 characters
+    fqdn_pattern = r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9]{2,63}$'
+
+    # Check overall domain length
+    if not domain or len(domain) > 255:
+        return False
+
+    # Validate using regex
+    return re.match(fqdn_pattern, domain) is not None
 
 
 input_json = simplejson.load(sys.stdin)
@@ -36,11 +50,13 @@ host_p = 'Host'
 user_p = 'User'
 password_p = 'Password'
 tls_verify_p = 'TLSVerify'
+ldap_user_domain_p = 'LdapUserDomain'
 
 host = ''
 user = ''
 password = ''
 tls_verify = ''
+ldap_user_domain = ''
 
 # action
 
@@ -75,6 +91,16 @@ else:
 
     if tls_verify not in ['enabled', 'disabled']:
         invalid_attributes.append(invalid_attribute(tls_verify_p, "invalid"))
+
+# ldap user domain
+if (ldap_user_domain_p not in input_json) or (not input_json[ldap_user_domain_p]):
+    invalid_attributes.append(invalid_attribute(ldap_user_domain_p, "empty"))
+else:
+    ldap_user_domain = input_json[ldap_user_domain_p]
+
+    # check if the domain is a valid domain
+    if not is_valid_fqdn(ldap_user_domain):
+        invalid_attributes.append(invalid_attribute(ldap_user_domain_p, "invalid"))
 
 # output
 success = len(invalid_attributes) == 0

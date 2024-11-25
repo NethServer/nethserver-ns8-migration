@@ -22,6 +22,13 @@
 
 set -e
 
+fqdn=${USER_DOMAIN:?}
+ldap_suffix=dc=$(echo "$fqdn" | sed 's/\./,dc=/g')
+# Extract the hostname (part before the first dot)
+host=${USER_DOMAIN%%.*}
+# Extract the domain (part after the first dot)
+domain=${USER_DOMAIN#*.}
+
 ldapservice_password=$(< /var/lib/nethserver/secrets/ldapservice)
 (
     umask 077
@@ -32,8 +39,8 @@ ldapservice_password=$(< /var/lib/nethserver/secrets/ldapservice)
     cat - >import.env <<EOF
 LDAP_SVCUSER=ldapservice
 LDAP_SVCPASS=${ldapservice_password}
-LDAP_DOMAIN=directory.nh
-LDAP_SUFFIX=dc=directory,dc=nh
+LDAP_DOMAIN=${fqdn}
+LDAP_SUFFIX=${ldap_suffix}
 EOF
 
     # Generate .ldif data dump
@@ -43,6 +50,10 @@ EOF
 # NS8 apps require a displayName attribute is set. Copy gecos attribute
 # value to displayName, assuming it is not already present.
 sed -i '/^gecos: / { h ; s/^gecos:/displayName:/ ; G }' dump-mdb0.ldif
+# replace dc=directory,dc=nh by ldap_suffix
+sed -i "s/dc=directory,dc=nh/${ldap_suffix}/g" dump-mdb0.ldif
+# replace dc: directory by dc: host
+sed -i "s/^dc: directory/dc: $host/" dump-mdb0.ldif 
 
 # Send import.env
 rsync -i import.env "${RSYNC_ENDPOINT:?}"/data/state/import.env
@@ -58,7 +69,7 @@ if [[ "${MIGRATE_ACTION}" != "finish" ]]; then
 fi
 
 # Remove temporary external user domain
-ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' "directory.nh")" || :
+ns8-action --attach cluster remove-external-domain "$(printf '{"domain":"%s"}' $fqdn)" || :
 
 # Commit DC migration
 rsync -v "${RSYNC_ENDPOINT}"/terminate

@@ -30,6 +30,8 @@ host=$(echo $data | jq -r '.Host')
 user=$(echo $data | jq -r '.User')
 password=$(echo $data | jq -r '.Password')
 tls_verify=$(echo $data | jq -r '.TLSVerify')
+# user domain used to rename the directory.nh to another baseDN
+ldap_user_domain=$(echo $data | jq -r '.LdapUserDomain')
 
 if [[ "$action" == "login" ]]; then
     # execute ns8-join
@@ -38,9 +40,9 @@ if [[ "$action" == "login" ]]; then
     trap 'rm -f $tmp_output' EXIT
     echo "=========== Join cluster" $(date -R) >>/var/log/ns8-migration.log
     if [ "$tls_verify" = "disabled" ]; then
-        /usr/sbin/ns8-join --no-tlsverify "$host" "$user" "$password" &>"${tmp_output}"
+        /usr/sbin/ns8-join --no-tlsverify "$host" "$user" "$password" "$ldap_user_domain" &>"${tmp_output}"
     else
-        /usr/sbin/ns8-join "$host" "$user" "$password" &>"${tmp_output}"
+        /usr/sbin/ns8-join "$host" "$user" "$password" "$ldap_user_domain" &>"${tmp_output}"
     fi
 
     if [ "$?" -gt 0 ]; then
