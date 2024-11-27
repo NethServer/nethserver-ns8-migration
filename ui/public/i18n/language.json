@@ -102,7 +102,12 @@
     "app_migrated_with_ad": "This app is migrated together with Local Active Directory app",
     "enable_forge_sogo": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings",
     "ldap_user_domain_description": "This machine uses a local OpenLDAP account provider. You must choose a new name for the domain, something like ldap.domain.tld. The name must be unique inside the NethServer 8 cluster",
-    "ldap_user_domain": "LDAP user domain"
+    "ldap_user_domain": "LDAP user domain",
+    "error_domain_exists": "The domain '{domain}' already exists in the NS8 cluster. Please choose a different domain name",
+    "error_unauthorized": "Access denied. Please verify your credentials.",
+    "error_certificate_verify_failed": "Certificate verification failed. You can deselect 'TLS validation' to skip this check, if necessary",
+    "error_no_route_to_host": "Connection to NS8 cluster failed. Please check the IP address or the fully qualified domain name",
+    "error_port_connection_error": "Connection to NS8 cluster failed. Please verify that the TCP port is open"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
