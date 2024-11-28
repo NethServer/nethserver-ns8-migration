@@ -9,10 +9,10 @@
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.connectionRead }}
     </div>
-    <div v-if="error.connectionUpdate" class="alert alert-danger">
+    <div v-if="error.connectionUpdate && error.rawConnectionUpdateMessage" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
-      {{ error.connectionUpdate }}
-      <pre v-if="error.rawConnectionUpdateMessage">{{ error.rawConnectionUpdateMessage }}</pre>
+      {{ error.connectionUpdate }}: 
+      {{ error.rawConnectionUpdateMessage }}
     </div>
     <div v-if="error.migrationRead" class="alert alert-danger">
       <span class="pficon pficon-error-circle-o"></span>
@@ -1599,7 +1599,47 @@ export default {
           );
           console.error(errorMessage, error);
           context.error.connectionUpdate = errorMessage;
-          context.error.rawConnectionUpdateMessage = streamMessage;
+          // Extract the 'error' field value from streamMessage
+          const domainExistMatch = streamMessage.match(/domain_exists/i);
+          const unauthorizedMatch = streamMessage.match(/unauthorized/i);
+          const certificateVerifyFailedMatch = streamMessage.match(
+            /certificate_verify_failed/i
+          );
+          const noRouteToHostMatch = streamMessage.match(/No route to host/i);
+          const portConnectionErrorMatch = streamMessage.match(
+            /port_connection_error/i
+          );
+          if (domainExistMatch) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.error_domain_exists", {
+                domain: context.config.ldapUserDomain
+              }
+            );
+            context.$refs.ldapUserDomain.focus();
+          } else if (unauthorizedMatch) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.error_unauthorized"
+            );
+            context.$refs.adminPassword.focus();
+          } else if (certificateVerifyFailedMatch) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.error_certificate_verify_failed"
+            );
+          } else if (noRouteToHostMatch) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.error_no_route_to_host"
+            );
+            context.$refs.leaderNode.focus();
+          } else if (portConnectionErrorMatch) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.error_port_connection_error"
+            );
+            context.$refs.leaderNode.focus();
+          } else {
+            // we do not know the error, show the last line of the error message
+            const lines = streamMessage.split("\n");
+            context.error.rawConnectionUpdateMessage = lines[lines.length - 1];
+          }
           context.loading.connectionUpdate = false;
         }
       );
