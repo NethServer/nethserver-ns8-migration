@@ -1500,10 +1500,12 @@ export default {
     connectionReadSuccess(output) {
       const ns8Config = output.configuration.ns8.props;
       const slapd = output.configuration.slapd.props;
+      const account_provider_proposal = output.configuration.account_provider_proposal;
       this.config.isConnected = ns8Config.Host != "";
       this.config.leaderNode = ns8Config.Host;
       this.config.adminUsername = ns8Config.User;
       this.config.adminPassword = ns8Config.Password;
+      this.config.ldapUserDomain = account_provider_proposal;
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
       this.isLdapEnabled = slapd.status === "enabled";
