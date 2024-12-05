@@ -101,7 +101,7 @@
     "error_on_skip": "There was an error when changing the skip flag.",
     "app_migrated_with_ad": "This app is migrated together with Local Active Directory app",
     "enable_forge_sogo": "To successfully migrate SOGo, ensure NethForge repository is enabled under NS8 Settings",
-    "ldap_user_domain_description": "This machine uses a local OpenLDAP account provider. You must choose a new name for the domain, something like ldap.domain.tld. The name must be unique inside the NethServer 8 cluster",
+    "ldap_user_domain_description": "This machine uses a local OpenLDAP account provider. You must choose a new name for the domain that must be a valid FQDN and unique inside the NethServer 8 cluster. Review the proposed value below.",
     "ldap_user_domain": "LDAP user domain",
     "error_domain_exists": "The domain '{domain}' already exists in the NS8 cluster. Please choose a different domain name",
     "error_unauthorized": "Access denied. Please verify your credentials.",
