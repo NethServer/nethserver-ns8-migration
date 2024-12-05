@@ -58,19 +58,33 @@
           {{ $t("dashboard.connect_description") }}
         </div>
         <form class="form-horizontal" v-on:submit.prevent="connectionValidate">
-            <!-- ldap_userdomain -->
-            <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
-            <div
-              class="alert alert-info alert-dismissable"
-            >
+          <!-- ldap_userdomain -->
+          <div
+            v-if="
+              isLdapEnabled &&
+              accountProviderConfig.location == 'local' &&
+              accountProviderConfig.type == 'ldap'
+            "
+          >
+            <div class="alert alert-info alert-dismissable">
               <span class="pficon pficon-info"></span>
-              {{
-                $t("dashboard.ldap_user_domain_description")
-              }}
+              {{ $t("dashboard.ldap_user_domain_description") }}
             </div>
           </div>
-          <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
-            <div :class="['form-group', { 'has-error': error.ldapUserDomain }, 'mg-bottom-40']">
+          <div
+            v-if="
+              isLdapEnabled &&
+              accountProviderConfig.location == 'local' &&
+              accountProviderConfig.type == 'ldap'
+            "
+          >
+            <div
+              :class="[
+                'form-group',
+                { 'has-error': error.ldapUserDomain },
+                'mg-bottom-40',
+              ]"
+            >
               <label class="col-sm-2 control-label" for="ldap-userdomain">{{
                 $t("dashboard.ldap_user_domain")
               }}</label>
@@ -86,7 +100,7 @@
                   $t("validation.ldap_user_domain_" + error.ldapUserDomain)
                 }}</span>
               </div>
-          </div>
+            </div>
           </div>
           <!-- leader node -->
           <div :class="['form-group', { 'has-error': error.leaderNode }]">
