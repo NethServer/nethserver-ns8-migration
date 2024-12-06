@@ -31,7 +31,11 @@ def get_config():
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
     ns8_config = simplejson.loads(output)
-    props = {"ns8": ns8_config, "slapd": {"props":{"status": "disabled"}}}
+    bash_command = "/sbin/e-smith/config printjson DomainName"
+    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    domain_name = simplejson.loads(output)
+    props = {"ns8": ns8_config,"account_provider_proposal": domain_name['type'], "slapd": {"props":{"status": "disabled"}}}
 
     # slapd config
     if os.path.isfile('/etc/e-smith/db/configuration/defaults/slapd/type'):

@@ -58,19 +58,33 @@
           {{ $t("dashboard.connect_description") }}
         </div>
         <form class="form-horizontal" v-on:submit.prevent="connectionValidate">
-            <!-- ldap_userdomain -->
-            <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
-            <div
-              class="alert alert-info alert-dismissable"
-            >
+          <!-- ldap_userdomain -->
+          <div
+            v-if="
+              isLdapEnabled &&
+              accountProviderConfig.location == 'local' &&
+              accountProviderConfig.type == 'ldap'
+            "
+          >
+            <div class="alert alert-info alert-dismissable">
               <span class="pficon pficon-info"></span>
-              {{
-                $t("dashboard.ldap_user_domain_description")
-              }}
+              {{ $t("dashboard.ldap_user_domain_description") }}
             </div>
           </div>
-          <div v-if="isLdapEnabled && accountProviderConfig.location == 'local' && accountProviderConfig.type == 'ldap'">
-            <div :class="['form-group', { 'has-error': error.ldapUserDomain }, 'mg-bottom-40']">
+          <div
+            v-if="
+              isLdapEnabled &&
+              accountProviderConfig.location == 'local' &&
+              accountProviderConfig.type == 'ldap'
+            "
+          >
+            <div
+              :class="[
+                'form-group',
+                { 'has-error': error.ldapUserDomain },
+                'mg-bottom-40',
+              ]"
+            >
               <label class="col-sm-2 control-label" for="ldap-userdomain">{{
                 $t("dashboard.ldap_user_domain")
               }}</label>
@@ -86,7 +100,7 @@
                   $t("validation.ldap_user_domain_" + error.ldapUserDomain)
                 }}</span>
               </div>
-          </div>
+            </div>
           </div>
           <!-- leader node -->
           <div :class="['form-group', { 'has-error': error.leaderNode }]">
@@ -1500,10 +1514,12 @@ export default {
     connectionReadSuccess(output) {
       const ns8Config = output.configuration.ns8.props;
       const slapd = output.configuration.slapd.props;
+      const account_provider_proposal = output.configuration.account_provider_proposal;
       this.config.isConnected = ns8Config.Host != "";
       this.config.leaderNode = ns8Config.Host;
       this.config.adminUsername = ns8Config.User;
       this.config.adminPassword = ns8Config.Password;
+      this.config.ldapUserDomain = account_provider_proposal;
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
       this.isLdapEnabled = slapd.status === "enabled";
