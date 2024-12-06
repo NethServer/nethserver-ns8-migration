@@ -107,7 +107,7 @@
     "error_unauthorized": "Access denied. Please verify your credentials.",
     "error_certificate_verify_failed": "Certificate verification failed. You can deselect 'TLS validation' to skip this check, if necessary",
     "error_no_route_to_host": "Connection to NS8 cluster failed. Please check the IP address or the fully qualified domain name",
-    "error_port_connection_error": "NS8 cannot connect to the NS7 LDAP service. Ensure that LDAP ports (e.g. 389, 636) are open and accessible from the green zone."
+    "error_port_connection_error": "NS8 cannot connect to the NS7 LDAP service. Ensure that LDAP ports (e.g. 389, 636 of slapd service) are open and accessible from the green zone."
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
