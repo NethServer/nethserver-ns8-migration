@@ -149,7 +149,7 @@ def run_filter():
     cur_schema = set()
     cur_entry = []
     for sline in sys.stdin:
-        if sline == '\n':
+        if not sline or sline == '\n':
             if cur_classes:
                 #
                 # Emit entry
@@ -186,18 +186,18 @@ def run_filter():
             cur_classes.clear()
             cur_schema.clear()
             cur_entry.clear()
-            continue
-        attribute, value = sline.split(':', 1)
-        if attribute == 'objectClass':
-            clname = value.strip()
-            if clname in ns8schema:
-                cur_classes.add(clname)
-                cur_schema.update(ns8schema[clname])
-                cur_entry.append((attribute, value))
-            else:
-                ignored_classes.add(clname)
         else:
-            cur_entry.append((attribute, value))
+            attribute, value = sline.split(':', 1)
+            if attribute == 'objectClass':
+                clname = value.strip()
+                if clname in ns8schema:
+                    cur_classes.add(clname)
+                    cur_schema.update(ns8schema[clname])
+                    cur_entry.append((attribute, value))
+                else:
+                    ignored_classes.add(clname)
+            else:
+                cur_entry.append((attribute, value))
 
     print("ns8fixschema.py3 ignored classes:", repr(ignored_classes), file=sys.stderr)
     print("ns8fixschema.py3 ignored attributes:", repr(ignored_attributes), file=sys.stderr)
