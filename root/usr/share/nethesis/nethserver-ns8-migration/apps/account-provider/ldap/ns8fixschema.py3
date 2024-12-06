@@ -150,7 +150,7 @@ def run_filter():
                 # already present. If gecos is not available, try with cn
                 # or uid.
                 if 'inetOrgPerson' in cur_classes and not _get_attribute(cur_entry, 'displayName'):
-                    displayName = _get_attribute(cur_entry, 'gecos') or _get_attribute('cn') or _get_attribute('uid')
+                    displayName = _get_attribute(cur_entry, 'gecos') or _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'uid')
                     print("displayName: " + displayName)
                 print()
             # Start a new LDIF entry
