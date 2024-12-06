@@ -170,8 +170,8 @@ def run_filter():
         else:
             cur_entry.append((attribute, value))
 
-    print("ns8fixschema.py ignored classes:", repr(ignored_classes), file=sys.stderr)
-    print("ns8fixschema.py ignored attributes:", repr(ignored_attributes), file=sys.stderr)
+    print("ns8fixschema.py3 ignored classes:", repr(ignored_classes), file=sys.stderr)
+    print("ns8fixschema.py3 ignored attributes:", repr(ignored_attributes), file=sys.stderr)
 
 if __name__ == '__main__':
     run_filter()

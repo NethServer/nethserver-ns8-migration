@@ -45,7 +45,7 @@ EOF
 
     # Generate .ldif data dump
     /usr/sbin/slapcat -o ldif-wrap=no -n 2 | \
-        python3 "${AGENT_INSTALL_DIR}"/apps/account-provider/ldap/ns8fixschema.py > dump-mdb0.ldif
+        python3 "${AGENT_INSTALL_DIR}"/apps/account-provider/ldap/ns8fixschema.py3 > dump-mdb0.ldif
 )
 
 # replace dc=directory,dc=nh by ldap_suffix
