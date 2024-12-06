@@ -20,6 +20,7 @@
 
 import sys
 import os
+import datetime
 
 #
 # This dictionary is a summary of the NS8 LDAP schema. Keys are
@@ -133,18 +134,46 @@ def run_filter():
             if ea == atname:
                 return ev.strip()
         return None
+    def _convert_pwd_change_date(epoch_days):
+        # change the date format from the number of days since the Unix
+        # Epoch to LDAP GeneralizedTime format (restricted ISO8601)
+        return datetime.date.fromtimestamp(epoch_days * 86400).strftime('%Y%m%d') + '000000Z'
+    def _has_disabled_password(entry):
+        for ea, ev in entry:
+            if ea == 'userPassword' and ev.startswith(': e0NSWVBUfSE'):
+                # The value starts with "{CRYPT}!" in base64 encoding,
+                # corresponding to a locked password:
+                return True
+        return False
     cur_classes = set()
     cur_schema = set()
     cur_entry = []
     for sline in sys.stdin:
         if sline == '\n':
             if cur_classes:
+                #
                 # Emit entry
+                #
                 for ea, ev in cur_entry:
                     if ea in system_attributes or ea in cur_schema:
                         print(ea + ':' + ev, end='')
                     else:
                         ignored_attributes.add(ea)
+                #
+                # Append additional attributes, specific to NS8 schema
+                #
+                # Convert the last password change timestamp:
+                if 'posixAccount' in cur_classes:
+                    shadow_last_change = _get_attribute(cur_entry, 'shadowLastChange')
+                    if shadow_last_change:
+                        try:
+                            print('pwdChangedTime: ' + _convert_pwd_change_date(int(shadow_last_change)))
+                        except Exception as ex:
+                            print('Failed conversion of shadowLastChange with value %s for user %s. Exception details:' % (ev.strip(), _get_attribute(cur_entry, 'uid')), ex, file=sys.stderr)
+                # A locked password has a "{CRYPT}!" prefix. If set, copy
+                # the information into pwdAccountLockedTime:
+                if 'posixAccount' in cur_classes and _has_disabled_password(cur_entry):
+                    print("pwdAccountLockedTime: 000001010000Z")
                 # NS8 apps require a displayName attribute is set. Copy
                 # gecos attribute value to displayName, if it is not
                 # already present. If gecos is not available, try with cn
