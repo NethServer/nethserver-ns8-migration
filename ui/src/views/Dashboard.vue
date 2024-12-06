@@ -1626,13 +1626,19 @@ export default {
           const portConnectionErrorMatch = streamMessage.match(
             /port_connection_error/i
           );
-          if (domainExistMatch) {
+          if (domainExistMatch && context.isLdapEnabled) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
-              "dashboard.error_domain_exists", {
+              "dashboard.ldap_error_domain_exists", {
                 domain: context.config.ldapUserDomain
               }
             );
-            context.$refs.ldapUserDomain.focus();
+              context.$refs.ldapUserDomain.focus();
+          } else if (domainExistMatch && ! context.isLdapEnabled) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.ad_error_domain_exists", {
+                domain: context.config.ldapUserDomain
+              }
+            );
           } else if (unauthorizedMatch) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
               "dashboard.error_unauthorized"
