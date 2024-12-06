@@ -44,12 +44,10 @@ LDAP_SUFFIX=${ldap_suffix}
 EOF
 
     # Generate .ldif data dump
-    /usr/sbin/slapcat -o ldif-wrap=no -n 2 -l dump-mdb0.ldif
+    /usr/sbin/slapcat -o ldif-wrap=no -n 2 | \
+        python3 "${AGENT_INSTALL_DIR}"/apps/account-provider/ldap/ns8fixschema.py3 > dump-mdb0.ldif
 )
 
-# NS8 apps require a displayName attribute is set. Copy gecos attribute
-# value to displayName, assuming it is not already present.
-sed -i '/^gecos: / { h ; s/^gecos:/displayName:/ ; G }' dump-mdb0.ldif
 # replace dc=directory,dc=nh by ldap_suffix
 sed -i "s/dc=directory,dc=nh/${ldap_suffix}/g" dump-mdb0.ldif
 # replace dc: directory by dc: host
