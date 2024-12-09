@@ -1634,7 +1634,7 @@ export default {
               }
             );
               context.$refs.ldapUserDomain.focus();
-          } else if (domainExistMatch && ! context.isLdapEnabled) {
+          } else if (domainExistMatch && !context.isLdapEnabled) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
               "dashboard.ad_error_domain_exists", {
                 domain: domainValue
