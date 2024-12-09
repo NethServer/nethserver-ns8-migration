@@ -1617,7 +1617,8 @@ export default {
           console.error(errorMessage, error);
           context.error.connectionUpdate = errorMessage;
           // Extract the 'error' field value from streamMessage
-          const domainExistMatch = streamMessage.match(/domain_exists/i);
+          const domainExistMatch = streamMessage.match(/domain_exists value: ([^\s]+)/i);
+          const domainValue = domainExistMatch[1];
           const unauthorizedMatch = streamMessage.match(/unauthorized/i);
           const certificateVerifyFailedMatch = streamMessage.match(
             /certificate_verify_failed/i
@@ -1626,13 +1627,19 @@ export default {
           const portConnectionErrorMatch = streamMessage.match(
             /port_connection_error/i
           );
-          if (domainExistMatch) {
+          if (domainExistMatch && context.isLdapEnabled) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
-              "dashboard.error_domain_exists", {
-                domain: context.config.ldapUserDomain
+              "dashboard.ldap_error_domain_exists", {
+                domain: domainValue
               }
             );
-            context.$refs.ldapUserDomain.focus();
+              context.$refs.ldapUserDomain.focus();
+          } else if (domainExistMatch && !context.isLdapEnabled) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.ad_error_domain_exists", {
+                domain: domainValue
+              }
+            );
           } else if (unauthorizedMatch) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
               "dashboard.error_unauthorized"
