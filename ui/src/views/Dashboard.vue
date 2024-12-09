@@ -1515,7 +1515,10 @@ export default {
       const ns8Config = output.configuration.ns8.props;
       const slapd = output.configuration.slapd.props;
       const account_provider_proposal = output.configuration.account_provider_proposal;
-      this.config.isConnected = ns8Config.Host != "";
+      this.config.isConnected =
+        ns8Config.Host != "" &&
+        ns8Config.User != "" &&
+        ns8Config.Password != "";
       this.config.leaderNode = ns8Config.Host;
       this.config.adminUsername = ns8Config.User;
       this.config.adminPassword = ns8Config.Password;
@@ -1618,7 +1621,7 @@ export default {
           context.error.connectionUpdate = errorMessage;
           // Extract the 'error' field value from streamMessage
           const domainExistMatch = streamMessage.match(/domain_exists value: ([^\s]+)/i);
-          const domainValue = domainExistMatch[1];
+          const domainValue = (domainExistMatch && domainExistMatch[1]) || "";
           const unauthorizedMatch = streamMessage.match(/unauthorized/i);
           const certificateVerifyFailedMatch = streamMessage.match(
             /certificate_verify_failed/i
