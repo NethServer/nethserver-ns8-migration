@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.0.18
+Version: 1.1.0
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,12 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Dec 12 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.1.0-1
+- Migration tool blindly removes external user domain - NethServer/dev#7199
+- NS6 (7) OpenLDAP migration failed - NethServer/dev#7101
+- Rename of directory.nh for multiple migrations - NethServer/dev#7103
+- Updates suspended after failed NS7 migration attempt - NethServer/dev#7192
+
 * Wed Nov 13 2024 Davide Principi <davide.principi@nethesis.it> - 1.0.18-1
 - Joining multiple NS7 systems with the same account provider to NS8 fails - Bug NethServer/dev#7111
 - Webtop NS8 migration validation error - Bug NethServer/dev#7085
