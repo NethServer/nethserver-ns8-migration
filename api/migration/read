@@ -23,6 +23,7 @@
 import sys
 import subprocess
 import simplejson
+import json
 import os
 import fcntl, errno
 
@@ -240,12 +241,42 @@ def list_apps():
     apps.append(get_account_provider_info())
     return apps
 
+# Function to check if 'mail' is installed on a given node
+def is_mail_installed_on_node(module_data, node_id):
+    for module in module_data:
+        if module.get("id") == "mail":
+            for destination in module.get("install_destinations", []):
+                if destination["node_id"] == node_id and destination["instances"] > 0:
+                    return True
+    return False
+
+# Function to check if 'ejabberd' is installed on a given node
+def is_ejabberd_installed_on_node(module_data, node_id):
+    for module in module_data:
+        if module.get("id") == "ejabberd":
+            for destination in module.get("install_destinations", []):
+                if destination["node_id"] == node_id and destination["instances"] > 0:
+                    return True
+    return False
 
 def get_cluster_status():
     bash_command = "/usr/sbin/ns8-action cluster get-cluster-status null"
     process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
-    return simplejson.loads(output)
+
+    output = json.loads(output.decode('utf-8'))
+
+    with open("/var/lib/nethserver/nethserver-ns8-migration/list-modules.json", "r") as file:
+        module_data = json.load(file)
+
+    for node in output["data"]["output"]["nodes"]:
+        node_id = node["id"]
+        mail_installed = is_mail_installed_on_node(module_data, node_id)
+        ejabberd_installed = is_ejabberd_installed_on_node(module_data, node_id)
+        node["mail_installed"] = mail_installed
+        node["ejabberd_installed"] = ejabberd_installed
+
+    return simplejson.loads(json.dumps(output))
 
 def check_user_domains():
     dump = subprocess.Popen(('echo \'{"action": "dump"}\' | /usr/libexec/nethserver/api/system-accounts-provider/read'), stdout=subprocess.PIPE, shell = True)
