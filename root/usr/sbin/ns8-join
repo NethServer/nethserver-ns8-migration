@@ -287,6 +287,15 @@ else:
     account_provider_domain = ""
     account_provider_external = ""
 
+# call list-modules to update the list of modules ans save it as a file
+list_modules_response = call(api_endpoint, "list-modules", payload['token'], None, False)
+if list_modules_response['data']['exit_code'] != 0:
+    print("Task list-modules has failed:", list_modules_response, file=sys.stderr)
+    subprocess.run(['/usr/sbin/ns8-leave']) # leave the cluster, we failed to connect to the external domain
+    sys.exit(1)
+with open('/var/lib/nethserver/nethserver-ns8-migration/list-modules.json', 'w') as fp:
+    json.dump(list_modules_response['data']['output'], fp)
+
 with open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'a') as fp:
     fp.write(f"USER_DOMAIN={account_provider_domain}\n")
     fp.write(f"ACCOUNT_PROVIDER_EXTERNAL={account_provider_external}\n")
