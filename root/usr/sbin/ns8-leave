@@ -46,6 +46,9 @@ fi
 # clean up agent state directory
 find /var/lib/nethserver/nethserver-ns8-migration -type f -not -name index.html | xargs -- rm -vf
 
+# remove the list-modules.json file
+rm -f /var/lib/nethserver/nethserver-ns8-migration/list-modules.json
+
 # signal event
 /sbin/e-smith/signal-event nethserver-ns8-migration-save
 # write log
