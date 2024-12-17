@@ -260,27 +260,41 @@ def check_user_domains():
     if local_config['isAD'] == "" and local_config['isLdap'] == "":
         return True
 
-    # list ns8 domains
-    bash_command = "/usr/sbin/ns8-action cluster list-user-domains"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    obj = simplejson.loads(output)
-    if local_config["IsLocal"]:
-        # is source account provider is internal, NS8 must not contain the same provider
-        for domain in obj['data']['output']['domains']:
-            if domain['location'] == 'internal' and domain['base_dn'] == local_config['BaseDN']:
-                    return False
-        return True
-    else:
-        # if source account provider is external, NS8 must be already configured with the same domain
-        for domain in obj['data']['output']['domains']:
-            if domain['base_dn'].lower() == local_config['BaseDN'].lower() \
-                and ( \
-                    (domain['schema'] == 'rfc2307' and local_config['isLdap']) \
-                    or (domain['schema'] == 'ad' and local_config['isAD']) \
-                ):
-                    return True
+    try:
+        fenv = open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'r')
+    except Exception as ex:
+        sys.stderr.write(str(ex) + '\n')
         return False
+    # parse environment file and read USER_DOMAIN value
+    for line in fenv.readlines():
+        variable, value = line.split("=", 1)
+        if variable == "USER_DOMAIN":
+            env_domain_name = value.rstrip()
+            break
+    else:
+        env_domain_name = ""
+    if not env_domain_name:
+        return False # The domain name is not correctly configured
+
+    # list ns8 domains
+    jdomlist = subprocess.check_output(["/usr/sbin/ns8-action", "cluster", "list-user-domains"])
+    obj = simplejson.loads(jdomlist)
+
+    # Check if a domain with the same name already exists in NS8.
+    for domain in obj['data']['output']['domains']:
+        if domain['name'].lower() == env_domain_name.lower() \
+            and ( \
+                (domain['schema'] == 'rfc2307' and local_config['isLdap']) \
+                or (domain['schema'] == 'ad' and local_config['isAD']) \
+            ):
+                # A domain with the same type and name exists in NS8.
+                if local_config["IsLocal"]:
+                    if domain['location'] == 'external':
+                        return True # pass, should be a temporary external domain
+                    else:
+                        return False # fail, internal is not allowed
+                else:
+                    return True # pass, a matching external domain is a requirement
 
     # pretend everything is ok
     return False
