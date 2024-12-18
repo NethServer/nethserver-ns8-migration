@@ -458,8 +458,8 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div class="mg-bottom-20">
-                    <div>
+                  <div v-if="!loading.getClusterStatus" class="mg-bottom-20">
+                    <div v-if="!isSaveDisabled">
                       {{
                         $t("dashboard.app_will_be_migrated", {
                           appName: currentApp.name,
@@ -467,19 +467,26 @@
                         })
                       }}
                     </div>
+                    <div v-else>
+                      {{
+                        $t("dashboard.app_cannot_be_migrated_to_node", {
+                          appName: currentApp.name,
+                          leaderNode: config.leaderNode
+                        })
+                      }}
                     <div
                       class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp"
+                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
                     >
                       {{ $t("dashboard.roundcube_webtop_migration") }}
                     </div>
                     <div
                       class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && sogoApp"
+                      v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
                     >
                       {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
                     </div>
-                    <div class="mg-top-10" v-if="sogoApp">
+                    <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
                       {{ $t("dashboard.enable_forge_sogo") }}
                     </div>
                   </div>
