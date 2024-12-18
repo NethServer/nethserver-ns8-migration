@@ -22,17 +22,8 @@
 
 set -e
 
-# read list-modules.json
-JSON_FILE="/var/lib/nethserver/nethserver-ns8-migration/list-modules.json"
-
-# Check if nethvoice-proxy > 0 on the node
-is_installed=$(jq -r --argjson node_id "$MODULE_NODE_ID" '
-  .[] | select(.id == "nethvoice-proxy") | .install_destinations[] | select(.node_id == $node_id) | .instances > 0
-' "$JSON_FILE")
-
-# if not installed in the node, install first nethvoice-proxy
-if [[ "$is_installed" == "false" ]]; then
-     ns8-action --attach cluster add-module "$(printf '{"image": "nethvoice-proxy", "node": %d}' "${MODULE_NODE_ID}")"
+if ns8-action --attach cluster list-modules | jq -e --arg node_id "${MODULE_NODE_ID:?missing node ID} " '.[] | select(.id == "nethvoice-proxy") | .install_destinations[] | select(.node_id == $node_id and .eligible == true)' > /dev/null; then
+    ns8-action --attach cluster add-module "$(printf '{"image": "nethvoice-proxy", "node": %d}' "${MODULE_NODE_ID}")"
 fi
 
 ns8-bind-app nethserver-nethvoice14
