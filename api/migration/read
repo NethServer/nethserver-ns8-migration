@@ -247,44 +247,6 @@ def get_cluster_status():
     output, error = process.communicate()
     return simplejson.loads(output)
 
-def check_user_domains():
-    dump = subprocess.Popen(('echo \'{"action": "dump"}\' | /usr/libexec/nethserver/api/system-accounts-provider/read'), stdout=subprocess.PIPE, shell = True)
-    output, error = dump.communicate()
-    try:
-         local_config = simplejson.loads(output)
-    except:
-         # can't access local domain info, just fail
-         return False
-
-    # domain not configured, skip all tests
-    if local_config['isAD'] == "" and local_config['isLdap'] == "":
-        return True
-
-    # list ns8 domains
-    bash_command = "/usr/sbin/ns8-action cluster list-user-domains"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-    obj = simplejson.loads(output)
-    if local_config["IsLocal"]:
-        # is source account provider is internal, NS8 must not contain the same provider
-        for domain in obj['data']['output']['domains']:
-            if domain['location'] == 'internal' and domain['base_dn'] == local_config['BaseDN']:
-                    return False
-        return True
-    else:
-        # if source account provider is external, NS8 must be already configured with the same domain
-        for domain in obj['data']['output']['domains']:
-            if domain['base_dn'].lower() == local_config['BaseDN'].lower() \
-                and ( \
-                    (domain['schema'] == 'rfc2307' and local_config['isLdap']) \
-                    or (domain['schema'] == 'ad' and local_config['isAD']) \
-                ):
-                    return True
-        return False
-
-    # pretend everything is ok
-    return False
-
 try:
     input_json = simplejson.load(sys.stdin)
     action = input_json["action"]
@@ -295,7 +257,7 @@ try:
         for app in apps:
             app["status"] = get_migration_status(app["id"])
 
-        output = simplejson.dumps({'migration': apps,  'validDomains': check_user_domains()})
+        output = simplejson.dumps({'migration': apps})
         print(output)
     elif action == 'getClusterStatus':
         cluster_status = get_cluster_status()

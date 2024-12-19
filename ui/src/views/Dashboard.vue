@@ -34,10 +34,6 @@
       <span class="pficon pficon-error-circle-o"></span>
       {{ error.getAccountProviderInfo }}
     </div>
-    <div v-if="error.userDomains" class="alert alert-danger">
-      <span class="pficon pficon-error-circle-o"></span>
-      {{ error.userDomains }}
-    </div>
     <div
       v-if="
         loading.listApplications ||
@@ -237,7 +233,6 @@
         <div
           id="pf-list-default"
           class="list-group list-view-pf app-list"
-          v-if="validUserDomains"
         >
           <div v-for="app in apps" :key="app.id" class="list-group-item">
             <div class="list-view-pf-actions migration-buttons">
@@ -1156,7 +1151,6 @@ export default {
       roundcubeNode: 1,
       sogoNode: 1,
       getmailNode: 1,
-      validUserDomains: true,
       localDomain: "",
       loading: {
         connectionRead: false,
@@ -1189,7 +1183,6 @@ export default {
         ctiVirtualHost: "",
         sogoVirtualHost: "",
         webtopVirtualHost: "",
-        userDomains: "",
         ldapUserDomain: "",
       }
     };
@@ -1339,7 +1332,6 @@ export default {
       this.error.ctiVirtualHost = "";
       this.error.sogoVirtualHost = "";
       this.error.webtopVirtualHost = "";
-      this.error.userDomains = "";
     },
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
@@ -1718,19 +1710,6 @@ export default {
       });
 
       this.apps = apps;
-      this.validUserDomains = output.validDomains;
-      if (!this.validUserDomains) {
-        if (this.accountProviderConfig.location === "remote") {
-          this.error.userDomains = this.$t(
-            "dashboard.external_user_domain_error"
-          );
-        } else {
-          this.error.userDomains = this.$t(
-            "dashboard.internal_user_domain_error",
-            { domain: this.localDomain }
-          );
-        }
-      }
       this.loading.migrationRead = false;
     },
     migrationUpdate(app, action) {
