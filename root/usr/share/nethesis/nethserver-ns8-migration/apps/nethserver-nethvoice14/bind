@@ -22,4 +22,8 @@
 
 set -e
 
+if ns8-action --attach cluster list-modules | jq -e --argjson node_id "${MODULE_NODE_ID:?missing node ID} " '.[] | select(.id == "nethvoice-proxy") | .install_destinations[] | select(.node_id == $node_id and .eligible == true)' > /dev/null; then
+    ns8-action --attach cluster add-module "$(printf '{"image": "nethvoice-proxy", "node": %d}' "${MODULE_NODE_ID}")"
+fi
+
 ns8-bind-app nethserver-nethvoice14
