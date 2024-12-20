@@ -73,7 +73,8 @@ fi
 echo "----------- ${action} ${app_id}" $(date -R) >>/var/log/ns8-migration.log
 
 if [ "$action" == "start" ]; then
-    "${app_idir}/bind" &>>/var/log/ns8-migration.log
+    mkdir -vp "${app_sdir}"
+    flock "${app_sdir}/syncing.lock" "${app_idir}/bind" &>>/var/log/ns8-migration.log
 elif [[ "$action" == "sync" ]]; then
     run_check_import "${app_id}"
     MIGRATE_ACTION="${action}" flock ${app_sdir}/syncing.lock "${app_idir}/migrate" &>>/var/log/ns8-migration.log
