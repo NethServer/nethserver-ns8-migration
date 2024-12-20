@@ -55,7 +55,7 @@ rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "$
 
 # translate local csv path
 TMPPBCONFIG=$(mktemp -d)
-if [[ $(find /etc/phonebook/sources.d -type f | wc -l) > 0 ]]; then
+if [[ $(find /etc/phonebook/sources.d -type f | wc -l) -gt 0 ]]; then
     /bin/cp -a /etc/phonebook/sources.d/* "${TMPPBCONFIG}"
     sed -i 's#"url":"file:\\\/\\\/\\\/var\\\/lib\\\/nethserver\\\/nethvoice\\\/phonebook\\\/uploads\\\/#"url":"file:\\\/\\\/\\\/var\\\/lib\\\/nethvoice\\\/phonebook\\\/uploads\\\/#' "${TMPPBCONFIG}"/*
 fi
