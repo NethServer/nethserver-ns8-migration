@@ -48,6 +48,7 @@
     "account_provider_migration_in_progress": "Account provider migration in progress",
     "account_provider_migration_in_progress_description": "NS8 apps are currently using NS7 account provider",
     "start_account_provider_migration_explanation": "Do not shutdown or disconnect the leader node {leaderNode} until the migration has finished",
+    "ad_provider_cannot_be_migrated_to_node": "This samba ad provider cannot be migrated to the leader node {leaderNode}, because it is already installed. We need one more node to migrate the samba ad provider",
     "ad_ip_address_explanation": "Select an IP address to configure Active Directory",
     "ad_ip_address": "Active Directory IP address",
     "disconnect_successful": "Disconnected from NS8 cluster",
@@ -110,7 +111,9 @@
     "error_certificate_verify_failed": "Certificate verification failed. You can deselect 'TLS validation' to skip this check, if necessary",
     "error_no_route_to_host": "Connection to NS8 cluster failed. Please check the IP address or the fully qualified domain name",
     "error_port_connection_error": "NS8 cannot connect to the NS7 LDAP service. Ensure that LDAP ports (e.g. 389, 636 of slapd service) are open and accessible from the green zone.",
-    "already_installed_on_this_node": "Already installed on this node"
+    "already_installed_on_this_node": "Already installed on this node",
+    "no_available_node_for_samba_provider": "No available node for Samba Active Directory provider, you have to add a new node to migrate the Samba Active Directory provider",
+    "read_cluster_status": "Read cluster status"
   },
   "validation": {
     "leader_node_empty": "Leader node is required",
