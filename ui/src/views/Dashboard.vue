@@ -474,6 +474,7 @@
                           leaderNode: config.leaderNode
                         })
                       }}
+                    </div>
                     <div
                       class="mg-top-10"
                       v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
@@ -644,7 +645,7 @@
                     </div>
                   </template>
                   <template v-else-if="currentApp.id === 'nethserver-ejabberd'">
-                    <!-- node selection for email apps -->
+                    <!-- node selection for ejabberd apps -->
                     <div class="form-group">
                       <label class="col-sm-5 control-label" for="ejabberd-node">
                         {{
