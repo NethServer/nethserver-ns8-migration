@@ -468,28 +468,28 @@
                       }}
                     </div>
                     <div v-else>
-                      {{
-                        $t("dashboard.app_cannot_be_migrated_to_node", {
-                          appName: currentApp.name,
-                          leaderNode: config.leaderNode
-                        })
-                      }}
-                      <div
-                        class="mg-top-10"
-                        v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
-                      >
-                        {{ $t("dashboard.roundcube_webtop_migration") }}
+                        {{
+                          $t("dashboard.app_cannot_be_migrated_to_node", {
+                            appName: currentApp.name,
+                            leaderNode: config.leaderNode
+                          })
+                        }}
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_migration") }}
+                        </div>
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                        </div>
+                        <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
+                          {{ $t("dashboard.enable_forge_sogo") }}
+                        </div>
                       </div>
-                      <div
-                        class="mg-top-10"
-                        v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
-                      >
-                        {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
-                      </div>
-                      <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
-                        {{ $t("dashboard.enable_forge_sogo") }}
-                      </div>
-                    </div>
                   </div>
                 </template>
                 <!-- loading nodes -->
