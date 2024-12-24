@@ -468,27 +468,28 @@
                       }}
                     </div>
                     <div v-else>
-                      {{
-                        $t("dashboard.app_cannot_be_migrated_to_node", {
-                          appName: currentApp.name,
-                          leaderNode: config.leaderNode
-                        })
-                      }}
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_migration") }}
-                    </div>
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
-                    </div>
-                    <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
-                      {{ $t("dashboard.enable_forge_sogo") }}
-                    </div>
+                        {{
+                          $t("dashboard.app_cannot_be_migrated_to_node", {
+                            appName: currentApp.name,
+                            leaderNode: config.leaderNode
+                          })
+                        }}
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_migration") }}
+                        </div>
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                        </div>
+                        <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
+                          {{ $t("dashboard.enable_forge_sogo") }}
+                        </div>
+                      </div>
                   </div>
                 </template>
                 <!-- loading nodes -->
@@ -644,7 +645,7 @@
                     </div>
                   </template>
                   <template v-else-if="currentApp.id === 'nethserver-ejabberd'">
-                    <!-- node selection for email apps -->
+                    <!-- node selection for ejabberd apps -->
                     <div class="form-group">
                       <label class="col-sm-5 control-label" for="ejabberd-node">
                         {{
