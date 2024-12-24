@@ -254,11 +254,18 @@ def get_cluster_status():
     modules_output, error = process.communicate()
     modules = json.loads(modules_output)
 
+    # list all AD providers
+    command = ["/usr/sbin/ns8-action", "cluster", "list-user-domains", "null"]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    domains_output, error = process.communicate()
+    domains = json.loads(domains_output)
+
     # iterate over all nodes and check if mail and ejabberd are installed
     for node in output["data"]["output"]["nodes"]:
         node_id = node["id"]
         node["mail_installed"] = False
         node["ejabberd_installed"] = False
+        node["adProvider_installed"] = False
         for module in modules['data']['output']:
             if module.get("id") == "mail":
                 for destination in module.get("install_destinations", []):
@@ -268,6 +275,14 @@ def get_cluster_status():
                 for destination in module.get("install_destinations", []):
                     if destination["node_id"] == node_id and not destination["eligible"]:
                         node["ejabberd_installed"] = True
+        for domain in domains['data']['output']['domains']:
+            if domain["schema"] == "ad":
+                providers = domain["providers"]
+                for provider in providers:
+                    provider_node_id = provider["node"]
+                    if provider_node_id == node_id:
+                        node["adProvider_installed"] = True
+                        break
 
     return simplejson.loads(json.dumps(output))
 
