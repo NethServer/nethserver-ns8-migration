@@ -477,13 +477,13 @@
                       <div
                         class="mg-top-10"
                         v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
-                        >
+                      >
                         {{ $t("dashboard.roundcube_webtop_migration") }}
                       </div>
                       <div
                         class="mg-top-10"
                         v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
-                        >
+                      >
                         {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
                       </div>
                       <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
