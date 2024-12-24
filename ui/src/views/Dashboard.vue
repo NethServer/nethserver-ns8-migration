@@ -474,21 +474,21 @@
                           leaderNode: config.leaderNode
                         })
                       }}
-                    </div>
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_migration") }}
-                    </div>
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
-                    </div>
-                    <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
-                      {{ $t("dashboard.enable_forge_sogo") }}
+                      <div
+                        class="mg-top-10"
+                        v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
+                        >
+                        {{ $t("dashboard.roundcube_webtop_migration") }}
+                      </div>
+                      <div
+                        class="mg-top-10"
+                        v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
+                        >
+                        {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                      </div>
+                      <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
+                        {{ $t("dashboard.enable_forge_sogo") }}
+                      </div>
                     </div>
                   </div>
                 </template>
