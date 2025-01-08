@@ -117,6 +117,44 @@ payload = json.loads(resp.read())
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
 
+# Test if the cluster has a room for an active directory (needs at least one node free)
+# only if the account provider is AD and local
+if account_provider_config['isAD'] == '1':
+    nsdc_ip_address = ""
+    try:
+        # If the account provider is AD, assume it is local and try to get nsdc IP address, otherwise skip.
+        nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
+        nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
+        # Get the cluster status
+        cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, False)
+        # List all AD providers
+        domains  = call(api_endpoint, "list-user-domains", payload['token'], {}, False)
+        # Initialize the flag
+        all_installed = True
+        # Parse all nodes
+        for node in cluster["data"]["output"]["nodes"]:
+            node_id = node["id"]
+            node["adProvider_installed"] = False  # Default to False
+            # Check each domain for AD providers
+            for domain in domains['data']['output']['domains']:
+                if domain["schema"] == "ad":
+                    for provider in domain["providers"]:
+                        if provider["node"] == node_id:
+                            node["adProvider_installed"] = True  # Mark as installed
+
+            # no AD installed set the flag
+            if not node["adProvider_installed"]:
+                all_installed = False
+        # If all nodes have providers
+        if all_installed:
+            print("no_available_node_for_samba_provider", file=sys.stderr)
+            sys.exit(1)
+    except json.JSONDecodeError:
+        pass # Ignore missing nsdc/IpAddress prop
+    except Exception as e:
+        print("Error:", e, file=sys.stderr)
+        sys.exit(1)
+
 # Generate a new Wireguard key. If add-node succeedes, but VPN connection
 # fails, we must not reuse the same key to avoid conflicts.
 tmpmask = os.umask(0o077)
@@ -211,12 +249,8 @@ api_endpoint = f"http://{ret['leader_ip_address']}:9311"
 if account_provider_config['isAD'] == '1':
     sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
     account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
-    try:
-        # If the account provider is AD, assume it is local and try to get nsdc IP address, otherwise skip.
-        nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
-        nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
-    except:
-        pass # Ignore missing nsdc/IpAddress prop
+    if nsdc_ip_address == "":
+        # Ignore missing nsdc/IpAddress prop
         account_provider_external = "1"
     else:
         account_provider_external = ""
