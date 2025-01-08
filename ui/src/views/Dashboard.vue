@@ -1778,6 +1778,10 @@ export default {
           const portConnectionErrorMatch = streamMessage.match(
             /port_connection_error/i
           );
+          // check no_available_node_for_samba_provider
+          const noAvailableNodeForSambaProviderMatch = streamMessage.match(
+            /no_available_node_for_samba_provider/i
+          );
           if (domainExistMatch && context.isLdapEnabled) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
               "dashboard.ldap_error_domain_exists", {
@@ -1790,6 +1794,10 @@ export default {
               "dashboard.ad_error_domain_exists", {
                 domain: domainValue
               }
+            );
+          } else if (noAvailableNodeForSambaProviderMatch && !context.isLdapEnabled) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.no_available_node_for_samba_provider"
             );
           } else if (unauthorizedMatch) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
