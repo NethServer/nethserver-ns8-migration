@@ -453,8 +453,8 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div class="mg-bottom-20">
-                    <div>
+                  <div v-if="!loading.getClusterStatus" class="mg-bottom-20">
+                    <div v-if="!isSaveDisabled">
                       {{
                         $t("dashboard.app_will_be_migrated", {
                           appName: currentApp.name,
@@ -462,21 +462,29 @@
                         })
                       }}
                     </div>
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && !sogoApp"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_migration") }}
-                    </div>
-                    <div
-                      class="mg-top-10"
-                      v-if="currentApp.id === 'nethserver-mail' && sogoApp"
-                    >
-                      {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
-                    </div>
-                    <div class="mg-top-10" v-if="sogoApp">
-                      {{ $t("dashboard.enable_forge_sogo") }}
-                    </div>
+                    <div v-else>
+                        {{
+                          $t("dashboard.app_cannot_be_migrated_to_node", {
+                            appName: currentApp.name,
+                            leaderNode: config.leaderNode
+                          })
+                        }}
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_migration") }}
+                        </div>
+                        <div
+                          class="mg-top-10"
+                          v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
+                        >
+                          {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                        </div>
+                        <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
+                          {{ $t("dashboard.enable_forge_sogo") }}
+                        </div>
+                      </div>
                   </div>
                 </template>
                 <!-- loading nodes -->
@@ -506,9 +514,15 @@
                             v-for="node in clusterNodes"
                             v-bind:key="node.id"
                             :value="node.id"
-                            :disabled="!node.online"
+                            :disabled="!node.online || node.mail_installed"
                           >
-                            {{ getNodeLabel(node) }}
+                            <span v-if="node.mail_installed"
+                              >{{ getNodeLabel(node) }}
+                              {{
+                                $t("dashboard.already_installed_on_this_node")
+                              }}</span
+                            >
+                            <span v-else>{{ getNodeLabel(node) }}</span>
                           </option>
                         </select>
                       </div>
@@ -625,6 +639,40 @@
                       </div>
                     </div>
                   </template>
+                  <template v-else-if="currentApp.id === 'nethserver-ejabberd'">
+                    <!-- node selection for ejabberd apps -->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="ejabberd-node">
+                        {{
+                          $t("dashboard.destination_node", {
+                            app: currentApp.name
+                          })
+                        }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="appNode"
+                          class="combobox form-control"
+                          id="ejabberd-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online || node.ejabberd_installed"
+                          >
+                            <span v-if="node.ejabberd_installed"
+                              >{{ getNodeLabel(node) }}
+                              {{
+                                $t("dashboard.already_installed_on_this_node")
+                              }}</span
+                            >
+                            <span v-else>{{ getNodeLabel(node) }}</span>
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template> 
                   <template v-else>
                     <!-- node selection for app-->
                     <div class="form-group">
@@ -672,7 +720,11 @@
                 type="button"
                 class="btn btn-primary"
                 @click="startMigrationFromModal"
-                :disabled="loading.getClusterStatus || !!error.getClusterStatus"
+                :disabled="
+                  loading.getClusterStatus ||
+                  !!error.getClusterStatus ||
+                  isSaveDisabled
+                "
               >
                 {{ $t("dashboard.start_migration") }}
               </button>
@@ -1188,6 +1240,23 @@ export default {
     };
   },
   computed: {
+    isSaveDisabled() {
+      if (this.currentApp && this.currentApp.id === "nethserver-mail") {
+        const selectedNode = this.clusterNodes.find(
+          (node) => node.id === this.emailNode
+        );
+        return selectedNode ? selectedNode.mail_installed : false;
+      } else if (
+        this.currentApp &&
+        this.currentApp.id === "nethserver-ejabberd"
+      ) {
+        const selectedNode = this.clusterNodes.find(
+          (node) => node.id === this.appNode
+        );
+        return selectedNode ? selectedNode.ejabberd_installed : false;
+      }
+      return false;
+    },
     accountProviderApp() {
       return this.apps.find((app) => app.id === "account-provider");
     },
