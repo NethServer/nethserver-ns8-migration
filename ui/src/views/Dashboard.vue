@@ -222,7 +222,7 @@
         </div>
         <!-- account provider samba ad node limit banner-->
         <div v-if="!isAvailableNodeForSambaProvider && config.isConnected">
-          <div class="alert alert-info alert-dismissable">
+          <div class="alert alert-danger">
             <button
               @click="connectionRead()"
               :disabled="loading.migrationUpdate"
@@ -230,7 +230,7 @@
             >
               {{ $t("dashboard.read_cluster_status") }}
             </button>
-            <span class="pficon pficon-info"></span>
+            <span class="pficon pficon-error-circle-o"></span>
             {{ $t("dashboard.no_available_node_for_samba_provider") }}
           </div>
         </div>
