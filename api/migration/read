@@ -242,23 +242,19 @@ def list_apps():
     return apps
 
 def get_cluster_status():
-    bash_command = "/usr/sbin/ns8-action cluster get-cluster-status null"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-
-    output = json.loads(output.decode('utf-8'))
+    bash_command = ["/usr/sbin/ns8-action", "cluster", "get-cluster-status", "null"]
+    process = subprocess.check_output(bash_command)
+    output = json.loads(process.decode('utf-8'))
 
     # list all modules
     command = ["/usr/sbin/ns8-action", "cluster", "list-modules", "null"]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    modules_output, error = process.communicate()
-    modules = json.loads(modules_output)
+    process = subprocess.check_output(command)
+    modules = json.loads(process.decode('utf8'))
 
     # list all AD providers
     command = ["/usr/sbin/ns8-action", "cluster", "list-user-domains", "null"]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    domains_output, error = process.communicate()
-    domains = json.loads(domains_output)
+    process = subprocess.check_output(command)
+    domains= json.loads(process.decode('utf8'))
 
     # iterate over all nodes and check if mail and ejabberd are installed
     for node in output["data"]["output"]["nodes"]:
