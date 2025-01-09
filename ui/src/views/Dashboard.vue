@@ -476,41 +476,79 @@
                       }}
                     </div>
                   </template>
-                </template>
-                <template v-else>
-                  <div v-if="!loading.getClusterStatus" class="mg-bottom-20">
-                    <div v-if="!isSaveDisabled">
-                      {{
-                        $t("dashboard.app_will_be_migrated", {
-                          appName: currentApp.name,
-                          leaderNode: config.leaderNode
-                        })
-                      }}
+                  <template
+                    v-else-if="
+                      currentApp.id === 'account-provider' &&
+                      !isAvailableNodeForSambaProvider
+                    "
+                  >
+                    <div class="alert alert-danger">
+                      <span class="pficon pficon-error-circle-o"></span>
+                      {{ $t("dashboard.no_available_node_for_samba_provider") }}
                     </div>
-                    <div v-else>
+                  </template>
+                  <template v-else>
+                    <div v-if="!loading.getClusterStatus" class="mg-bottom-20">
+                      <div
+                        v-if="
+                          !isSaveDisabled && isAvailableNodeForSambaProvider
+                        "
+                      >
+                        {{
+                          $t("dashboard.app_will_be_migrated", {
+                            appName: currentApp.name,
+                            leaderNode: config.leaderNode,
+                          })
+                        }}
+                      </div>
+                      <div v-else-if="!isAvailableNodeForSambaProvider">
+                        <div class="alert alert-danger">
+                          <span class="pficon pficon-error-circle-o"></span>
+                          {{
+                            $t(
+                              "dashboard.no_available_node_for_samba_provider"
+                            )
+                          }}
+                        </div>
+                      </div>
+                      <div v-else>
                         {{
                           $t("dashboard.app_cannot_be_migrated_to_node", {
                             appName: currentApp.name,
-                            leaderNode: config.leaderNode
+                            leaderNode: config.leaderNode,
                           })
                         }}
                         <div
                           class="mg-top-10"
-                          v-if="currentApp.id === 'nethserver-mail' && !sogoApp && !isSaveDisabled"
+                          v-if="
+                            currentApp.id === 'nethserver-mail' &&
+                            !sogoApp &&
+                            !isSaveDisabled
+                          "
                         >
                           {{ $t("dashboard.roundcube_webtop_migration") }}
                         </div>
                         <div
                           class="mg-top-10"
-                          v-if="currentApp.id === 'nethserver-mail' && sogoApp && !isSaveDisabled"
+                          v-if="
+                            currentApp.id === 'nethserver-mail' &&
+                            sogoApp &&
+                            !isSaveDisabled
+                          "
                         >
-                          {{ $t("dashboard.roundcube_webtop_sogo_migration") }}
+                          {{
+                            $t("dashboard.roundcube_webtop_sogo_migration")
+                          }}
                         </div>
-                        <div class="mg-top-10" v-if="sogoApp && !isSaveDisabled">
+                        <div
+                          class="mg-top-10"
+                          v-if="sogoApp && !isSaveDisabled"
+                        >
                           {{ $t("dashboard.enable_forge_sogo") }}
                         </div>
                       </div>
-                  </div>
+                    </div>
+                  </template>
                 </template>
                 <!-- loading nodes -->
                 <div v-if="loading.getClusterStatus">
@@ -522,7 +560,11 @@
                   ></div>
                 </div>
                 <!-- node selection -->
-                <template v-if="clusterNodes.length > 1">
+                <template
+                  v-if="
+                    clusterNodes.length > 1 && isAvailableNodeForSambaProvider
+                  "
+                >
                   <template v-if="currentApp.id === 'nethserver-mail'">
                     <!-- node selection for email apps -->
                     <div class="form-group">
@@ -782,7 +824,8 @@
                 :disabled="
                   loading.getClusterStatus ||
                   !!error.getClusterStatus ||
-                  isSaveDisabled
+                  isSaveDisabled ||
+                  !isAvailableNodeForSambaProvider
                 "
               >
                 {{ $t("dashboard.start_migration") }}
