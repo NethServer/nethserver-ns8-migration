@@ -254,7 +254,7 @@ def get_cluster_status():
     # list all AD providers
     command = ["/usr/sbin/ns8-action", "cluster", "list-user-domains", "null"]
     process = subprocess.check_output(command)
-    domains= json.loads(process.decode('utf8'))
+    domains = json.loads(process.decode('utf8'))
 
     # iterate over all nodes and check if mail and ejabberd are installed
     for node in output["data"]["output"]["nodes"]:
