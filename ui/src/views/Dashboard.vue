@@ -40,7 +40,8 @@
         loading.connectionRead ||
         loading.migrationRead ||
         loading.accountProviderInfo ||
-        loading.abortAction
+        loading.abortAction ||
+        loading.getClusterStatus
       "
       class="spinner spinner-lg"
     ></div>
@@ -215,7 +216,20 @@
             </a>
           </span>
         </div>
-
+        <!-- account provider samba ad node limit banner-->
+        <div v-if="!isAvailableNodeForSambaProvider && config.isConnected">
+          <div class="alert alert-danger">
+            <button
+              @click="connectionRead()"
+              :disabled="loading.migrationUpdate"
+              class="btn btn-default cluster-status"
+            >
+              {{ $t("dashboard.read_cluster_status") }}
+            </button>
+            <span class="pficon pficon-error-circle-o"></span>
+            {{ $t("dashboard.no_available_node_for_samba_provider") }}
+          </div>
+        </div>
         <div
           v-if="accountProviderMigrationStarted"
           class="alert alert-info alert-dismissable"
@@ -245,7 +259,9 @@
                 "
                 @click="showStartMigrationModal(app)"
                 :disabled="
-                  loading.migrationUpdate || !canStartAccountProviderMigration
+                  loading.migrationUpdate ||
+                  !canStartAccountProviderMigration ||
+                  !isAvailableNodeForSambaProvider
                 "
                 class="btn btn-default"
               >
@@ -274,7 +290,10 @@
               >
                 <button
                   @click="showStartMigrationModal(app)"
-                  :disabled="isStartMigrationButtonDisabled(app)"
+                  :disabled="
+                    isStartMigrationButtonDisabled(app) ||
+                    !isAvailableNodeForSambaProvider
+                  "
                   v-if="!isMailChild(app) && !isAdChild(app)"
                   class="btn btn-default"
                 >
@@ -442,15 +461,21 @@
                   <span class="pficon pficon-error-circle-o"></span>
                   {{ error.getClusterStatus }}
                 </div>
-                <template v-if="currentApp.id === 'account-provider'">
-                  <div class="mg-bottom-20">
-                    {{
-                      $t(
-                        "dashboard.start_account_provider_migration_explanation",
-                        { leaderNode: config.leaderNode }
-                      )
-                    }}
-                  </div>
+                <template v-if="!loading.getClusterStatus">
+                  <template
+                    v-if="
+                      currentApp.id === 'account-provider' && !isSaveDisabled
+                    "
+                  >
+                    <div class="mg-bottom-20">
+                      {{
+                        $t(
+                          "dashboard.start_account_provider_migration_explanation",
+                          { leaderNode: config.leaderNode }
+                        )
+                      }}
+                    </div>
+                  </template>
                 </template>
                 <template v-else>
                   <div v-if="!loading.getClusterStatus" class="mg-bottom-20">
@@ -662,6 +687,40 @@
                             :disabled="!node.online || node.ejabberd_installed"
                           >
                             <span v-if="node.ejabberd_installed"
+                              >{{ getNodeLabel(node) }}
+                              {{
+                                $t("dashboard.already_installed_on_this_node")
+                              }}</span
+                            >
+                            <span v-else>{{ getNodeLabel(node) }}</span>
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </template> 
+                  <template v-else-if="currentApp.provider === 'ad'">
+                    <!-- node selection for AD apps -->
+                    <div class="form-group">
+                      <label class="col-sm-5 control-label" for="adprovider-node">
+                        {{
+                          $t("dashboard.destination_node", {
+                            app: currentApp.name
+                          })
+                        }}
+                      </label>
+                      <div class="col-sm-6">
+                        <select
+                          v-model="appNode"
+                          class="combobox form-control"
+                          id="adprovider-node"
+                        >
+                          <option
+                            v-for="node in clusterNodes"
+                            v-bind:key="node.id"
+                            :value="node.id"
+                            :disabled="!node.online || node.adProvider_installed"
+                          >
+                            <span v-if="node.adProvider_installed"
                               >{{ getNodeLabel(node) }}
                               {{
                                 $t("dashboard.already_installed_on_this_node")
@@ -1254,8 +1313,27 @@ export default {
           (node) => node.id === this.appNode
         );
         return selectedNode ? selectedNode.ejabberd_installed : false;
+      } else if (this.currentApp && this.currentApp.provider === "ad") {
+        const selectedNode = this.clusterNodes.find(
+          (node) => node.id === this.appNode
+        );
+        return selectedNode ? selectedNode.adProvider_installed : false;
       }
       return false;
+    },
+    isAvailableNodeForSambaProvider() {
+      // check if there is a node available for samba provider, return true if there is
+      if (
+        this.accountProviderConfig.type === "ad" &&
+        this.accountProviderConfig.location === "local"
+      ) {
+        return this.clusterNodes.some(
+          (node) => node.online && !node.adProvider_installed
+        );
+      } else {
+        // if account provider is not ad or is remote, return true
+        return true;
+      }
     },
     accountProviderApp() {
       return this.apps.find((app) => app.id === "account-provider");
@@ -1588,6 +1666,7 @@ export default {
       this.loading.connectionRead = false;
       this.isLdapEnabled = slapd.status === "enabled";
       if (this.config.isConnected) {
+        this.migrationReadClusterStatus();
         this.listApplications();
       } else {
         this.$nextTick(() => {
@@ -1691,6 +1770,10 @@ export default {
           const portConnectionErrorMatch = streamMessage.match(
             /port_connection_error/i
           );
+          // check no_available_node_for_samba_provider
+          const noAvailableNodeForSambaProviderMatch = streamMessage.match(
+            /no_available_node_for_samba_provider/i
+          );
           if (domainExistMatch && context.isLdapEnabled) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
               "dashboard.ldap_error_domain_exists", {
@@ -1703,6 +1786,10 @@ export default {
               "dashboard.ad_error_domain_exists", {
                 domain: domainValue
               }
+            );
+          } else if (noAvailableNodeForSambaProviderMatch && !context.isLdapEnabled) {
+            context.error.rawConnectionUpdateMessage = context.$i18n.t(
+              "dashboard.no_available_node_for_samba_provider"
             );
           } else if (unauthorizedMatch) {
             context.error.rawConnectionUpdateMessage = context.$i18n.t(
@@ -2159,6 +2246,10 @@ export default {
   justify-content: flex-end;
 }
 
+.cluster-status {
+  margin-right: 0px !important;
+  float: right;
+}
 .node-spinner {
   margin-left: 20px;
 }
