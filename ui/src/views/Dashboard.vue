@@ -1367,6 +1367,7 @@ export default {
     isAvailableNodeForSambaProvider() {
       // check if there is a node available for samba provider, return true if there is
       if (
+        this.accountProviderConfig &&
         this.accountProviderConfig.type === "ad" &&
         this.accountProviderConfig.location === "local"
       ) {
