@@ -115,14 +115,6 @@ payload = json.loads(resp.read())
 account_provider_domain = ""
 account_provider_external = ""
 
-# LDAP attributes used by popular implementations:
-uuid_attrs = [
-    "entryUUID",      # OpenLDAP, ApacheDS
-    "nsUniqueId",     # 389 Directory Server
-    "ibm-entryUUID",  # IBM Security Directory Server
-    "GUID",           # Novell eDirectory
-]
-
 # Retrieve account provider information
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
@@ -190,39 +182,22 @@ elif account_provider_config['isLdap'] == '1':
         # Check if remote RFC2307 account provider is correctly configured
         # in NS8. Acquire the domain name for migration from NS8 existing
         # domain.
+        matching_domains = []
         for domain in domains['data']['output']['domains']:
             if domain.get("schema", "") != "rfc2307":
                 continue # ignore non-rfc2307 domains
-            elif not "base_entryuuid" in domain:
-                print("ns8-join: missing base_entryuuid field in response. Update NS8 to latest core version and try again.", file=sys.stderr)
-                sys.exit(1)
-            elif domain["base_entryuuid"]:
-                # Find the domain where the entryUUID (or equivalent)
-                # attribute of the BaseDN matches with our account
-                # provider.
-                ldap_filter = "(|" + "".join([f'({attrname}={domain["base_entryuuid"]})' for attrname in uuid_attrs]) + ")"
-                # Note: in NS7 "TLS_REQCERT" is controlled by /etc/openldap/ldap.conf
-                osearch = subprocess.check_output([
-                    "ldapsearch", "-x",
-                    *(("-ZZ",) if (account_provider_config["StartTls"] != "") else ()),
-                    "-H", account_provider_config["LdapURI"],
-                    "-D", account_provider_config["BindDN"],
-                    "-w", account_provider_config["BindPassword"],
-                    "-b", account_provider_config["BaseDN"],
-                    "-s", "base",
-                    ldap_filter,
-                    "1.1", # no attributes, print only dn.
-                ], encoding='utf-8')
-                # Exceptions are not handled. If the ldapsearch command
-                # fails, abort the whole script.
-                # The BaseDN should be in the command output if a match is
-                # found.
-                if "dn: " + account_provider_config["BaseDN"].lower() in osearch.lower():
-                    account_provider_domain = domain["name"] # Domain match found.
-                    break
-        else:
+            elif domain["location"] != "external":
+                continue # ignore internal domains
+            elif domain["base_dn"].lower() == account_provider_config["BaseDN"].lower():
+                account_provider_domain = domain["name"] # Domain match found.
+                matching_domains.append(domain["name"])
+        if len(matching_domains) == 0:
             # No domain match found.
             print("ns8-join: a matching external LDAP domain was not found in NS8.", file=sys.stderr)
+            sys.exit(1)
+        elif len(matching_domains) > 1:
+            # Too much matches: anomaly.
+            print("ns8-join: multiple LDAP domain matches were found: ", ", ".join(matching_domains), file=sys.stderr)
             sys.exit(1)
 
 # Generate a new Wireguard key. If add-node succeedes, but VPN connection
