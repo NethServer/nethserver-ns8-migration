@@ -128,8 +128,8 @@ account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-tes
 account_provider_config = json.loads(account_provider_json)
 
 # Retrieve NS8 cluster information for later validation
-cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, False, hidden=True)
-domains  = call(api_endpoint, "list-user-domains", payload['token'], {"extra_fields":["base_entryuuid"]}, False, hidden=True)
+cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, args.tlsverify, hidden=True)
+domains  = call(api_endpoint, "list-user-domains", payload['token'], {"extra_fields":["base_entryuuid"]}, args.tlsverify, hidden=True)
 
 # Test if the cluster has a room for an active directory (needs at least one node free)
 # only if the account provider is AD and local
@@ -285,7 +285,7 @@ data_ns7admin = {
         "user": ns7admin_user
     }
 
-add_user_response = call(api_endpoint, "add-user", payload['token'], data_ns7admin, False)
+add_user_response = call(api_endpoint, "add-user", payload['token'], data_ns7admin, args.tlsverify)
 if add_user_response['data']['exit_code'] != 0:
     # we need to leave the cluster if the user ns7admin cannot be added
     print(f"Task add_user {ns7admin_user} has failed:", add_user_response, file=sys.stderr)
@@ -320,7 +320,7 @@ if account_provider_external != "":
 elif account_provider_config['isAD'] == '1':
         # Push a route to reach NSDC IP address through the cluster VPN
         update_routes_request = {"add": [{"ip_address": nsdc_ip_address, "node_id": ret['node_id']}]}
-        update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
+        update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, args.tlsverify)
         if update_routes_response['data']['exit_code'] != 0:
             print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
             sys.exit(1)
@@ -340,7 +340,7 @@ elif account_provider_config['isAD'] == '1':
             "tls": True,
             "tls_verify": False,
         }
-        add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+        add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, args.tlsverify)
         if add_external_domain_response['data']['exit_code'] != 0:
             # we need to leave the cluster if the external domain cannot be added
             error = add_external_domain_response['data']['output'][0].get('error', '')
@@ -362,7 +362,7 @@ elif account_provider_config['isLdap'] == '1':
         "tls": True,
         "tls_verify": False,
     }
-    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, args.tlsverify)
     if add_external_domain_response['data']['exit_code'] != 0:
         # we need to leave the cluster if the external domain cannot be added
         error = add_external_domain_response['data']['output'][0].get('error', '')
