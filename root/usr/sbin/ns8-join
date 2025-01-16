@@ -32,21 +32,20 @@ import os
 import socket
 from urllib import request, parse, error
 
-def call(api_endpoint, action, token, data, tlsverify):
+def call(api_endpoint, action, token, data, tlsverify, hidden=False):
     # Prepare SSL context
     ctx = ssl.create_default_context()
     if not tlsverify:
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-    
     jdata = json.dumps({"action": action, "data": data, "extra": {
+                       "isNotificationHidden": hidden,
                        "title": action}}).encode('utf8')
     req = request.Request(f'{api_endpoint}/api/cluster/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
     post = request.urlopen(req, context=ctx)
     post_response = json.loads(post.read())
-
     # wait for the cluster queue to grab the request
     time.sleep(0.5)
     if post_response["code"] == 201:
@@ -72,7 +71,6 @@ def call(api_endpoint, action, token, data, tlsverify):
                 watchdog = watchdog + 1
 
         return get_response
-
     return None
 
 
@@ -130,8 +128,8 @@ account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-tes
 account_provider_config = json.loads(account_provider_json)
 
 # Retrieve NS8 cluster information for later validation
-cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, False)
-domains  = call(api_endpoint, "list-user-domains", payload['token'], {"extra_fields":["base_entryuuid"]}, False)
+cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, False, hidden=True)
+domains  = call(api_endpoint, "list-user-domains", payload['token'], {"extra_fields":["base_entryuuid"]}, False, hidden=True)
 
 # Test if the cluster has a room for an active directory (needs at least one node free)
 # only if the account provider is AD and local

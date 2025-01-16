@@ -242,17 +242,17 @@ def list_apps():
     return apps
 
 def get_cluster_status():
-    bash_command = ["/usr/sbin/ns8-action", "cluster", "get-cluster-status", "null"]
+    bash_command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "get-cluster-status", "null"]
     process = subprocess.check_output(bash_command)
     output = json.loads(process.decode('utf-8'))
 
     # list all modules
-    command = ["/usr/sbin/ns8-action", "cluster", "list-modules", "null"]
+    command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "list-modules", "null"]
     process = subprocess.check_output(command)
     modules = json.loads(process.decode('utf8'))
 
     # list all AD providers
-    command = ["/usr/sbin/ns8-action", "cluster", "list-user-domains", "null"]
+    command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "list-user-domains", "null"]
     process = subprocess.check_output(command)
     domains = json.loads(process.decode('utf8'))
 
