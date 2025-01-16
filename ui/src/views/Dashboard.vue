@@ -418,7 +418,7 @@
                       accountProviderConfig.location === 'remote'
                     "
                   >
-                    {{ $t("dashboard.remote_account_provider") }}
+                    {{ $t("dashboard.remote_account_provider", {"domain": app.domain}) }}
                   </span>
                   <!-- local account provider status description -->
                   <span
@@ -428,7 +428,7 @@
                       !canStartAccountProviderMigration
                     "
                   >
-                    {{ $t("dashboard.local_account_provider_migrate_last") }}
+                    {{ $t("dashboard.local_account_provider_migrate_last", {"domain": app.domain}) }}
                   </span>
                   <!-- standard status description -->
                   <span v-else>{{ $t("dashboard.status_" + app.status) }}</span>
