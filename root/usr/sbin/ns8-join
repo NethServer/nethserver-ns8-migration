@@ -32,21 +32,20 @@ import os
 import socket
 from urllib import request, parse, error
 
-def call(api_endpoint, action, token, data, tlsverify):
+def call(api_endpoint, action, token, data, tlsverify, hidden=False):
     # Prepare SSL context
     ctx = ssl.create_default_context()
     if not tlsverify:
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-    
     jdata = json.dumps({"action": action, "data": data, "extra": {
+                       "isNotificationHidden": hidden,
                        "title": action}}).encode('utf8')
     req = request.Request(f'{api_endpoint}/api/cluster/tasks', data=jdata)
     req.add_header('Content-Type', 'application/json')
     req.add_header('Authorization', f'Bearer {token}')
     post = request.urlopen(req, context=ctx)
     post_response = json.loads(post.read())
-
     # wait for the cluster queue to grab the request
     time.sleep(0.5)
     if post_response["code"] == 201:
@@ -72,7 +71,6 @@ def call(api_endpoint, action, token, data, tlsverify):
                 watchdog = watchdog + 1
 
         return get_response
-
     return None
 
 
@@ -113,22 +111,28 @@ except error.URLError as ex:
 
 payload = json.loads(resp.read())
 
+# Default values for account provider configuration:
+account_provider_domain = ""
+account_provider_external = ""
+
 # Retrieve account provider information
 account_provider_json = subprocess.check_output(['/usr/sbin/account-provider-test', 'dump'], encoding='utf-8')
 account_provider_config = json.loads(account_provider_json)
+
+# Retrieve NS8 cluster information for later validation
+cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, args.tlsverify, hidden=True)
+domains  = call(api_endpoint, "list-user-domains", payload['token'], {"extra_fields":["base_entryuuid"]}, args.tlsverify, hidden=True)
 
 # Test if the cluster has a room for an active directory (needs at least one node free)
 # only if the account provider is AD and local
 if account_provider_config['isAD'] == '1':
     nsdc_ip_address = ""
+    sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
+    account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
     try:
         # If the account provider is AD, assume it is local and try to get nsdc IP address, otherwise skip.
         nsdc_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'nsdc'], encoding='utf-8')
         nsdc_ip_address = json.loads(nsdc_props_json)['props']['IpAddress']
-        # Get the cluster status
-        cluster = call(api_endpoint, "get-cluster-status", payload['token'], {}, False)
-        # List all AD providers
-        domains  = call(api_endpoint, "list-user-domains", payload['token'], {}, False)
         # Initialize the flag
         all_installed = True
         # Parse all nodes
@@ -141,7 +145,6 @@ if account_provider_config['isAD'] == '1':
                     for provider in domain["providers"]:
                         if provider["node"] == node_id:
                             node["adProvider_installed"] = True  # Mark as installed
-
             # no AD installed set the flag
             if not node["adProvider_installed"]:
                 all_installed = False
@@ -150,10 +153,52 @@ if account_provider_config['isAD'] == '1':
             print("no_available_node_for_samba_provider", file=sys.stderr)
             sys.exit(1)
     except json.JSONDecodeError:
-        pass # Ignore missing nsdc/IpAddress prop
+        # Ignore missing nsdc/IpAddress prop, assuming the provider is
+        # external.
+        account_provider_external = "1"
+        # Ensure the external AD domain is already configured in NS8:
+        for domain in domains['data']['output']['domains']:
+            if domain.get("schema", "") != "ad":
+                continue # ignore non-AD domains
+            elif domain["name"] == account_provider_domain:
+                break # Domain match found.
+        else:
+            # No domain match found.
+            print("ns8-join: a matching external AD domain was not found in NS8.", file=sys.stderr)
+            sys.exit(1)
     except Exception as e:
         print("Error:", e, file=sys.stderr)
         sys.exit(1)
+elif account_provider_config['isLdap'] == '1':
+    if '127.0.0.1' in account_provider_config['LdapURI']:
+        # We have a local OpenLDAP account provider. Acquire the domain
+        # name for migration from UI.
+        if not args.user_domain:
+            print("ns8-join: user_domain is required for OpenLDAP account provider", file=sys.stderr)
+            sys.exit(1)
+        account_provider_domain = args.user_domain.lower()
+    else:
+        account_provider_external = "1"
+        # Check if remote RFC2307 account provider is correctly configured
+        # in NS8. Acquire the domain name for migration from NS8 existing
+        # domain.
+        matching_domains = []
+        for domain in domains['data']['output']['domains']:
+            if domain.get("schema", "") != "rfc2307":
+                continue # ignore non-rfc2307 domains
+            elif domain["location"] != "external":
+                continue # ignore internal domains
+            elif domain["base_dn"].lower() == account_provider_config["BaseDN"].lower():
+                account_provider_domain = domain["name"] # Domain match found.
+                matching_domains.append(domain["name"])
+        if len(matching_domains) == 0:
+            # No domain match found.
+            print("ns8-join: a matching external LDAP domain was not found in NS8.", file=sys.stderr)
+            sys.exit(1)
+        elif len(matching_domains) > 1:
+            # Too much matches: anomaly.
+            print("ns8-join: multiple LDAP domain matches were found: ", ", ".join(matching_domains), file=sys.stderr)
+            sys.exit(1)
 
 # Generate a new Wireguard key. If add-node succeedes, but VPN connection
 # fails, we must not reuse the same key to avoid conflicts.
@@ -215,7 +260,7 @@ data_ns7admin = {
         "user": ns7admin_user
     }
 
-add_user_response = call(api_endpoint, "add-user", payload['token'], data_ns7admin, False)
+add_user_response = call(api_endpoint, "add-user", payload['token'], data_ns7admin, args.tlsverify)
 if add_user_response['data']['exit_code'] != 0:
     # we need to leave the cluster if the user ns7admin cannot be added
     print(f"Task add_user {ns7admin_user} has failed:", add_user_response, file=sys.stderr)
@@ -245,18 +290,12 @@ api_endpoint = f"http://{ret['leader_ip_address']}:9311"
 #
 # Configure NS7 local account provider as external user domain provider in NS8
 #
-
-if account_provider_config['isAD'] == '1':
-    sssd_props_json = subprocess.check_output(['/sbin/e-smith/config', 'printjson', 'sssd'], encoding='utf-8')
-    account_provider_domain = json.loads(sssd_props_json)['props']['Realm'].lower()
-    if nsdc_ip_address == "":
-        # Ignore missing nsdc/IpAddress prop
-        account_provider_external = "1"
-    else:
-        account_provider_external = ""
+if account_provider_external != "":
+    pass # External account providers must be already configured: nothing to do.
+elif account_provider_config['isAD'] == '1':
         # Push a route to reach NSDC IP address through the cluster VPN
         update_routes_request = {"add": [{"ip_address": nsdc_ip_address, "node_id": ret['node_id']}]}
-        update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, False)
+        update_routes_response = call(api_endpoint, "update-routes", payload['token'], update_routes_request, args.tlsverify)
         if update_routes_response['data']['exit_code'] != 0:
             print("Task update_routes has failed:", update_routes_response, file=sys.stderr)
             sys.exit(1)
@@ -276,7 +315,7 @@ if account_provider_config['isAD'] == '1':
             "tls": True,
             "tls_verify": False,
         }
-        add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+        add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, args.tlsverify)
         if add_external_domain_response['data']['exit_code'] != 0:
             # we need to leave the cluster if the external domain cannot be added
             error = add_external_domain_response['data']['output'][0].get('error', '')
@@ -285,13 +324,7 @@ if account_provider_config['isAD'] == '1':
             print(message, file=sys.stderr)
             subprocess.run(['/usr/sbin/ns8-leave']) # leave the cluster, we failed to connect to the external domain
             sys.exit(1)
-elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provider_config['LdapURI']:
-    # Configure OpenLDAP as account provider of an external user domain: (retrieve the baseDN from the UI, directory.nh is obsoleted)
-    if not args.user_domain:
-        print("ns8-join: user_domain is required for OpenLDAP account provider", file=sys.stderr)
-        sys.exit(1)
-    account_provider_domain = args.user_domain.lower()
-    account_provider_external = ""
+elif account_provider_config['isLdap'] == '1':
     add_external_domain_request = {
         "domain": account_provider_domain,
         "protocol": "ldap",
@@ -304,7 +337,7 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
         "tls": True,
         "tls_verify": False,
     }
-    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, False)
+    add_external_domain_response = call(api_endpoint, "add-external-domain", payload['token'], add_external_domain_request, args.tlsverify)
     if add_external_domain_response['data']['exit_code'] != 0:
         # we need to leave the cluster if the external domain cannot be added
         error = add_external_domain_response['data']['output'][0].get('error', '')
@@ -313,13 +346,6 @@ elif account_provider_config['isLdap'] == '1' and '127.0.0.1' in account_provide
         print(message, file=sys.stderr)
         subprocess.run(['/usr/sbin/ns8-leave']) # leave the cluster, we failed to connect to the external domain
         sys.exit(1)
-elif account_provider_config['isLdap'] == '1':
-    # Remote LDAP account provider
-    account_provider_domain = account_provider_config["BaseDN"].replace(",dc=", ".").replace("dc=", "")
-    account_provider_external = "1"
-else:
-    account_provider_domain = ""
-    account_provider_external = ""
 
 with open('/var/lib/nethserver/nethserver-ns8-migration/environment', 'a') as fp:
     fp.write(f"USER_DOMAIN={account_provider_domain}\n")

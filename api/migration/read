@@ -103,6 +103,7 @@ def get_migration_status(app_id):
 
 def get_account_provider_info():
     provider = 'ldap'
+    domain = subprocess.check_output(["awk", "-F", "=", '/^USER_DOMAIN=/ { print $2 }', "/var/lib/nethserver/nethserver-ns8-migration/environment"]).strip()
     ip_addresses = []
     if os.path.isfile('/etc/e-smith/db/configuration/defaults/nsdc/type'):
         provider = 'ad'
@@ -121,6 +122,7 @@ def get_account_provider_info():
     return {
         "id": "account-provider",
         "provider": provider,
+        "domain": domain,
         "ip_addresses": ip_addresses
     }
 
@@ -242,17 +244,17 @@ def list_apps():
     return apps
 
 def get_cluster_status():
-    bash_command = ["/usr/sbin/ns8-action", "cluster", "get-cluster-status", "null"]
+    bash_command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "get-cluster-status", "null"]
     process = subprocess.check_output(bash_command)
     output = json.loads(process.decode('utf-8'))
 
     # list all modules
-    command = ["/usr/sbin/ns8-action", "cluster", "list-modules", "null"]
+    command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "list-modules", "null"]
     process = subprocess.check_output(command)
     modules = json.loads(process.decode('utf8'))
 
     # list all AD providers
-    command = ["/usr/sbin/ns8-action", "cluster", "list-user-domains", "null"]
+    command = ["/usr/sbin/ns8-action", "--hidden", "cluster", "list-user-domains", "null"]
     process = subprocess.check_output(command)
     domains = json.loads(process.decode('utf8'))
 

@@ -418,7 +418,7 @@
                       accountProviderConfig.location === 'remote'
                     "
                   >
-                    {{ $t("dashboard.remote_account_provider") }}
+                    {{ $t("dashboard.remote_account_provider", {"domain": app.domain}) }}
                   </span>
                   <!-- local account provider status description -->
                   <span
@@ -428,7 +428,7 @@
                       !canStartAccountProviderMigration
                     "
                   >
-                    {{ $t("dashboard.local_account_provider_migrate_last") }}
+                    {{ $t("dashboard.local_account_provider_migrate_last", {"domain": app.domain}) }}
                   </span>
                   <!-- standard status description -->
                   <span v-else>{{ $t("dashboard.status_" + app.status) }}</span>
@@ -1367,6 +1367,7 @@ export default {
     isAvailableNodeForSambaProvider() {
       // check if there is a node available for samba provider, return true if there is
       if (
+        this.accountProviderConfig &&
         this.accountProviderConfig.type === "ad" &&
         this.accountProviderConfig.location === "local"
       ) {
