@@ -152,7 +152,7 @@ if account_provider_config['isAD'] == '1':
         if all_installed:
             print("no_available_node_for_samba_provider", file=sys.stderr)
             sys.exit(1)
-    except json.JSONDecodeError:
+    except (TypeError, json.JSONDecodeError):
         # Ignore missing nsdc/IpAddress prop, assuming the provider is
         # external.
         account_provider_external = "1"
@@ -166,9 +166,6 @@ if account_provider_config['isAD'] == '1':
             # No domain match found.
             print("ns8-join: a matching external AD domain was not found in NS8.", file=sys.stderr)
             sys.exit(1)
-    except Exception as e:
-        print("Error:", e, file=sys.stderr)
-        sys.exit(1)
 elif account_provider_config['isLdap'] == '1':
     if '127.0.0.1' in account_provider_config['LdapURI']:
         # We have a local OpenLDAP account provider. Acquire the domain
