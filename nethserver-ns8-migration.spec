@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.1.0
+Version: 1.2.0
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,12 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Wed Jan 22 2025 Davide Principi <davide.principi@nethesis.it> - 1.2.0-1
+- Migration: prevent app migration to nodes with allocated ports - NethServer/dev#7226
+- NS7 join fails if user domain directory.nh exists - NethServer/dev#7222
+- Browser page refresh leads to Start migration button again - NethServer/dev#7239
+- Nethvoice: install nethvoice proxy as a migration dependency - NethServer/dev#7221
+
 * Thu Dec 12 2024 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.1.0-1
 - Migration tool blindly removes external user domain - NethServer/dev#7199
 - NS6 (7) OpenLDAP migration failed - NethServer/dev#7101
