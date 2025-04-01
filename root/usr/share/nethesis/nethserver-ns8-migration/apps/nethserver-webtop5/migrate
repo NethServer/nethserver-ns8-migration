@@ -53,6 +53,9 @@ fi
 # Sync z-push_state. uid=82:gid=82 maps to www-data:www-data
 rsync -i --archive --usermap=1-1000:82 --groupmap=1-1000:82 --delete /var/log/z-push/state/ "${RSYNC_ENDPOINT}"/data/volumes/z-push_state/
 
+# Cleanup bad IMAP config, issue #7371
+su - postgres  -c "psql -nqS -P pager=off webtop5 -c \"delete from core.user_settings where service_id='com.sonicle.webtop.mail' and key='host' and value ='localhost';\"" || :
+
 # Sync postgresql webtop5 DB dump
 su - postgres -c "pg_dump --format=c webtop5" > webtop5.dump
 rsync -zi webtop5.dump "${RSYNC_ENDPOINT}"/data/state/webtop5.dump
