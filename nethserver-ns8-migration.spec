@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.2.0
+Version: 1.2.1
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Apr 04 2025 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.2.1-1
+- Webtop migration to NS8 and failure to access mailboxes in some cases - NethServer/dev#7371
+
 * Wed Jan 22 2025 Davide Principi <davide.principi@nethesis.it> - 1.2.0-1
 - Migration: prevent app migration to nodes with allocated ports - NethServer/dev#7226
 - NS7 join fails if user domain directory.nh exists - NethServer/dev#7222
