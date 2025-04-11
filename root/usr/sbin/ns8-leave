@@ -34,7 +34,7 @@ if [[ -n "${NODE_ID}" ]]; then
 fi
 
 # reset DB props
-/sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled LeaderIpAddress ""
+/sbin/e-smith/config setprop ns8 Host "" User "" Password "" TLSVerify enabled LeaderIpAddress "" ActionWatchdog "enabled"
 /sbin/e-smith/config setprop wg-quick@ns8 status disabled Address "" RemoteEndpoint "" RemoteKey "" RemoteNetwork ""
 
 # reset nsdc routes
