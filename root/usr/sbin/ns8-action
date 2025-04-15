@@ -54,18 +54,23 @@ def run_task(api_endpoint, token, agent, action, data):
     return f"{agent}/task/{task_id}"
 
 def wait_task(api_endpoint, token, task_id):
-    """Wait until the task_id response is ready. Timeout in 10 minutes."""
-    get_response = {"code": 201}
+    """Wait for the running task_id, until its response is ready or a
+    network/HTTP error occurs."""
     watchdog = 0
-    while get_response["code"] == 201:
-        if watchdog >= 300:
-            raise Exception("No server response")
+    while True:
+        if watchdog > 9:
+            context_request = request.Request(f'{api_endpoint}/api/{task_id}/context')
+            context_request.add_header('Content-Type', 'application/json')
+            context_request.add_header('Authorization', f'Bearer {token}')
+            # NOTE: this raises an exception if the task has died unexpectedly:
+            if request.urlopen(context_request).getcode() == 200:
+                # Clear watchdog if task is still running
+                watchdog = 0
         try:
             req = request.Request(f'{api_endpoint}/api/{task_id}/status')
             req.add_header('Content-Type', 'application/json')
             req.add_header('Authorization', f'Bearer {token}')
-            get = request.urlopen(req)
-            get_response = json.loads(get.read())
+            return json.loads(request.urlopen(req).read())
         except HTTPError as ex:
             if ex.getcode() in [400, 404]:
                 time.sleep(2)
@@ -73,8 +78,6 @@ def wait_task(api_endpoint, token, task_id):
                 raise
         finally:
             watchdog = watchdog + 1
-
-    return get_response
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--attach', default=False, action='store_true', help="return the remote action exit code and output")
