@@ -99,6 +99,25 @@ echo "Dump asteriskcdrdb database structure"
 echo "Dump asteriskcdrdb database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --skip-lock-tables --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
 
+# Dump NethHotel databases
+if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
+    # Create nethhotel structure dump
+    echo "Dump nethhotel database structure"
+    /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases roomsdb > /var/lib/asterisk/20_roomsdb_structure.sql
+    # Create nethhotel data dump
+    echo "Dump nethhotel database data"
+    /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases roomsdb > /var/lib/asterisk/70_roomsdb_data.sql
+
+    # Dump fias database if exists
+    if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE fias" 2>/dev/null; then
+        # Create fias structure dump
+        echo "Dump fias database structure"
+        /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases fias > /var/lib/asterisk/20_fias_structure.sql
+        # Create fias data dump
+        echo "Dump fias database data"
+        /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases fias > /var/lib/asterisk/70_fias_data.sql
+    fi
+fi
 
 # Create astdb dump
 echo "Dump astdb"
