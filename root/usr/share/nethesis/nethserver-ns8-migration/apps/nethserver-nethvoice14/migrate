@@ -49,6 +49,7 @@ done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/etc_exclude \
     /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -trv --owner --group --chown=990:991 -s --delete /etc/fias.conf "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/agi-bin_exclude \
     /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
@@ -152,6 +153,21 @@ TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
 
 PHONEBOOK_DB_PASS=$(cat /var/lib/nethserver/secrets/PhonebookDBPasswd)
 
+# Set NETHVOICE_HOTEL variable to 1 if roomsdb databse exists
+if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
+    NETHVOICE_HOTEL=1
+else
+    NETHVOICE_HOTEL=0
+fi
+# Set NETHVOICE_HOTEL_FIAS_ADDRESS and NETHVOICE_HOTEL_FIAS_PORT from /etc/fias.conf
+if [[ -f /etc/fias.conf ]]; then
+    NETHVOICE_HOTEL_FIAS_ADDRESS=$(grep -E "^address=" /etc/fias.conf | cut -d= -f2)
+    NETHVOICE_HOTEL_FIAS_PORT=$(grep -E "^port=" /etc/fias.conf | cut -d= -f2)
+else
+    NETHVOICE_HOTEL_FIAS_ADDRESS=""
+    NETHVOICE_HOTEL_FIAS_PORT=""
+fi
+
 ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
         --arg brand_name "${BRAND_NAME}" \
@@ -162,6 +178,9 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
         --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
         --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
         --arg timezone "${TIMEZONE}" \
+        --arg nethvoice_hotel "${NETHVOICE_HOTEL}" \
+        --arg nethvoice_hotel_fias_address "${NETHVOICE_HOTEL_FIAS_ADDRESS}" \
+        --arg nethvoice_hotel_fias_port "${NETHVOICE_HOTEL_FIAS_PORT}" \
         --arg user_domain "${USER_DOMAIN}" \
         '{
             "brand_name": $brand_name,
