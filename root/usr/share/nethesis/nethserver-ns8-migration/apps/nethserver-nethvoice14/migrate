@@ -155,9 +155,9 @@ PHONEBOOK_DB_PASS=$(cat /var/lib/nethserver/secrets/PhonebookDBPasswd)
 
 # Set NETHVOICE_HOTEL variable to 1 if roomsdb databse exists
 if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
-    NETHVOICE_HOTEL=1
+    NETHVOICE_HOTEL=True
 else
-    NETHVOICE_HOTEL=0
+    NETHVOICE_HOTEL=False
 fi
 # Set NETHVOICE_HOTEL_FIAS_ADDRESS and NETHVOICE_HOTEL_FIAS_PORT from /etc/fias.conf
 if [[ -f /etc/fias.conf ]]; then
