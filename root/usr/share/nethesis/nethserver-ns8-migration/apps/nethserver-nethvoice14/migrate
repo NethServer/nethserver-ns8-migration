@@ -185,7 +185,7 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
         '{
             "brand_name": $brand_name,
             "http2https": true,
-            "lets_encrypt": false,
+            "lets_encrypt": true,
             "nethcti_ui_host": $nethcti_ui_host,
             "nethvoice_host": $nethvoice_host,
             "phonebook_db_password": $phonebook_db_password,
