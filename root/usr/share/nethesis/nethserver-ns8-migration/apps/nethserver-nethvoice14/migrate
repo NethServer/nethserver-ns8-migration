@@ -153,7 +153,7 @@ TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
 
 PHONEBOOK_DB_PASS=$(cat /var/lib/nethserver/secrets/PhonebookDBPasswd)
 
-# Set NETHVOICE_HOTEL variable to 1 if roomsdb databse exists
+# Set NETHVOICE_HOTEL variable to True if roomsdb databse exists
 if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
     NETHVOICE_HOTEL=True
 else
@@ -193,6 +193,9 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
             "subscription_systemid": $subscription_systemid,
             "subscription_secret": $subscription_secret,
             "timezone": $timezone,
+            "nethvoice_hotel": $nethvoice_hotel,
+            "nethvoice_hotel_fias_address": $nethvoice_hotel_fias_address,
+            "nethvoice_hotel_fias_port": $nethvoice_hotel_fias_port,
             "user_domain": $user_domain
         }'
 )"
