@@ -39,6 +39,8 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     # During the last, "finish" rsync run there must be no changes to
     # the database: stop the service early.
     systemctl stop httpd-fpbx
+    systemctl stop fias || :
+    systemctl stop fias-dispatcher || :
 fi
 
 # Sync custom audio files
