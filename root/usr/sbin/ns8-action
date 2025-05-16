@@ -59,20 +59,24 @@ def wait_task(api_endpoint, token, task_id):
     watchdog = 0
     while True:
         if watchdog > 9:
+            watchdog = 0
             context_request = request.Request(f'{api_endpoint}/api/{task_id}/context')
             context_request.add_header('Content-Type', 'application/json')
             context_request.add_header('Authorization', f'Bearer {token}')
-            # NOTE: this raises an exception if the task has died unexpectedly:
-            if request.urlopen(context_request).getcode() == 200:
-                # Clear watchdog if task is still running
-                watchdog = 0
+            try:
+                request.urlopen(context_request)
+            except HTTPError as ex:
+                if ex.getcode() in [500]:
+                    time.sleep(2) # retry after 2 seconds
+                else:
+                    raise
         try:
             req = request.Request(f'{api_endpoint}/api/{task_id}/status')
             req.add_header('Content-Type', 'application/json')
             req.add_header('Authorization', f'Bearer {token}')
             return json.loads(request.urlopen(req).read())
         except HTTPError as ex:
-            if ex.getcode() in [400, 404]:
+            if ex.getcode() in [400, 404, 500]:
                 time.sleep(2)
             else:
                 raise
