@@ -39,6 +39,8 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     # During the last, "finish" rsync run there must be no changes to
     # the database: stop the service early.
     systemctl stop httpd-fpbx
+    systemctl stop fias || :
+    systemctl stop fias-dispatcher || :
 fi
 
 # Sync custom audio files
@@ -49,6 +51,7 @@ done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/etc_exclude \
     /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -trv --owner --group --chown=990:991 -s --delete /etc/fias.conf "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/agi-bin_exclude \
     /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
@@ -99,6 +102,25 @@ echo "Dump asteriskcdrdb database structure"
 echo "Dump asteriskcdrdb database data"
 /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --skip-lock-tables --no-create-info --databases asteriskcdrdb > /var/lib/asterisk/80_asteriskcdrdb_data.sql
 
+# Dump NethHotel databases
+if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
+    # Create nethhotel structure dump
+    echo "Dump nethhotel database structure"
+    /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases roomsdb > /var/lib/asterisk/20_roomsdb_structure.sql
+    # Create nethhotel data dump
+    echo "Dump nethhotel database data"
+    /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases roomsdb > /var/lib/asterisk/70_roomsdb_data.sql
+
+    # Dump fias database if exists
+    if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE fias" 2>/dev/null; then
+        # Create fias structure dump
+        echo "Dump fias database structure"
+        /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --no-data --add-drop-database --databases fias > /var/lib/asterisk/20_fias_structure.sql
+        # Create fias data dump
+        echo "Dump fias database data"
+        /usr/bin/mysqldump --defaults-file=/root/.my.cnf --skip-dump-date --skip-triggers --no-create-info --databases fias > /var/lib/asterisk/70_fias_data.sql
+    fi
+fi
 
 # Create astdb dump
 echo "Dump astdb"
@@ -133,6 +155,21 @@ TIMEZONE=$(/sbin/e-smith/db configuration get TimeZone)
 
 PHONEBOOK_DB_PASS=$(cat /var/lib/nethserver/secrets/PhonebookDBPasswd)
 
+# Set NETHVOICE_HOTEL variable to True if roomsdb databse exists
+if /usr/bin/mysql --defaults-file=/root/.my.cnf -e "USE roomsdb" 2>/dev/null; then
+    NETHVOICE_HOTEL=True
+else
+    NETHVOICE_HOTEL=False
+fi
+# Set NETHVOICE_HOTEL_FIAS_ADDRESS and NETHVOICE_HOTEL_FIAS_PORT from /etc/fias.conf
+if [[ -f /etc/fias.conf ]]; then
+    NETHVOICE_HOTEL_FIAS_ADDRESS=$(grep -E "^address=" /etc/fias.conf | cut -d= -f2)
+    NETHVOICE_HOTEL_FIAS_PORT=$(grep -E "^port=" /etc/fias.conf | cut -d= -f2)
+else
+    NETHVOICE_HOTEL_FIAS_ADDRESS=""
+    NETHVOICE_HOTEL_FIAS_PORT=""
+fi
+
 ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
     jq -n -c \
         --arg brand_name "${BRAND_NAME}" \
@@ -143,11 +180,14 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
         --arg subscription_systemid "${SUBSCRIPTION_SYSTEMID}" \
         --arg subscription_secret "${SUBSCRIPTION_SECRET}" \
         --arg timezone "${TIMEZONE}" \
+        --arg nethvoice_hotel "${NETHVOICE_HOTEL}" \
+        --arg nethvoice_hotel_fias_address "${NETHVOICE_HOTEL_FIAS_ADDRESS}" \
+        --arg nethvoice_hotel_fias_port "${NETHVOICE_HOTEL_FIAS_PORT}" \
         --arg user_domain "${USER_DOMAIN}" \
         '{
             "brand_name": $brand_name,
             "http2https": true,
-            "lets_encrypt": false,
+            "lets_encrypt": true,
             "nethcti_ui_host": $nethcti_ui_host,
             "nethvoice_host": $nethvoice_host,
             "phonebook_db_password": $phonebook_db_password,
@@ -155,6 +195,9 @@ ns8-action --attach "module/${MODULE_INSTANCE_ID}" configure-module "$(
             "subscription_systemid": $subscription_systemid,
             "subscription_secret": $subscription_secret,
             "timezone": $timezone,
+            "nethvoice_hotel": $nethvoice_hotel,
+            "nethvoice_hotel_fias_address": $nethvoice_hotel_fias_address,
+            "nethvoice_hotel_fias_port": $nethvoice_hotel_fias_port,
             "user_domain": $user_domain
         }'
 )"
