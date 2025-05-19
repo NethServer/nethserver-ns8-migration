@@ -2084,8 +2084,7 @@ export default {
           context.loading.migrationUpdate = false;
           context.loading.abortAction = false;
           context.migrationReadApps();
-        },
-        false
+        }
       );
     },
     toggleSkip(app) {
