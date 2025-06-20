@@ -1305,7 +1305,7 @@ export default {
       roundcubeNode: 1,
       sogoNode: 1,
       getmailNode: 1,
-      leaderIpAddress: "",
+      LeaderIpAddress: "",
       localDomain: "",
       loading: {
         connectionRead: false,
@@ -1710,7 +1710,7 @@ export default {
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
       this.isLdapEnabled = slapd.status === "enabled";
-      this.leaderIpAddress = ns8Config.leaderIpAddress;
+      this.LeaderIpAddress = ns8Config.LeaderIpAddress;
       if (this.config.isConnected) {
         this.migrationReadClusterStatus();
         this.listApplications();
@@ -2192,9 +2192,9 @@ export default {
         return;
       }
       this.clusterNodes = output.clusterStatus.data.output.nodes;
-      // find the leader node.id when leaderIpAddress === vpn.ip_address
+      // find the leader node.id when LeaderIpAddress === vpn.ip_address
       this.clusterNodes.forEach((node) => {
-        if (node.vpn.ip_address === this.leaderIpAddress) {
+        if (node.vpn.ip_address === this.LeaderIpAddress) {
           // the leader node.id is probably not the default id 1, set what we find
           this.appNode = node.id;
           this.emailNode = node.id;
