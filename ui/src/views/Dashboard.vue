@@ -1710,7 +1710,7 @@ export default {
       this.config.tlsVerify = ns8Config.TLSVerify == "enabled";
       this.loading.connectionRead = false;
       this.isLdapEnabled = slapd.status === "enabled";
-      this.leaderIpAddress = ns8Config.leaderIpAddress;
+      this.leaderIpAddress = ns8Config.LeaderIpAddress;
       if (this.config.isConnected) {
         this.migrationReadClusterStatus();
         this.listApplications();
