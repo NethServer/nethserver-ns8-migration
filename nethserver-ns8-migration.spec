@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.1
+Version: 1.3.2
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Mon Jun 23 2025 Davide Principi <davide.principi@nethesis.it> - 1.3.2-1
+- Migration to orphan single node cluster fails - NethServer/dev#7508
+- NethHotel: port old NethHotel from NethVoice14 - NethServer/dev#7425
+
 * Tue May 20 2025 Davide Principi <davide.principi@nethesis.it> - 1.3.1-1
 - Migration tool app abort error with non-root user - NethServer/dev#7449
 - Migration Mail start fails with HTTP 500 error - NethServer/dev#7464
