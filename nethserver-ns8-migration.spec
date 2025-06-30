@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.2
+Version: 1.3.3
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Mon Jun 30 2025 Stefano Fancello <gentoo.stefano@gmail.com> - 1.3.3-1
+- fix(nethvoice): Don't fail if /etc/fias.conf doesn't exist (#121)
+
 * Mon Jun 23 2025 Davide Principi <davide.principi@nethesis.it> - 1.3.2-1
 - Migration to orphan single node cluster fails - NethServer/dev#7508
 - NethHotel: port old NethHotel from NethVoice14 - NethServer/dev#7425
