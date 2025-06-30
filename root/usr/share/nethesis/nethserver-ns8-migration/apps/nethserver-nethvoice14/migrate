@@ -51,7 +51,7 @@ done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/etc_exclude \
     /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
-rsync -trv --owner --group --chown=990:991 -s --delete /etc/fias.conf "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
+rsync -trv --owner --group --chown=990:991 -s --delete --ignore-missing-args /etc/fias.conf "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/agi-bin_exclude \
     /var/lib/asterisk/agi-bin/ "${RSYNC_ENDPOINT}"/data/volumes/agi-bin/
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/moh/ "${RSYNC_ENDPOINT}"/data/volumes/moh/
