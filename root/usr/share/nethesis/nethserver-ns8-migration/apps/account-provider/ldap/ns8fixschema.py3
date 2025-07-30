@@ -179,8 +179,12 @@ def run_filter():
                 # already present. If cn is not available, try with gecos
                 # or uid.
                 if 'inetOrgPerson' in cur_classes and not _get_attribute(cur_entry, 'displayName'):
+                    # the gecos attribute misses some utf8 characters
                     displayName = _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'gecos') or _get_attribute(cur_entry, 'uid')
-                    print("displayName: " + displayName)
+                    if displayName.startswith(': '): # we have an b64 string because we split the value of the attribute with ':'
+                        print("displayName:" + displayName) # base64 encoded value
+                    else:
+                        print("displayName: " + displayName) # not a base64 encoded value
                 print()
             # Start a new LDIF entry
             cur_classes.clear()
