@@ -180,7 +180,7 @@ def run_filter():
                 # or uid.
                 if 'inetOrgPerson' in cur_classes and not _get_attribute(cur_entry, 'displayName'):
                     # the gecos attribute misses some utf8 characters, the displayname will be wrong usèr !== usr
-                    displayName = _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'uid')
+                    displayName = _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'gecos') or _get_attribute(cur_entry, 'uid')
                     if ':' in displayName: # we have an b64 string because we split the value of the attribute with ':'
                         displayName = displayName.lstrip(':').lstrip()
                         print("displayName:: " + displayName) # base64 encoded value
