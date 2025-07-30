@@ -175,12 +175,16 @@ def run_filter():
                 if 'posixAccount' in cur_classes and _has_disabled_password(cur_entry):
                     print("pwdAccountLockedTime: 000001010000Z")
                 # NS8 apps require a displayName attribute is set. Copy
-                # gecos attribute value to displayName, if it is not
-                # already present. If gecos is not available, try with cn
+                # cn attribute value to displayName, if it is not
+                # already present. If cn is not available, try with gecos
                 # or uid.
                 if 'inetOrgPerson' in cur_classes and not _get_attribute(cur_entry, 'displayName'):
-                    displayName = _get_attribute(cur_entry, 'gecos') or _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'uid')
-                    print("displayName: " + displayName)
+                    # the gecos attribute misses some utf8 characters
+                    displayName = _get_attribute(cur_entry, 'cn') or _get_attribute(cur_entry, 'gecos') or _get_attribute(cur_entry, 'uid')
+                    if displayName.startswith(': '): # we have an b64 string because we split the value of the attribute with ':'
+                        print("displayName:" + displayName) # base64 encoded value
+                    else:
+                        print("displayName: " + displayName) # not a base64 encoded value
                 print()
             # Start a new LDIF entry
             cur_classes.clear()
