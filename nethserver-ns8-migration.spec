@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.3
+Version: 1.3.4
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Tue Aug 26 2025 Davide Principi <davide.principi@nethesis.it> - 1.3.4-1
+- OpenLDAP migration trims accented chars - NethServer/dev#7576
+- WebTop 1.5 with Tomcat and Postgresql Version Upgrade [always migrate to WebTop 1.4.4] - NethServer/dev#7489
+
 * Mon Jun 30 2025 Stefano Fancello <gentoo.stefano@gmail.com> - 1.3.3-1
 - fix(nethvoice): Don't fail if /etc/fias.conf doesn't exist (#121)
 
