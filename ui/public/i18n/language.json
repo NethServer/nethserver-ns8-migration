@@ -124,7 +124,7 @@
     "admin_password_not_allowed":"The `|` character is not allowed",
     "ldap_user_domain_empty": "LDAP user domain is required",
     "ldap_user_domain_invalid": "Invalid LDAP user domain",
-    "virtual_host_invalid": "Invalid virtual host"
+    "virtual_host_invalid": "A fully qualified domain name (FQDN) must include a DNS domain suffix, such as .com or .local"
   },
   "docs": {},
   "are_you_sure": "Are you sure",
