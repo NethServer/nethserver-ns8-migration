@@ -1525,6 +1525,12 @@ export default {
       this.error.sogoVirtualHost = "";
       this.error.webtopVirtualHost = "";
     },
+    fullyQualifiedDomainNameValidation(value) {
+      // Simple FQDN validation: labels separated by dots, no label starts/ends with hyphen
+      const simpleFqdnRegex =
+        /^(?!-)[A-Za-z0-9-]+(\.[A-ZaZ0-9-]+)*\.[A-Za-z]{2,}$/i;
+      return simpleFqdnRegex.test(value);
+    },
     validateFinishMigrationFromModal() {
       let isValidationOk = true;
 
@@ -1540,6 +1546,17 @@ export default {
           this.$refs.virtualHost.focus();
           isValidationOk = false;
         }
+        // fqdn validation virtualHost
+        if (
+          this.virtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.virtualHost)
+        ) {
+          this.error.virtualHost = this.$t("validation.virtual_host_invalid");
+          if (isValidationOk) {
+            this.$refs.virtualHost.focus();
+            isValidationOk = false;
+          }
+        }
       } else if (this.currentApp.id === "nethserver-nethvoice14") {
         // nethvoice
 
@@ -1553,10 +1570,36 @@ export default {
             isValidationOk = false;
           }
         }
+        // fqdn validation nethVoiceVirtualHost
+        if (
+          this.nethVoiceVirtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.nethVoiceVirtualHost)
+        ) {
+          this.error.nethVoiceVirtualHost = this.$t(
+            "validation.virtual_host_invalid"
+          );
+          if (isValidationOk) {
+            this.$refs.nethVoiceVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
 
         if (this.nethvoiceApp && !this.ctiVirtualHost) {
           this.error.ctiVirtualHost = this.$t("validation.virtual_host_empty");
 
+          if (isValidationOk) {
+            this.$refs.ctiVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+        // fqdn validation ctiVirtualHost
+        if (
+          this.ctiVirtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.ctiVirtualHost)
+        ) {
+          this.error.ctiVirtualHost = this.$t(
+            "validation.virtual_host_invalid"
+          );
           if (isValidationOk) {
             this.$refs.ctiVirtualHost.focus();
             isValidationOk = false;
@@ -1604,10 +1647,36 @@ export default {
             isValidationOk = false;
           }
         }
+        // fqdn validation roundCubeVirtualHost
+        if (
+          this.roundCubeVirtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.roundCubeVirtualHost)
+        ) {
+          this.error.roundCubeVirtualHost = this.$t(
+            "validation.virtual_host_invalid"
+          );
+          if (isValidationOk) {
+            this.$refs.roundcubeVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
 
         if (this.sogoApp && !this.sogoVirtualHost) {
           this.error.sogoVirtualHost = this.$t("validation.virtual_host_empty");
 
+          if (isValidationOk) {
+            this.$refs.sogoVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+        // fqdn validation sogoVirtualHost
+        if (
+          this.sogoVirtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.sogoVirtualHost)
+        ) {
+          this.error.sogoVirtualHost = this.$t(
+            "validation.virtual_host_invalid"
+          );
           if (isValidationOk) {
             this.$refs.sogoVirtualHost.focus();
             isValidationOk = false;
@@ -1623,6 +1692,19 @@ export default {
             "validation.virtual_host_empty"
           );
 
+          if (isValidationOk) {
+            this.$refs.webtopVirtualHost.focus();
+            isValidationOk = false;
+          }
+        }
+        // fqdn validation webtopVirtualHost
+        if (
+          this.webtopVirtualHost &&
+          !this.fullyQualifiedDomainNameValidation(this.webtopVirtualHost)
+        ) {
+          this.error.webtopVirtualHost = this.$t(
+            "validation.virtual_host_invalid"
+          );
           if (isValidationOk) {
             this.$refs.webtopVirtualHost.focus();
             isValidationOk = false;
