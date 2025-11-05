@@ -1549,6 +1549,7 @@ export default {
         // fqdn validation virtualHost
         if (
           this.virtualHost &&
+          !this.nextcloudApp.config.props.VirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.virtualHost)
         ) {
           this.error.virtualHost = this.$t("validation.virtual_host_invalid");
@@ -1572,6 +1573,7 @@ export default {
         }
         // fqdn validation nethVoiceVirtualHost
         if (
+          this.nethvoiceApp &&
           this.nethVoiceVirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.nethVoiceVirtualHost)
         ) {
@@ -1594,6 +1596,7 @@ export default {
         }
         // fqdn validation ctiVirtualHost
         if (
+          this.nethvoiceApp &&
           this.ctiVirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.ctiVirtualHost)
         ) {
@@ -1649,6 +1652,7 @@ export default {
         }
         // fqdn validation roundCubeVirtualHost
         if (
+          this.roundcubeApp &&
           this.roundCubeVirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.roundCubeVirtualHost)
         ) {
@@ -1671,6 +1675,7 @@ export default {
         }
         // fqdn validation sogoVirtualHost
         if (
+          this.sogoApp &&
           this.sogoVirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.sogoVirtualHost)
         ) {
@@ -1699,6 +1704,7 @@ export default {
         }
         // fqdn validation webtopVirtualHost
         if (
+          this.webtopApp &&
           this.webtopVirtualHost &&
           !this.fullyQualifiedDomainNameValidation(this.webtopVirtualHost)
         ) {
