@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.4
+Version: 1.3.5
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Thu Nov 13 2025 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.3.5-1
+- Nextcloud migration stuck with wrong virtual host name - NethServer/dev#7681
+
 * Tue Aug 26 2025 Davide Principi <davide.principi@nethesis.it> - 1.3.4-1
 - OpenLDAP migration trims accented chars - NethServer/dev#7576
 - WebTop 1.5 with Tomcat and Postgresql Version Upgrade [always migrate to WebTop 1.4.4] - NethServer/dev#7489
