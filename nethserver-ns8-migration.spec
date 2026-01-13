@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.5
+Version: 1.3.6
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Tue Jan 13 2026 Davide Principi <davide.principi@nethesis.it> - 1.3.6-1
+- NethVoice: Backend support for new certificate management UX (failures & Traefik restart warning) - NethServer/dev#7720
+
 * Thu Nov 13 2025 Stephane de Labrusse <stephdl@de-labrusse.fr> - 1.3.5-1
 - Nextcloud migration stuck with wrong virtual host name - NethServer/dev#7681
 
