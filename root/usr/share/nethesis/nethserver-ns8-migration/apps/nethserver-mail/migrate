@@ -81,17 +81,6 @@ fi
 # rsync note: using usermap and groupmap arguments because the chown does
 # not work. Using the "catchall" range 1-1000 because "*" does not work
 
-# Fix sieve filters: strip @domain from Shared/ folder paths
-# NS7 format: fileinto "Shared/account@domain/folder"
-# NS8 format: fileinto "Shared/account/folder"
-# Issue #7714
-fix_sieve_filters() {
-    find /var/lib/nethserver/vmail/ -name "*.sieve" -print0 \
-        | xargs -0 --no-run-if-empty \
-          sed -i -E 's|(fileinto\s+"Shared/[^@"]+)@[^/"]*(/?[^"]*")|\1\2|g'
-}
-fix_sieve_filters
-
 # Send mailboxes
 rsync -i --archive --usermap=1-1000:100 --groupmap=1-1000:101 --exclude lucene-indexes/ --delete /var/lib/nethserver/vmail/ "${RSYNC_ENDPOINT}"/data/volumes/dovecot-data/
 
