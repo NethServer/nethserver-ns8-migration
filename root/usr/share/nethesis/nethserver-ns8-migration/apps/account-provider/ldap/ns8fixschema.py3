@@ -165,7 +165,8 @@ def run_filter():
                 # Convert the last password change timestamp:
                 if 'posixAccount' in cur_classes:
                     shadow_last_change = _get_attribute(cur_entry, 'shadowLastChange')
-                    if shadow_last_change:
+                    has_password_never_expires = _get_attribute(cur_entry, 'shadowMax') == '99999'
+                    if shadow_last_change and not has_password_never_expires:
                         try:
                             print('pwdChangedTime: ' + _convert_pwd_change_date(int(shadow_last_change)))
                         except Exception as ex:
