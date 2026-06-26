@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.7
+Version: 1.3.8
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Jun 26 2026 Davide Principi <davide.principi@nethesis.it> - 1.3.8-1
+- Password never expires: OpenLDAP support for individual users - NethServer/dev#7981
+
 * Fri Mar 20 2026 Davide Principi <davide.principi@nethesis.it> - 1.3.7-1
 - Alternate root folder configured on webtop does not work after migration to NS8 - NethServer/dev#7715
 - WebTop: Favorite folders not migrated - NethServer/dev#7718
