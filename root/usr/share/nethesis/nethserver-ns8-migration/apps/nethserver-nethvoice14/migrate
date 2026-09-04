@@ -62,7 +62,7 @@ for lang in $(find /var/lib/asterisk/sounds/ -maxdepth 2  -mindepth 2 -type d -n
         /var/lib/asterisk/sounds/"${lang}"/custom "${RSYNC_ENDPOINT}"/data/volumes/sounds/"${lang}"/
 done
 rsync -trv --owner --group --chown=990:991 -s --delete /var/lib/asterisk/sounds/nethcti "${RSYNC_ENDPOINT}"/data/volumes/sounds/
-rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/etc_exclude \
+rsync -trlv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/etc_exclude \
     /etc/asterisk/ "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
 rsync -trv --owner --group --chown=990:991 -s --delete --ignore-missing-args /etc/fias.conf "${RSYNC_ENDPOINT}"/data/volumes/asterisk/
 rsync -trv --owner --group --chown=990:991 -s --exclude-from="${AGENT_INSTALL_DIR}"/apps/nethserver-nethvoice14/agi-bin_exclude \
@@ -92,10 +92,11 @@ if [[ "${MIGRATE_ACTION}" == "finish" ]]; then
     run_tancredi_ns8_migration_helper prepare-tokens
 fi
 
-# NS8 generates and publishes its own tok1 through RPS. Import only the tok2
-# prepared above; the legacy retry journal is private migration state.
+# NS8 generates and publishes its own tok1 through RPS. Preserve the empty
+# first_access_tokens directory, with its mapped www-data group, but exclude
+# every legacy tok1. The legacy retry journal is private migration state.
 rsync -trvp --owner --group --usermap=48:33 --groupmap=48:33 -s --delete \
-    --exclude='data/first_access_tokens/' \
+    --exclude='data/first_access_tokens/*' \
     --exclude='data/.ns8-migration-tokens.json' \
     /var/lib/tancredi/data "${RSYNC_ENDPOINT}"/data/volumes/tancredi/
 
