@@ -1,5 +1,5 @@
 Name: nethserver-ns8-migration
-Version: 1.3.8
+Version: 1.4.0
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -45,6 +45,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Nov 06 2026 Davide Principi <davide.principi@nethesis.it> - 1.4.0-1
+- feat(tancredi): migrate phones to new host - NethServer/nethserver-ns8-migration#128
+  NethServer/dev#8008
+
 * Fri Jun 26 2026 Davide Principi <davide.principi@nethesis.it> - 1.3.8-1
 - Password never expires: OpenLDAP support for individual users - NethServer/dev#7981
 
