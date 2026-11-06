@@ -2,4 +2,6 @@ samples*
 keys
 asterisk.conf
 modules.conf
+# The destination image supplies this absolute symlink.
+/extensions.conf
 *.rpmnew
