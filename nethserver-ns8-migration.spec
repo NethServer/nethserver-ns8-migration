@@ -1,16 +1,22 @@
+%global rsync_version 3.4.4
+
 Name: nethserver-ns8-migration
 Version: 1.4.0
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
-License: GPLv3
+License: GPLv3 and GPLv3+
 URL: https://github.com/nethesis/icaro
 Source: %{name}-%{version}.tar.gz
 Source1: %{name}-cockpit.tar.gz
+# Private rsync build: EL7 rsync 3.1.2 is very slow with --xattrs
+Source2: https://download.samba.org/pub/rsync/src/rsync-%{rsync_version}.tar.gz
 
-%global debug_package %{nil} 
+%global debug_package %{nil}
 
 BuildRequires: nethserver-devtools
+BuildRequires: gcc, make
+BuildRequires: libacl-devel, libattr-devel, popt-devel, zlib-devel
 Requires: wireguard-tools, kmod-wireguard
 Requires: mariadb
 
@@ -19,12 +25,34 @@ NS7 to NS8 migration
 
 %prep
 %setup -q
+%setup -q -T -D -a 2
 
 
 %build
 %{makedocs}
 perl createlinks
 sed -i 's/_RELEASE_/%{version}/' %{name}.json
+# Build only the rsync binary, linked to EL7 base libraries
+pushd rsync-%{rsync_version}
+%configure \
+    --disable-md2man \
+    --disable-openssl \
+    --disable-xxhash \
+    --disable-zstd \
+    --disable-lz4 \
+    --disable-roll-simd \
+    --disable-md5-asm
+make %{?_smp_mflags} rsync
+popd
+
+%check
+# configure silently drops features if their -devel package is missing:
+# the file server migration requires both ACLs and xattrs support
+rsync-%{rsync_version}/rsync --version | tee rsync-version.txt
+if grep -qE '\<no (ACLs|xattrs)\>' rsync-version.txt ; then
+    echo "rsync was built without ACLs or xattrs support" 1>&2
+    exit 1
+fi
 
 %install
 rm -rf %{buildroot}
@@ -36,6 +64,8 @@ mkdir -p %{buildroot}/usr/libexec/nethserver/api/%{name}/
 tar xvf %{SOURCE1} -C %{buildroot}/usr/share/cockpit/%{name}/
 cp -a %{name}.json %{buildroot}/usr/share/cockpit/nethserver/applications/
 cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
+install -D -m 0755 rsync-%{rsync_version}/rsync %{buildroot}%{_libexecdir}/%{name}/rsync
+install -D -m 0644 rsync-%{rsync_version}/COPYING %{buildroot}%{_docdir}/%{name}/rsync-COPYING
 
 %{genfilelist} %{buildroot} --file /etc/sudoers.d/50_nsapi_nethserver_ns8_migration 'attr(0440,root,root)' > e-smith-%{version}-filelist
 
