@@ -28,11 +28,20 @@ function has_subdirs ()
     return $?
 }
 
+# The EL7 rsync 3.1.2 is very slow at transferring extended attributes
+# of many files. Prefer the newer rsync build shipped with this package
+# for the --xattrs pass, if it runs on this system.
+rsync_xattrs=/usr/libexec/nethserver-ns8-migration/rsync
+if ! "${rsync_xattrs}" --version &>/dev/null; then
+    echo "[WARNING] ${rsync_xattrs} is not available, falling back to the system rsync"
+    rsync_xattrs=rsync
+fi
+
 # Rsync command wrapper that ignores some specific exit codes
 function rsync_forced ()
 {
     local exit_code=0
-    rsync "${@}" || exit_code=$?
+    "${rsync_xattrs}" "${@}" || exit_code=$?
     if [[ ${exit_code} == 23 ]]; then
         echo "[WARNING] rsync exit code 23 is ignored: Partial transfer due to error"
         return 0
