@@ -1,7 +1,7 @@
 %global rsync_version 3.4.4
 
 Name: nethserver-ns8-migration
-Version: 1.4.0
+Version: 1.5.0
 Release: 1%{?dist}
 Summary: NS7 to NS8 migration
 
@@ -75,6 +75,9 @@ install -D -m 0644 rsync-%{rsync_version}/COPYING %{buildroot}%{_docdir}/%{name}
 %dir %{_nseventsdir}/%{name}-update
 
 %changelog
+* Fri Nov 20 2026 Davide Principi <davide.principi@nethesis.it> - 1.5.0-1
+- Faster file server migration from NethServer 7: ship a newer rsync - NethServer/dev#8337
+
 * Fri Nov 06 2026 Davide Principi <davide.principi@nethesis.it> - 1.4.0-1
 - feat(tancredi): migrate phones to new host - NethServer/nethserver-ns8-migration#128
   NethServer/dev#8008
